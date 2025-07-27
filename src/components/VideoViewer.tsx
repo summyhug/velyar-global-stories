@@ -14,11 +14,12 @@ interface VideoViewerProps {
     videoUrl: string;
     caption?: string;
   }>;
+  initialIndex?: number;
   onBack: () => void;
 }
 
-export const VideoViewer = ({ videos, onBack }: VideoViewerProps) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerProps) => {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState("");
 
@@ -137,7 +138,7 @@ export const VideoViewer = ({ videos, onBack }: VideoViewerProps) => {
                     placeholder="Add a thoughtful comment..."
                     value={comment}
                     onChange={(e) => setComment(e.target.value.slice(0, maxCommentLength))}
-                    className="min-h-20 resize-none"
+                    className="min-h-20 resize-none border-velyar-earth/20 focus:border-velyar-earth"
                   />
                   <div className="text-xs text-muted-foreground mt-1 text-right">
                     {comment.length}/{maxCommentLength}
@@ -146,7 +147,7 @@ export const VideoViewer = ({ videos, onBack }: VideoViewerProps) => {
                 <Button
                   onClick={handleCommentSubmit}
                   disabled={!comment.trim()}
-                  className="bg-velyar-earth hover:bg-velyar-warm"
+                  className="bg-velyar-warm hover:bg-velyar-glow text-velyar-earth"
                 >
                   Send
                 </Button>

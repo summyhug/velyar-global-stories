@@ -1,53 +1,53 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Velyar Brand Design System */
 
 @layer base {
   :root {
-    /* Warm, community-focused palette for Velyar */
-    --background: 36 8% 98%;
-    --foreground: 20 20% 15%;
+    /* Velyar Brand Colors */
+    --background: 43 33% 94%; /* #F5F1E1 - Warm Beige */
+    --foreground: 194 42% 28%; /* #285A66 - Dark Teal */
 
-    --card: 36 12% 96%;
-    --card-foreground: 20 20% 15%;
+    --card: 43 33% 96%;
+    --card-foreground: 194 42% 28%;
 
-    --popover: 36 12% 96%;
-    --popover-foreground: 20 20% 15%;
+    --popover: 43 33% 96%;
+    --popover-foreground: 194 42% 28%;
 
-    /* Warm earth tone primary */
-    --primary: 25 35% 45%;
-    --primary-foreground: 36 8% 98%;
+    /* Dark Teal primary */
+    --primary: 194 42% 28%; /* #285A66 */
+    --primary-foreground: 43 33% 94%;
 
-    /* Soft secondary */
-    --secondary: 35 15% 88%;
-    --secondary-foreground: 20 20% 20%;
+    /* Warm Brown secondary */
+    --secondary: 37 37% 60%; /* #D1A15D */
+    --secondary-foreground: 194 42% 28%;
 
-    --muted: 35 10% 92%;
-    --muted-foreground: 20 8% 55%;
+    --muted: 43 20% 88%;
+    --muted-foreground: 194 20% 45%;
 
-    /* Warm accent */
-    --accent: 40 25% 85%;
-    --accent-foreground: 20 20% 20%;
+    /* Warm Brown accent */
+    --accent: 37 37% 60%; /* #D1A15D */
+    --accent-foreground: 194 42% 28%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 36 8% 98%;
+    --destructive-foreground: 43 33% 94%;
 
-    --border: 35 12% 88%;
-    --input: 35 12% 90%;
-    --ring: 25 35% 45%;
+    --border: 43 20% 85%;
+    --input: 43 20% 90%;
+    --ring: 194 42% 28%;
 
-    /* Rounded for friendliness */
     --radius: 1rem;
 
     /* Velyar-specific design tokens */
-    --velyar-warm: 35 40% 70%;
-    --velyar-earth: 25 35% 45%;
-    --velyar-soft: 35 15% 88%;
-    --velyar-glow: 40 80% 85%;
+    --velyar-warm: 37 37% 60%; /* #D1A15D - Warm Brown */
+    --velyar-earth: 194 42% 28%; /* #285A66 - Dark Teal */
+    --velyar-soft: 43 33% 96%; /* Lighter Warm Beige */
+    --velyar-glow: 37 37% 70%; /* Lighter Warm Brown */
+    --velyar-coral: 13 100% 67%; /* #FF7F5A - Muted Coral */
+    --velyar-olive: 78 44% 39%; /* #6E8A3D - Olive Green */
     
     /* Gradients */
     --gradient-warm: linear-gradient(135deg, hsl(var(--velyar-earth)), hsl(var(--velyar-warm)));
@@ -57,66 +57,61 @@ All colors MUST be HSL.
     --shadow-gentle: 0 4px 16px -8px hsl(var(--velyar-earth) / 0.15);
     --shadow-warm: 0 8px 32px -12px hsl(var(--velyar-earth) / 0.2);
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 43 33% 96%;
+    --sidebar-foreground: 194 42% 28%;
+    --sidebar-primary: 194 42% 28%;
+    --sidebar-primary-foreground: 43 33% 94%;
+    --sidebar-accent: 43 20% 90%;
+    --sidebar-accent-foreground: 194 42% 28%;
+    --sidebar-border: 43 20% 85%;
+    --sidebar-ring: 194 42% 28%;
   }
 
   .dark {
-    /* Dark mode with warm undertones */
-    --background: 20 15% 8%;
-    --foreground: 36 8% 92%;
+    /* Dark mode with Velyar brand colors */
+    --background: 194 42% 12%;
+    --foreground: 43 33% 94%;
 
-    --card: 20 15% 10%;
-    --card-foreground: 36 8% 92%;
+    --card: 194 42% 15%;
+    --card-foreground: 43 33% 94%;
 
-    --popover: 20 15% 10%;
-    --popover-foreground: 36 8% 92%;
+    --popover: 194 42% 15%;
+    --popover-foreground: 43 33% 94%;
 
-    --primary: 35 40% 65%;
-    --primary-foreground: 20 15% 8%;
+    --primary: 37 37% 60%;
+    --primary-foreground: 194 42% 12%;
 
-    --secondary: 20 10% 18%;
-    --secondary-foreground: 36 8% 88%;
+    --secondary: 194 30% 25%;
+    --secondary-foreground: 43 33% 90%;
 
-    --muted: 20 8% 16%;
-    --muted-foreground: 35 6% 65%;
+    --muted: 194 30% 20%;
+    --muted-foreground: 43 20% 70%;
 
-    --accent: 25 25% 25%;
-    --accent-foreground: 36 8% 88%;
+    --accent: 37 37% 55%;
+    --accent-foreground: 194 42% 12%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 36 8% 92%;
+    --destructive-foreground: 43 33% 94%;
 
-    --border: 20 10% 20%;
-    --input: 20 10% 20%;
-    --ring: 35 40% 65%;
+    --border: 194 30% 25%;
+    --input: 194 30% 25%;
+    --ring: 37 37% 60%;
 
-    /* Dark mode Velyar tokens */
-    --velyar-warm: 35 30% 55%;
-    --velyar-earth: 35 40% 65%;
-    --velyar-soft: 20 10% 18%;
-    --velyar-glow: 40 60% 45%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --velyar-warm: 37 37% 55%;
+    --velyar-earth: 194 42% 40%;
+    --velyar-soft: 194 42% 15%;
+    --velyar-glow: 37 37% 50%;
+    --velyar-coral: 13 100% 60%;
+    --velyar-olive: 78 44% 35%;
+    
+    --sidebar-background: 194 42% 15%;
+    --sidebar-foreground: 43 33% 94%;
+    --sidebar-primary: 37 37% 60%;
+    --sidebar-primary-foreground: 194 42% 12%;
+    --sidebar-accent: 194 30% 25%;
+    --sidebar-accent-foreground: 43 33% 90%;
+    --sidebar-border: 194 30% 25%;
+    --sidebar-ring: 37 37% 60%;
   }
 }
 

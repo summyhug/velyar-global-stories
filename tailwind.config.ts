@@ -62,6 +62,8 @@ export default {
 					earth: 'hsl(var(--velyar-earth))',
 					soft: 'hsl(var(--velyar-soft))',
 					glow: 'hsl(var(--velyar-glow))',
+					coral: 'hsl(var(--velyar-coral))',
+					olive: 'hsl(var(--velyar-olive))',
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',

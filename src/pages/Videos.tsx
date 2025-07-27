@@ -6,7 +6,7 @@ import { useParams, useNavigate } from "react-router-dom";
 const Videos = () => {
   const { type, id } = useParams();
   const navigate = useNavigate();
-  const [showVideoViewer, setShowVideoViewer] = useState(true);
+  const [showVideoViewer, setShowVideoViewer] = useState(!!id);
 
   // Mock video data
   const mockVideos = [
@@ -34,17 +34,31 @@ const Videos = () => {
   ];
 
   const handleBack = () => {
-    setShowVideoViewer(false);
-    navigate(-1);
+    if (id) {
+      // If we have an ID, go back to the video list
+      navigate(`/videos/${type}`);
+    } else {
+      // If no ID, go back to previous page
+      navigate(-1);
+    }
   };
 
-  if (showVideoViewer) {
+  // If we have an ID, show the video viewer
+  if (id && showVideoViewer) {
+    const startIndex = mockVideos.findIndex(video => video.id === id);
     return (
       <VideoViewer
         videos={mockVideos}
+        initialIndex={startIndex >= 0 ? startIndex : 0}
         onBack={handleBack}
       />
     );
+  }
+
+  // If no ID, redirect to video list page
+  if (!id) {
+    navigate(`/video-list/${type}`);
+    return null;
   }
 
   return null;

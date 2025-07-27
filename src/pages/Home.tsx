@@ -1,5 +1,5 @@
 
-import { Heart, Users, MapPin } from "lucide-react";
+import { Users, MapPin } from "lucide-react";
 import { DailyPrompt } from "@/components/DailyPrompt";
 import { MissionCard } from "@/components/MissionCard";
 
@@ -9,9 +9,9 @@ const Home = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-          <h1 className="text-2xl font-light tracking-wide text-velyar-earth font-nunito">velyar</h1>
+          <h1 className="text-2xl font-semibold tracking-wide text-velyar-earth font-nunito">velyar</h1>
           <div className="flex items-center gap-1">
-            <Heart className="w-5 h-5 text-velyar-warm" />
+            <span className="text-lg">🐙</span>
             <span className="text-sm text-muted-foreground">global stories</span>
           </div>
         </div>

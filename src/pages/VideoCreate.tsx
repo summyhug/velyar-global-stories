@@ -1,19 +1,25 @@
 
-import { ArrowLeft, Video, Camera, RotateCcw, CheckCircle, MapPin, Type } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowLeft, Camera, Video, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { VideoTextOverlay } from "@/components/VideoTextOverlay";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const VideoCreate = () => {
+  const [step, setStep] = useState<'permission' | 'record' | 'upload' | 'edit'>('permission');
+  const [hasPermission, setHasPermission] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [hasRecorded, setHasRecorded] = useState(false);
+  const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
-  const [videoDuration, setVideoDuration] = useState(30); // Mock duration
+  const [location, setLocation] = useState("");
+  const [videoDuration, setVideoDuration] = useState(0);
   const [textOverlays, setTextOverlays] = useState([]);
-  const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const navigate = useNavigate();
 
   const requestPermissions = async () => {
     try {
@@ -21,194 +27,183 @@ const VideoCreate = () => {
         video: true, 
         audio: true 
       });
-      setPermissionsGranted(true);
-      stream.getTracks().forEach(track => track.stop()); // Stop the stream for now
+      setHasPermission(true);
+      setStep('record');
+      // Stop the stream for now
+      stream.getTracks().forEach(track => track.stop());
     } catch (error) {
       console.error('Permission denied:', error);
     }
   };
 
-  const handleRecord = () => {
-    if (!permissionsGranted) {
-      requestPermissions();
-      return;
+  const startRecording = () => {
+    setIsRecording(true);
+    // Recording logic would go here
+  };
+
+  const stopRecording = () => {
+    setIsRecording(false);
+    // Mock recorded video
+    setRecordedVideo("/placeholder-video.mp4");
+    setVideoDuration(30); // 30 seconds
+    setStep('edit');
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setRecordedVideo(url);
+      setVideoDuration(30); // Mock duration
+      setStep('edit');
     }
-    
-    setIsRecording(!isRecording);
-    if (isRecording) {
-      setHasRecorded(true);
-      setIsRecording(false);
+  };
+
+  const handleSubmit = () => {
+    // Submit video logic
+    console.log('Video submitted:', { caption, location, textOverlays });
+    navigate('/');
+  };
+
+  const handleBack = () => {
+    if (step === 'permission') {
+      navigate(-1);
+    } else if (step === 'record') {
+      setStep('permission');
+    } else if (step === 'edit') {
+      setStep('record');
     }
   };
 
   return (
     <div className="min-h-screen bg-background font-quicksand">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="p-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBack}
+            className="p-2 text-velyar-earth hover:bg-velyar-soft"
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-lg font-medium text-foreground font-nunito">share your story</h1>
+          <h1 className="text-xl font-medium text-velyar-earth font-nunito">share your story</h1>
         </div>
       </header>
 
-      {/* Current Prompt */}
-      <div className="max-w-md mx-auto px-4 mt-4">
-        <Card className="bg-velyar-glow/20 border-velyar-earth/20">
-          <CardContent className="p-4 text-center">
-            <p className="text-sm text-muted-foreground mb-2">today's prompt</p>
-            <h2 className="text-lg font-medium text-foreground font-nunito">
-              "what did you eat last night?"
-            </h2>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Video Recording Area */}
-      <div className="max-w-md mx-auto px-4 mt-6">
-        <Card className="overflow-hidden border-0 shadow-warm">
-          <div className="relative aspect-[9/16] bg-muted flex items-center justify-center">
-            {!hasRecorded ? (
-              <>
-                {/* Camera Preview Placeholder */}
-                <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted-foreground/20" />
-                <div className="relative z-10 text-center">
-                  <div className="w-16 h-16 bg-background/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Camera className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {permissionsGranted ? 'position yourself in the frame' : 'tap record to grant camera access'}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {permissionsGranted ? 'tap the record button when ready' : 'camera and microphone access required'}
-                  </p>
-                </div>
-
-                {/* AI Framing Helper */}
-                {permissionsGranted && (
-                  <div className="absolute top-4 left-4 right-4">
-                    <div className="bg-background/80 backdrop-blur-sm rounded-lg p-2">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        <span className="text-xs text-foreground">good lighting detected</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="relative w-full h-full bg-muted flex items-center justify-center">
-                <div className="text-center">
-                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
-                  <p className="text-sm text-foreground">video recorded!</p>
-                </div>
-              </div>
-            )}
-
-            {/* Recording Controls */}
-            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
-              {hasRecorded && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full bg-background/80 backdrop-blur-sm"
-                  onClick={() => setHasRecorded(false)}
+      {/* Main Content */}
+      <main className="max-w-md mx-auto px-4 pb-24">
+        {step === 'permission' && (
+          <div className="mt-8">
+            <Card className="text-center border-velyar-earth/10">
+              <CardHeader>
+                <CardTitle className="text-velyar-earth font-nunito">camera & microphone access</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="text-6xl mb-4">🎥</div>
+                <p className="text-muted-foreground">
+                  to record your story, we need access to your camera and microphone
+                </p>
+                <Button 
+                  onClick={requestPermissions}
+                  className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  allow access
                 </Button>
-              )}
-              
-              <Button
-                size="lg"
-                className={`rounded-full w-16 h-16 ${
-                  isRecording 
-                    ? 'bg-red-500 hover:bg-red-600' 
-                    : hasRecorded 
-                    ? 'bg-green-500 hover:bg-green-600'
-                    : 'bg-velyar-earth hover:bg-velyar-warm'
-                }`}
-                onClick={handleRecord}
-              >
-                {isRecording ? (
-                  <div className="w-6 h-6 bg-white rounded-sm" />
-                ) : hasRecorded ? (
-                  <CheckCircle className="w-8 h-8 text-white" />
-                ) : (
-                  <Video className="w-8 h-8 text-white" />
-                )}
-              </Button>
-            </div>
+              </CardContent>
+            </Card>
           </div>
-        </Card>
-      </div>
+        )}
 
-      {/* Caption & Details */}
-      {hasRecorded && (
-        <div className="max-w-md mx-auto px-4 mt-6 space-y-4">
-          {/* Caption */}
-          <Card className="border-0 shadow-gentle">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Type className="w-4 h-4 text-velyar-earth" />
-                <span className="text-sm font-medium text-foreground font-nunito">add caption</span>
-              </div>
-              <Textarea
-                placeholder="tell us more about your story..."
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-                className="min-h-20 resize-none border-0 bg-muted/50 focus:bg-background"
-              />
-            </CardContent>
-          </Card>
-
-          {/* Text Overlays */}
-          <VideoTextOverlay
-            videoDuration={videoDuration}
-            onTextOverlaysChange={setTextOverlays}
-          />
-
-          {/* Location */}
-          <Card className="border-0 shadow-gentle">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <MapPin className="w-4 h-4 text-velyar-earth" />
-                <span className="text-sm font-medium text-foreground font-nunito">location</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                <span>san francisco, california</span>
-                <Button variant="ghost" size="sm" className="text-xs ml-auto">
-                  change
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Subtitles */}
-          <Card className="border-0 shadow-gentle">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-medium text-foreground font-nunito">auto-translate subtitles</h4>
-                  <p className="text-xs text-muted-foreground">help others understand your story</p>
+        {step === 'record' && (
+          <div className="mt-8 space-y-6">
+            <Card className="border-velyar-earth/10">
+              <CardContent className="p-6">
+                <div className="aspect-[9/16] bg-muted rounded-lg flex items-center justify-center mb-4">
+                  <Camera className="w-16 h-16 text-muted-foreground" />
                 </div>
-                <Button variant="outline" size="sm">
-                  enable
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex gap-4 justify-center">
+                  <Button
+                    onClick={isRecording ? stopRecording : startRecording}
+                    className={`${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-velyar-warm hover:bg-velyar-glow'} text-white`}
+                  >
+                    {isRecording ? 'stop recording' : 'start recording'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Share Button */}
-          <Button
-            size="lg"
-            className="w-full bg-gradient-warm text-white font-medium font-nunito mb-24"
-          >
-            share with the world
-          </Button>
-        </div>
-      )}
+            <Card className="border-velyar-earth/10">
+              <CardContent className="p-6 text-center">
+                <div className="text-velyar-earth font-nunito font-medium mb-2">or upload a video</div>
+                <Label htmlFor="video-upload" className="cursor-pointer">
+                  <div className="border-2 border-dashed border-velyar-earth/20 rounded-lg p-6 hover:bg-velyar-soft transition-colors">
+                    <Upload className="w-8 h-8 mx-auto mb-2 text-velyar-earth" />
+                    <span className="text-velyar-earth">choose file</span>
+                  </div>
+                  <Input
+                    id="video-upload"
+                    type="file"
+                    accept="video/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </Label>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {step === 'edit' && (
+          <div className="mt-8 space-y-6">
+            <Card className="border-velyar-earth/10">
+              <CardContent className="p-4">
+                <div className="aspect-[9/16] bg-muted rounded-lg flex items-center justify-center mb-4">
+                  <Video className="w-16 h-16 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-velyar-earth/10">
+              <CardContent className="p-4 space-y-4">
+                <div>
+                  <Label htmlFor="caption" className="text-velyar-earth font-nunito">caption</Label>
+                  <Textarea
+                    id="caption"
+                    placeholder="tell us about your story..."
+                    value={caption}
+                    onChange={(e) => setCaption(e.target.value)}
+                    className="mt-2 border-velyar-earth/20 focus:border-velyar-earth"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="location" className="text-velyar-earth font-nunito">location</Label>
+                  <Input
+                    id="location"
+                    placeholder="city, country"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="mt-2 border-velyar-earth/20 focus:border-velyar-earth"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <VideoTextOverlay
+              videoDuration={videoDuration}
+              onTextOverlaysChange={setTextOverlays}
+            />
+
+            <Button 
+              onClick={handleSubmit}
+              className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium"
+            >
+              share your story
+            </Button>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
