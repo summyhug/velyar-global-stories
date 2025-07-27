@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VideoViewer } from "@/components/VideoViewer";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -56,10 +56,11 @@ const Videos = () => {
   }
 
   // If no ID, redirect to video list page
-  if (!id) {
-    navigate(`/video-list/${type}`);
-    return null;
-  }
+  useEffect(() => {
+    if (!id) {
+      navigate(`/video-list/${type}`);
+    }
+  }, [id, type, navigate]);
 
   return null;
 };

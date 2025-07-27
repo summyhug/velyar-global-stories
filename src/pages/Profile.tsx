@@ -3,6 +3,7 @@ import { ArrowLeft, MapPin, Calendar, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 
 const Profile = () => {
   const contributions = [
@@ -73,10 +74,17 @@ const Profile = () => {
 
         {/* Mission Contributions */}
         <section className="mt-6">
-          <h2 className="text-lg font-medium text-foreground mb-4 font-nunito">mission contributions</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium text-foreground font-nunito">mission contributions</h2>
+            <Link to="/contributions">
+              <Button variant="ghost" size="sm" className="text-velyar-brown hover:bg-velyar-brown/10">
+                view all
+              </Button>
+            </Link>
+          </div>
           
           <div className="space-y-3">
-            {contributions.map((contribution, index) => (
+            {contributions.slice(0, 3).map((contribution, index) => (
               <Card key={index} className="border-0 shadow-gentle">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">

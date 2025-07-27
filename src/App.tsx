@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Explore from "./pages/Explore";
 import Missions from "./pages/Missions";
 import Profile from "./pages/Profile";
+import Contributions from "./pages/Contributions";
 import VideoCreate from "./pages/VideoCreate";
 import Videos from "./pages/Videos";
 import VideoList from "./pages/VideoList";
@@ -29,6 +30,7 @@ const App = () => {
               <Route path="/explore" element={<Explore />} />
               <Route path="/missions" element={<Missions />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/contributions" element={<Contributions />} />
               <Route path="/create" element={<VideoCreate />} />
               <Route path="/video-list/:type" element={<VideoList />} />
               <Route path="/videos/:type/:id?" element={<Videos />} />
