@@ -18,35 +18,68 @@ const VideoCreate = () => {
   const [location, setLocation] = useState("");
   const [videoDuration, setVideoDuration] = useState(0);
   const [textOverlays, setTextOverlays] = useState([]);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
 
   const requestPermissions = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: true, 
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'user' }, 
         audio: true 
       });
+      setStream(mediaStream);
       setHasPermission(true);
       setStep('record');
-      // Stop the stream for now
-      stream.getTracks().forEach(track => track.stop());
+      
+      // Show live preview
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
     } catch (error) {
       console.error('Permission denied:', error);
     }
   };
 
   const startRecording = () => {
+    if (!stream) return;
+    
+    const recorder = new MediaRecorder(stream);
+    const chunks: Blob[] = [];
+    
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        chunks.push(event.data);
+      }
+    };
+    
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      setRecordedVideo(url);
+      setVideoDuration(30); // We'll calculate actual duration later
+      setStep('edit');
+    };
+    
+    setRecordedChunks(chunks);
+    setMediaRecorder(recorder);
+    recorder.start();
     setIsRecording(true);
-    // Recording logic would go here
   };
 
   const stopRecording = () => {
-    setIsRecording(false);
-    // Mock recorded video
-    setRecordedVideo("/placeholder-video.mp4");
-    setVideoDuration(30); // 30 seconds
-    setStep('edit');
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      
+      // Stop the live stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+      }
+    }
   };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,12 +153,30 @@ const VideoCreate = () => {
           <div className="mt-8 space-y-6">
             <Card className="border-velyar-earth/10">
               <CardContent className="p-6">
-                <div className="aspect-[9/16] bg-muted rounded-lg flex items-center justify-center mb-4">
-                  <Camera className="w-16 h-16 text-muted-foreground" />
+                <div className="aspect-[9/16] bg-muted rounded-lg overflow-hidden mb-4 relative">
+                  {stream ? (
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Camera className="w-16 h-16 text-muted-foreground" />
+                    </div>
+                  )}
+                  {isRecording && (
+                    <div className="absolute top-4 right-4 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      REC
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-4 justify-center">
                   <Button
                     onClick={isRecording ? stopRecording : startRecording}
+                    disabled={!stream}
                     className={`${isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-velyar-warm hover:bg-velyar-glow'} text-white`}
                   >
                     {isRecording ? 'stop recording' : 'start recording'}
