@@ -14,7 +14,203 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_prompts: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          is_active: boolean
+          prompt_text: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          is_active?: boolean
+          prompt_text: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          is_active?: boolean
+          prompt_text?: string
+        }
+        Relationships: []
+      }
+      missions: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          location_needed: string | null
+          participants_count: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          location_needed?: string | null
+          participants_count?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          location_needed?: string | null
+          participants_count?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      video_overlays: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          overlay_type: string
+          position_x: number
+          position_y: number
+          style_data: Json | null
+          video_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          overlay_type: string
+          position_x: number
+          position_y: number
+          style_data?: Json | null
+          video_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          overlay_type?: string
+          position_x?: number
+          position_y?: number
+          style_data?: Json | null
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_overlays_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      videos: {
+        Row: {
+          created_at: string
+          daily_prompt_id: string | null
+          description: string | null
+          duration: number | null
+          id: string
+          is_public: boolean
+          location: string | null
+          mission_id: string | null
+          thumbnail_url: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          daily_prompt_id?: string | null
+          description?: string | null
+          duration?: number | null
+          id?: string
+          is_public?: boolean
+          location?: string | null
+          mission_id?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          daily_prompt_id?: string | null
+          description?: string | null
+          duration?: number | null
+          id?: string
+          is_public?: boolean
+          location?: string | null
+          mission_id?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "videos_daily_prompt_id_fkey"
+            columns: ["daily_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "daily_prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "videos_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
