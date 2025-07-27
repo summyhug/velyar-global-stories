@@ -1,4 +1,5 @@
-import { ArrowRight, Clock } from "lucide-react";
+
+import { ArrowRight, Clock, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
@@ -12,7 +13,7 @@ export const DailyPrompt = () => {
           <span className="text-sm text-muted-foreground">today's global prompt</span>
         </div>
         
-        <h2 className="text-xl font-medium text-foreground mb-4 leading-relaxed">
+        <h2 className="text-xl font-medium text-foreground mb-4 leading-relaxed font-nunito">
           "what did you eat last night?"
         </h2>
         
@@ -20,15 +21,27 @@ export const DailyPrompt = () => {
           join 2,847 voices from 94 countries sharing their evening meals
         </p>
         
-        <Link to="/create">
-          <Button 
-            className="w-full bg-velyar-earth hover:bg-velyar-warm transition-colors"
-            size="lg"
-          >
-            share your answer
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </Link>
+        <div className="flex gap-3">
+          <Link to="/create" className="flex-1">
+            <Button 
+              className="w-full bg-velyar-earth hover:bg-velyar-warm transition-colors"
+              size="lg"
+            >
+              share
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
+          <Link to="/videos/daily-prompt" className="flex-1">
+            <Button 
+              variant="outline"
+              className="w-full"
+              size="lg"
+            >
+              view
+              <Eye className="w-4 h-4 ml-2" />
+            </Button>
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,6 +1,8 @@
-import { MapPin, Users2, ArrowRight } from "lucide-react";
+
+import { MapPin, Users2, ArrowRight, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Link } from "react-router-dom";
 
 interface MissionCardProps {
   title: string;
@@ -21,7 +23,7 @@ export const MissionCard = ({ title, description, participants, location, imageU
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-2 left-3 text-white">
-          <h3 className="font-medium text-sm">{title}</h3>
+          <h3 className="font-medium text-sm font-nunito">{title}</h3>
         </div>
       </div>
       
@@ -39,10 +41,19 @@ export const MissionCard = ({ title, description, participants, location, imageU
           </div>
         </div>
         
-        <Button variant="outline" size="sm" className="w-full">
-          join mission
-          <ArrowRight className="w-3 h-3 ml-2" />
-        </Button>
+        <div className="flex gap-2">
+          <Link to="/create" className="flex-1">
+            <Button variant="outline" size="sm" className="w-full">
+              join mission
+              <ArrowRight className="w-3 h-3 ml-2" />
+            </Button>
+          </Link>
+          <Link to={`/videos/mission/${title.replace(/\s+/g, '-')}`}>
+            <Button variant="ghost" size="sm" className="px-3">
+              <Eye className="w-3 h-3" />
+            </Button>
+          </Link>
+        </div>
       </CardContent>
     </Card>
   );

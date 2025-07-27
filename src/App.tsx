@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +9,7 @@ import Explore from "./pages/Explore";
 import Missions from "./pages/Missions";
 import Profile from "./pages/Profile";
 import VideoCreate from "./pages/VideoCreate";
+import Videos from "./pages/Videos";
 import NotFound from "./pages/NotFound";
 import { BottomNav } from "./components/BottomNav";
 
@@ -26,6 +28,7 @@ const App = () => (
             <Route path="/missions" element={<Missions />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/create" element={<VideoCreate />} />
+            <Route path="/videos/:type/:id?" element={<Videos />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <BottomNav />

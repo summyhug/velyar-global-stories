@@ -1,24 +1,55 @@
+
 import { ArrowLeft, Video, Camera, RotateCcw, CheckCircle, MapPin, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { VideoTextOverlay } from "@/components/VideoTextOverlay";
 import { useState } from "react";
 
 const VideoCreate = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [hasRecorded, setHasRecorded] = useState(false);
   const [caption, setCaption] = useState("");
+  const [videoDuration, setVideoDuration] = useState(30); // Mock duration
+  const [textOverlays, setTextOverlays] = useState([]);
+  const [permissionsGranted, setPermissionsGranted] = useState(false);
+
+  const requestPermissions = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: true, 
+        audio: true 
+      });
+      setPermissionsGranted(true);
+      stream.getTracks().forEach(track => track.stop()); // Stop the stream for now
+    } catch (error) {
+      console.error('Permission denied:', error);
+    }
+  };
+
+  const handleRecord = () => {
+    if (!permissionsGranted) {
+      requestPermissions();
+      return;
+    }
+    
+    setIsRecording(!isRecording);
+    if (isRecording) {
+      setHasRecorded(true);
+      setIsRecording(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background font-quicksand">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
           <Button variant="ghost" size="sm" className="p-2">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-lg font-medium text-foreground">share your story</h1>
+          <h1 className="text-lg font-medium text-foreground font-nunito">share your story</h1>
         </div>
       </header>
 
@@ -27,7 +58,7 @@ const VideoCreate = () => {
         <Card className="bg-velyar-glow/20 border-velyar-earth/20">
           <CardContent className="p-4 text-center">
             <p className="text-sm text-muted-foreground mb-2">today's prompt</p>
-            <h2 className="text-lg font-medium text-foreground">
+            <h2 className="text-lg font-medium text-foreground font-nunito">
               "what did you eat last night?"
             </h2>
           </CardContent>
@@ -47,22 +78,24 @@ const VideoCreate = () => {
                     <Camera className="w-8 h-8 text-muted-foreground" />
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    position yourself in the frame
+                    {permissionsGranted ? 'position yourself in the frame' : 'tap record to grant camera access'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    tap the record button when ready
+                    {permissionsGranted ? 'tap the record button when ready' : 'camera and microphone access required'}
                   </p>
                 </div>
 
                 {/* AI Framing Helper */}
-                <div className="absolute top-4 left-4 right-4">
-                  <div className="bg-background/80 backdrop-blur-sm rounded-lg p-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                      <span className="text-xs text-foreground">good lighting detected</span>
+                {permissionsGranted && (
+                  <div className="absolute top-4 left-4 right-4">
+                    <div className="bg-background/80 backdrop-blur-sm rounded-lg p-2">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        <span className="text-xs text-foreground">good lighting detected</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </>
             ) : (
               <div className="relative w-full h-full bg-muted flex items-center justify-center">
@@ -95,15 +128,7 @@ const VideoCreate = () => {
                     ? 'bg-green-500 hover:bg-green-600'
                     : 'bg-velyar-earth hover:bg-velyar-warm'
                 }`}
-                onClick={() => {
-                  if (!hasRecorded) {
-                    setIsRecording(!isRecording);
-                    if (isRecording) {
-                      setHasRecorded(true);
-                      setIsRecording(false);
-                    }
-                  }
-                }}
+                onClick={handleRecord}
               >
                 {isRecording ? (
                   <div className="w-6 h-6 bg-white rounded-sm" />
@@ -126,7 +151,7 @@ const VideoCreate = () => {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Type className="w-4 h-4 text-velyar-earth" />
-                <span className="text-sm font-medium text-foreground">add caption</span>
+                <span className="text-sm font-medium text-foreground font-nunito">add caption</span>
               </div>
               <Textarea
                 placeholder="tell us more about your story..."
@@ -137,12 +162,18 @@ const VideoCreate = () => {
             </CardContent>
           </Card>
 
+          {/* Text Overlays */}
+          <VideoTextOverlay
+            videoDuration={videoDuration}
+            onTextOverlaysChange={setTextOverlays}
+          />
+
           {/* Location */}
           <Card className="border-0 shadow-gentle">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-3">
                 <MapPin className="w-4 h-4 text-velyar-earth" />
-                <span className="text-sm font-medium text-foreground">location</span>
+                <span className="text-sm font-medium text-foreground font-nunito">location</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <div className="w-2 h-2 bg-green-500 rounded-full" />
@@ -159,7 +190,7 @@ const VideoCreate = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-medium text-foreground">auto-translate subtitles</h4>
+                  <h4 className="text-sm font-medium text-foreground font-nunito">auto-translate subtitles</h4>
                   <p className="text-xs text-muted-foreground">help others understand your story</p>
                 </div>
                 <Button variant="outline" size="sm">
@@ -172,7 +203,7 @@ const VideoCreate = () => {
           {/* Share Button */}
           <Button
             size="lg"
-            className="w-full bg-gradient-warm text-white font-medium"
+            className="w-full bg-gradient-warm text-white font-medium font-nunito mb-24"
           >
             share with the world
           </Button>
