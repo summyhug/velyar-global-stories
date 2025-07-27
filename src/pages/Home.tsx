@@ -12,7 +12,7 @@ const Home = () => {
           <h1 className="text-2xl font-semibold tracking-wide text-velyar-earth font-nunito">velyar</h1>
           <div className="flex items-center gap-1">
             <span className="text-lg">🐙</span>
-            <span className="text-sm text-muted-foreground">global stories</span>
+            <span className="text-sm text-muted-foreground">global voices</span>
           </div>
         </div>
       </header>
