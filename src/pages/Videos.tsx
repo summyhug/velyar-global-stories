@@ -33,6 +33,13 @@ const Videos = () => {
     }
   ];
 
+  // Handle navigation - must be before any conditional returns
+  useEffect(() => {
+    if (!id) {
+      navigate(`/video-list/${type}`);
+    }
+  }, [id, type, navigate]);
+
   const handleBack = () => {
     if (id) {
       // If we have an ID, go back to the video list
@@ -55,12 +62,10 @@ const Videos = () => {
     );
   }
 
-  // If no ID, redirect to video list page
-  useEffect(() => {
-    if (!id) {
-      navigate(`/video-list/${type}`);
-    }
-  }, [id, type, navigate]);
+  // If no ID, the useEffect will handle navigation
+  if (!id) {
+    return null;
+  }
 
   return null;
 };
