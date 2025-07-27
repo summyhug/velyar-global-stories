@@ -1,5 +1,5 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Camera, Video, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,32 @@ const VideoCreate = () => {
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
+
+  // Check for existing permissions on component mount
+  useEffect(() => {
+    const checkPermissions = async () => {
+      try {
+        const permissionStatus = await navigator.permissions.query({ name: 'camera' as PermissionName });
+        if (permissionStatus.state === 'granted') {
+          setHasPermission(true);
+          setStep('record');
+          // Start camera preview immediately
+          const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'user' }, 
+            audio: true 
+          });
+          setStream(mediaStream);
+          if (videoRef.current) {
+            videoRef.current.srcObject = mediaStream;
+          }
+        }
+      } catch (error) {
+        console.log('Permission check failed, showing permission screen');
+      }
+    };
+    
+    checkPermissions();
+  }, []);
 
   const requestPermissions = async () => {
     try {

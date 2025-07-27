@@ -50,13 +50,30 @@ const VideoList = () => {
   };
 
   const getTitle = () => {
+    if (!type) return "videos";
+    
+    if (type.startsWith('theme-')) {
+      const theme = type.replace('theme-', '').replace('-', ' ');
+      return `${theme} voices`;
+    }
+    
+    if (type.startsWith('prompt-')) {
+      const prompt = type.replace('prompt-', '').replace(/-/g, ' ');
+      return `"${prompt}"`;
+    }
+    
+    if (type.startsWith('mission-')) {
+      const mission = type.replace('mission-', '').replace(/-/g, ' ');
+      return `${mission} mission`;
+    }
+    
     switch (type) {
       case 'daily-prompt':
         return 'daily prompt responses';
       case 'mission':
-        return 'mission stories';
+        return 'mission voices';
       default:
-        return 'stories';
+        return 'global voices';
     }
   };
 
@@ -119,7 +136,7 @@ const VideoList = () => {
             variant="outline" 
             className="border-velyar-earth/20 text-velyar-earth hover:bg-velyar-soft"
           >
-            load more stories
+            load more voices
           </Button>
         </div>
       </main>
