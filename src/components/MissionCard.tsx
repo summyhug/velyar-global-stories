@@ -48,7 +48,7 @@ export const MissionCard = ({ title, description, participants, location, imageU
               <ArrowRight className="w-3 h-3 ml-2" />
             </Button>
           </Link>
-          <Link to={`/videos/mission/${title.replace(/\s+/g, '-')}`}>
+          <Link to={`/video-list/mission-${title.replace(/\s+/g, '-')}`}>
             <Button variant="ghost" size="sm" className="px-3">
               <Eye className="w-3 h-3" />
             </Button>

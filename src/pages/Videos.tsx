@@ -43,7 +43,7 @@ const Videos = () => {
   const handleBack = () => {
     if (id) {
       // If we have an ID, go back to the video list
-      navigate(`/videos/${type}`);
+      navigate(`/video-list/${type}`);
     } else {
       // If no ID, go back to previous page
       navigate(-1);

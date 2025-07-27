@@ -3,8 +3,11 @@ import { ArrowLeft, MapPin, Users, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MissionCard } from "@/components/MissionCard";
+import { useNavigate } from "react-router-dom";
 
 const Missions = () => {
+  const navigate = useNavigate();
+  
   const activeMissions = [
     {
       title: "street markets of the world",
@@ -41,7 +44,12 @@ const Missions = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="p-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="p-2"
+            onClick={() => navigate(-1)}
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="text-xl font-medium text-foreground font-nunito">mission hub</h1>
