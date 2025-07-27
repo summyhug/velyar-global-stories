@@ -17,29 +17,31 @@ import { BottomNav } from "./components/BottomNav";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div className="relative">
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Home />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/missions" element={<Missions />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/create" element={<VideoCreate />} />
-            <Route path="/video-list/:type" element={<VideoList />} />
-            <Route path="/videos/:type/:id?" element={<Videos />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <BottomNav />
-        </div>
+        <TooltipProvider>
+          <div className="relative">
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/missions" element={<Missions />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/create" element={<VideoCreate />} />
+              <Route path="/video-list/:type" element={<VideoList />} />
+              <Route path="/videos/:type/:id?" element={<Videos />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <BottomNav />
+          </div>
+          <Toaster />
+          <Sonner />
+        </TooltipProvider>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;
