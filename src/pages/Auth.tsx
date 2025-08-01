@@ -62,8 +62,8 @@ const Auth = () => {
         </div>
       </div>
 
-      <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10">
-        <CardHeader className="text-center">
+      <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10 max-h-[90vh] flex flex-col">
+        <CardHeader className="text-center pb-4 flex-shrink-0">
           <div className="flex items-center justify-center gap-2 mb-4">
             <VelyarLogo size={56} className="text-velyar-earth" />
             <h1 className="text-3xl font-semibold text-velyar-earth font-nunito">velyar</h1>
@@ -71,7 +71,7 @@ const Auth = () => {
           <CardTitle className="text-xl font-medium text-velyar-earth font-nunito">
             {isLogin ? "welcome back" : "join our global community"}
           </CardTitle>
-          <CardDescription className="text-muted-foreground font-quicksand">
+          <CardDescription className="text-muted-foreground font-quicksand text-sm">
             {isLogin ? "share your voice with the world" : "start sharing your human experiences"}
           </CardDescription>
           {!isLogin && (
@@ -79,18 +79,18 @@ const Auth = () => {
               type="button"
               variant="ghost"
               onClick={() => setIsLogin(true)}
-              className="text-sm text-velyar-earth hover:text-velyar-warm font-quicksand"
+              className="text-xs text-velyar-earth hover:text-velyar-warm font-quicksand mt-2 h-auto p-1"
             >
               Already have an account? Sign in
             </Button>
           )}
         </CardHeader>
-        <CardContent className="max-h-[70vh] overflow-y-auto">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="flex-1 overflow-y-auto px-6 pb-6">
+          <form onSubmit={handleSubmit} className="space-y-3">
             {!isLogin && (
               <>
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-velyar-earth font-nunito">full name</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="name" className="text-velyar-earth font-nunito text-sm">full name</Label>
                   <Input
                     id="name"
                     name="name"
@@ -101,8 +101,8 @@ const Auth = () => {
                     className="border-velyar-earth/20 focus:border-velyar-earth"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="text-velyar-earth font-nunito">username</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="username" className="text-velyar-earth font-nunito text-sm">username</Label>
                   <Input
                     id="username"
                     name="username"
@@ -116,8 +116,8 @@ const Auth = () => {
               </>
             )}
             
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-velyar-earth font-nunito">email</Label>
+            <div className="space-y-1">
+              <Label htmlFor="email" className="text-velyar-earth font-nunito text-sm">email</Label>
               <Input
                 id="email"
                 name="email"
@@ -129,8 +129,8 @@ const Auth = () => {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-velyar-earth font-nunito">password</Label>
+            <div className="space-y-1">
+              <Label htmlFor="password" className="text-velyar-earth font-nunito text-sm">password</Label>
               <Input
                 id="password"
                 name="password"
@@ -145,8 +145,8 @@ const Auth = () => {
             {!isLogin && (
               <>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="city" className="text-velyar-earth font-nunito">city</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="city" className="text-velyar-earth font-nunito text-sm">city</Label>
                     <Input
                       id="city"
                       name="city"
@@ -157,8 +157,8 @@ const Auth = () => {
                       className="border-velyar-earth/20 focus:border-velyar-earth"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="country" className="text-velyar-earth font-nunito">country</Label>
+                  <div className="space-y-1">
+                    <Label htmlFor="country" className="text-velyar-earth font-nunito text-sm">country</Label>
                     <Input
                       id="country"
                       name="country"
@@ -171,8 +171,8 @@ const Auth = () => {
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="dob" className="text-velyar-earth font-nunito">date of birth</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="dob" className="text-velyar-earth font-nunito text-sm">date of birth</Label>
                   <Input
                     id="dob"
                     name="dob"
@@ -187,8 +187,8 @@ const Auth = () => {
             )}
 
             {!isLogin && (
-              <div className="space-y-3 pt-2 border-t border-velyar-earth/10">
-                <div className="flex items-center space-x-2">
+              <div className="space-y-2 pt-2 border-t border-velyar-earth/10">
+                <div className="flex items-start space-x-2">
                   <Checkbox 
                     id="terms" 
                     checked={acceptedTerms}
@@ -199,8 +199,8 @@ const Auth = () => {
                     I agree to the <Link to="/terms" className="text-velyar-earth hover:text-velyar-warm underline">Terms of Service</Link>
                   </Label>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
+                <div className="flex items-start space-x-2">
+                  <Checkbox
                     id="privacy" 
                     checked={acceptedPrivacy}
                     onCheckedChange={(checked) => setAcceptedPrivacy(checked as boolean)}
@@ -223,11 +223,11 @@ const Auth = () => {
           </form>
 
           {isLogin && (
-            <div className="mt-6 text-center">
+            <div className="mt-4 text-center">
               <button
                 type="button"
                 onClick={() => setIsLogin(false)}
-                className="text-velyar-earth hover:text-velyar-warm transition-colors font-quicksand"
+                className="text-velyar-earth hover:text-velyar-warm transition-colors font-quicksand text-sm"
               >
                 need an account? sign up
               </button>
@@ -235,7 +235,7 @@ const Auth = () => {
           )}
 
           {/* Legal footer for EU compliance */}
-          <div className="mt-6 pt-4 border-t border-velyar-earth/10 text-center">
+          <div className="mt-4 pt-3 border-t border-velyar-earth/10 text-center">
             <div className="flex justify-center gap-4 text-xs text-muted-foreground">
               <Link to="/terms" className="hover:text-velyar-earth transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-velyar-earth transition-colors">Privacy</Link>
