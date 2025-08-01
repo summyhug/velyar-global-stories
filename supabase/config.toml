@@ -56,3 +56,9 @@ enabled = true
 
 [functions.analyze-geography]
 verify_jwt = false
+
+[functions.generate-daily-prompt]
+verify_jwt = false
+
+[functions.daily-prompt-automation]
+verify_jwt = false

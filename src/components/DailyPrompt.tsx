@@ -21,7 +21,7 @@ export const DailyPrompt = () => {
           .select('id, prompt_text')
           .eq('date', today)
           .eq('is_active', true)
-          .single();
+          .maybeSingle();
 
         if (todayPrompt) {
           setPrompt(todayPrompt.prompt_text);
