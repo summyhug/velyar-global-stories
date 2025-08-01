@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 
 interface MissionCardProps {
+  id: string;
   title: string;
   description: string;
   participants: number;
@@ -12,7 +13,7 @@ interface MissionCardProps {
   imageUrl: string;
 }
 
-export const MissionCard = ({ title, description, participants, location, imageUrl }: MissionCardProps) => {
+export const MissionCard = ({ id, title, description, participants, location, imageUrl }: MissionCardProps) => {
   return (
     <Card className="overflow-hidden border-0 shadow-gentle hover:shadow-warm transition-all duration-300">
       <div className="relative h-24 overflow-hidden">
@@ -48,7 +49,7 @@ export const MissionCard = ({ title, description, participants, location, imageU
               <ArrowRight className="w-3 h-3 ml-2" />
             </Button>
           </Link>
-          <Link to={`/video-list/mission-${title.replace(/\s+/g, '-')}`}>
+          <Link to={`/video-list/mission/${id}`}>
             <Button variant="ghost" size="sm" className="px-3">
               <Eye className="w-3 h-3" />
             </Button>

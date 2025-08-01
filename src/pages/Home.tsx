@@ -30,6 +30,7 @@ const Home = () => {
           </div>
           <div className="space-y-4">
             <MissionCard
+              id="demo-1"
               title="street markets of the world"
               description="share the vibrant energy of your local marketplace"
               participants={1247}
@@ -37,6 +38,7 @@ const Home = () => {
               imageUrl="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop"
             />
             <MissionCard
+              id="demo-2"
               title="morning rituals"
               description="how do you start your day?"
               participants={892}

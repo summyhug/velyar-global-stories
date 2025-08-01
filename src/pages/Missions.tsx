@@ -119,7 +119,15 @@ const Missions = () => {
               ))
             ) : (
               missions.map((mission) => (
-                <MissionCard key={mission.id} {...mission} />
+                <MissionCard
+                  key={mission.id}
+                  id={mission.id}
+                  title={mission.title}
+                  description={mission.description}
+                  participants={mission.participants}
+                  location={mission.location}
+                  imageUrl={mission.imageUrl}
+                />
               ))
             )}
           </div>
