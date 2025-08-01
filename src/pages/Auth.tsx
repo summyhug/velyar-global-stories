@@ -42,18 +42,18 @@ const Auth = () => {
       {/* Enhanced animated background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-gradient-to-br from-velyar-earth/5 to-velyar-warm/5">
-          <div className="absolute inset-0 bg-gradient-to-tl from-velyar-teal/5 to-transparent animate-pulse"></div>
+          <div className="absolute inset-0 bg-gradient-to-tl from-velyar-earth/5 to-transparent animate-pulse"></div>
         </div>
         
         {/* Floating particles */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-velyar-earth/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-velyar-warm/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/3 right-1/3 w-64 h-64 bg-velyar-teal/8 rounded-full blur-2xl animate-pulse"></div>
+        <div className="absolute top-1/3 right-1/3 w-64 h-64 bg-velyar-earth/8 rounded-full blur-2xl animate-pulse"></div>
         
         {/* Animated bubbles */}
         <div className="absolute top-20 left-1/2 w-4 h-4 bg-velyar-warm/20 rounded-full animate-bounce"></div>
         <div className="absolute top-40 left-1/3 w-3 h-3 bg-velyar-earth/20 rounded-full animate-bounce" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-60 right-1/4 w-2 h-2 bg-velyar-teal/20 rounded-full animate-bounce" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-60 right-1/4 w-2 h-2 bg-velyar-earth/20 rounded-full animate-bounce" style={{ animationDelay: '2s' }}></div>
         
         {/* Flowing tentacle-like shapes */}
         <div className="absolute top-0 left-0 w-full h-full">
@@ -62,13 +62,13 @@ const Auth = () => {
         </div>
       </div>
 
-      <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10 max-h-[90vh] flex flex-col">
-        <CardHeader className="text-center pb-4 flex-shrink-0">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <VelyarLogo size={56} className="text-velyar-earth" />
-            <h1 className="text-3xl font-semibold text-velyar-earth font-nunito">velyar</h1>
+      <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10 max-h-[85vh] flex flex-col">
+        <CardHeader className="text-center pb-3 flex-shrink-0 px-6">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <VelyarLogo size={48} className="text-velyar-earth" />
+            <h1 className="text-2xl font-semibold text-velyar-earth font-nunito">velyar</h1>
           </div>
-          <CardTitle className="text-xl font-medium text-velyar-earth font-nunito">
+          <CardTitle className="text-lg font-medium text-velyar-earth font-nunito mb-1">
             {isLogin ? "welcome back" : "join our global community"}
           </CardTitle>
           <CardDescription className="text-muted-foreground font-quicksand text-sm">
@@ -79,7 +79,7 @@ const Auth = () => {
               type="button"
               variant="ghost"
               onClick={() => setIsLogin(true)}
-              className="text-xs text-velyar-earth hover:text-velyar-warm font-quicksand mt-2 h-auto p-1"
+              className="text-xs text-velyar-earth/70 hover:text-velyar-earth font-quicksand mt-1 h-auto p-1"
             >
               Already have an account? Sign in
             </Button>
@@ -216,18 +216,18 @@ const Auth = () => {
             <Button
               type="submit"
               disabled={!isLogin && (!acceptedTerms || !acceptedPrivacy)}
-              className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-velyar-earth hover:bg-velyar-earth/90 text-white font-nunito font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLogin ? "sign in" : "create account"}
             </Button>
           </form>
 
           {isLogin && (
-            <div className="mt-4 text-center">
+            <div className="mt-3 text-center">
               <button
                 type="button"
                 onClick={() => setIsLogin(false)}
-                className="text-velyar-earth hover:text-velyar-warm transition-colors font-quicksand text-sm"
+                className="text-velyar-earth/70 hover:text-velyar-earth transition-colors font-quicksand text-sm"
               >
                 need an account? sign up
               </button>
@@ -235,7 +235,7 @@ const Auth = () => {
           )}
 
           {/* Legal footer for EU compliance */}
-          <div className="mt-4 pt-3 border-t border-velyar-earth/10 text-center">
+          <div className="mt-3 pt-3 border-t border-velyar-earth/10 text-center">
             <div className="flex justify-center gap-4 text-xs text-muted-foreground">
               <Link to="/terms" className="hover:text-velyar-earth transition-colors">Terms</Link>
               <Link to="/privacy" className="hover:text-velyar-earth transition-colors">Privacy</Link>
