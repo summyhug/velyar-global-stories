@@ -16,24 +16,32 @@ interface Mission {
   imageUrl: string;
 }
 
+interface WeeklyStats {
+  voicesShared: number;
+  countries: number;
+  languages: number;
+}
+
 const Missions = () => {
   const navigate = useNavigate();
   const [missions, setMissions] = useState<Mission[]>([]);
+  const [weeklyStats, setWeeklyStats] = useState<WeeklyStats>({ voicesShared: 0, countries: 0, languages: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchMissions = async () => {
+    const fetchData = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch missions
+        const { data: missionsData, error: missionsError } = await supabase
           .from('missions')
           .select('*')
           .eq('is_active', true)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (missionsError) throw missionsError;
 
-        const formattedMissions: Mission[] = data.map(mission => ({
+        const formattedMissions: Mission[] = missionsData.map(mission => ({
           id: mission.id,
           title: mission.title,
           description: mission.description,
@@ -43,14 +51,50 @@ const Missions = () => {
         }));
 
         setMissions(formattedMissions);
+
+        // Fetch weekly statistics (videos from the last 7 days)
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+
+        const { data: weeklyVideos, error: statsError } = await supabase
+          .from('videos')
+          .select('id, location, language, profiles!inner(user_id)')
+          .eq('is_public', true)
+          .gte('created_at', weekAgo.toISOString());
+
+        if (statsError) throw statsError;
+
+        // Calculate statistics
+        const voicesShared = weeklyVideos?.length || 0;
+        
+        const uniqueCountries = new Set(
+          weeklyVideos
+            ?.map(video => video.location)
+            .filter(location => location && location.trim() !== '')
+            .map(location => location.split(',').pop()?.trim().toLowerCase())
+            .filter(Boolean)
+        ).size;
+
+        const uniqueLanguages = new Set(
+          weeklyVideos
+            ?.map(video => video.language)
+            .filter(Boolean)
+        ).size;
+
+        setWeeklyStats({
+          voicesShared,
+          countries: uniqueCountries,
+          languages: uniqueLanguages
+        });
+
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch missions');
+        setError(err instanceof Error ? err.message : 'Failed to fetch data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMissions();
+    fetchData();
   }, []);
 
   return (
@@ -140,15 +184,21 @@ const Missions = () => {
               <h3 className="text-sm font-medium text-foreground mb-4 font-nunito">this week's impact</h3>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
-                  <div className="text-lg font-medium text-velyar-earth font-nunito">3,216</div>
-                  <div className="text-xs text-muted-foreground">stories shared</div>
+                  <div className="text-lg font-medium text-velyar-earth font-nunito">
+                    {loading ? '...' : weeklyStats.voicesShared.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-muted-foreground">voices shared</div>
                 </div>
                 <div>
-                  <div className="text-lg font-medium text-velyar-earth font-nunito">147</div>
+                  <div className="text-lg font-medium text-velyar-earth font-nunito">
+                    {loading ? '...' : weeklyStats.countries}
+                  </div>
                   <div className="text-xs text-muted-foreground">countries</div>
                 </div>
                 <div>
-                  <div className="text-lg font-medium text-velyar-earth font-nunito">12</div>
+                  <div className="text-lg font-medium text-velyar-earth font-nunito">
+                    {loading ? '...' : weeklyStats.languages}
+                  </div>
                   <div className="text-xs text-muted-foreground">languages</div>
                 </div>
               </div>

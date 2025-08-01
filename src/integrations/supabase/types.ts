@@ -156,6 +156,7 @@ export type Database = {
           duration: number | null
           id: string
           is_public: boolean
+          language: string | null
           location: string | null
           mission_id: string | null
           thumbnail_url: string | null
@@ -171,6 +172,7 @@ export type Database = {
           duration?: number | null
           id?: string
           is_public?: boolean
+          language?: string | null
           location?: string | null
           mission_id?: string | null
           thumbnail_url?: string | null
@@ -186,6 +188,7 @@ export type Database = {
           duration?: number | null
           id?: string
           is_public?: boolean
+          language?: string | null
           location?: string | null
           mission_id?: string | null
           thumbnail_url?: string | null
