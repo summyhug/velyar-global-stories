@@ -1,9 +1,46 @@
 
+import { useState, useEffect } from "react";
 import { Users, MapPin } from "lucide-react";
 import { DailyPrompt } from "@/components/DailyPrompt";
 import { MissionCard } from "@/components/MissionCard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Mission {
+  id: string;
+  title: string;
+  description: string;
+  participants_count: number;
+  location_needed: string;
+  image_url: string;
+}
 
 const Home = () => {
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMissions = async () => {
+      try {
+        const { data: missionsData, error } = await supabase
+          .from('missions')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(2);
+
+        if (error) throw error;
+        setMissions(missionsData || []);
+      } catch (error) {
+        console.error('Error fetching missions:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMissions();
+  }, []);
   return (
     <div className="min-h-screen bg-background font-quicksand">
       {/* Header */}
@@ -29,22 +66,39 @@ const Home = () => {
             <h2 className="text-lg font-medium text-foreground font-nunito">live missions</h2>
           </div>
           <div className="space-y-4">
-            <MissionCard
-              id="demo-1"
-              title="street markets of the world"
-              description="share the vibrant energy of your local marketplace"
-              participants={1247}
-              location="eastern europe needed"
-              imageUrl="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop"
-            />
-            <MissionCard
-              id="demo-2"
-              title="morning rituals"
-              description="how do you start your day?"
-              participants={892}
-              location="oceania needed"
-              imageUrl="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=200&fit=crop"
-            />
+            {loading ? (
+              // Loading skeletons
+              Array.from({ length: 2 }).map((_, index) => (
+                <Card key={index} className="overflow-hidden">
+                  <div className="flex">
+                    <Skeleton className="w-24 h-20" />
+                    <div className="flex-1 p-4 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                </Card>
+              ))
+            ) : missions.length > 0 ? (
+              // Dynamic mission cards
+              missions.map((mission) => (
+                <MissionCard
+                  key={mission.id}
+                  id={mission.id}
+                  title={mission.title}
+                  description={mission.description}
+                  participants={mission.participants_count}
+                  location={mission.location_needed || ''}
+                  imageUrl={mission.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop'}
+                />
+              ))
+            ) : (
+              // No missions fallback
+              <Card className="p-6 text-center">
+                <p className="text-muted-foreground">No active missions at the moment</p>
+              </Card>
+            )}
           </div>
         </section>
       </main>

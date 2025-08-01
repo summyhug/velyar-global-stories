@@ -1,10 +1,55 @@
 
+import { useState, useEffect } from "react";
 import { ArrowRight, Clock, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 export const DailyPrompt = () => {
+  const [stats, setStats] = useState({ voices: 0, countries: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPromptStats = async () => {
+      try {
+        // Get today's active daily prompt
+        const today = new Date().toISOString().split('T')[0];
+        const { data: todayPrompt } = await supabase
+          .from('daily_prompts')
+          .select('id')
+          .eq('date', today)
+          .eq('is_active', true)
+          .single();
+
+        if (todayPrompt) {
+          // Get videos for today's prompt
+          const { data: videos } = await supabase
+            .from('videos')
+            .select('id, location')
+            .eq('daily_prompt_id', todayPrompt.id)
+            .eq('is_public', true);
+
+          const voiceCount = videos?.length || 0;
+          const countrySet = new Set(
+            videos
+              ?.map(video => video.location)
+              .filter(location => location && location.trim() !== '')
+              .map(location => location.split(',').pop()?.trim().toLowerCase())
+              .filter(Boolean)
+          );
+
+          setStats({ voices: voiceCount, countries: countrySet.size });
+        }
+      } catch (error) {
+        console.error('Error fetching prompt stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPromptStats();
+  }, []);
   return (
     <Card className="mt-6 bg-gradient-soft border-0 shadow-gentle">
       <CardContent className="p-6">
@@ -18,7 +63,12 @@ export const DailyPrompt = () => {
         </h2>
         
         <p className="text-sm text-muted-foreground mb-6">
-          join 2,847 voices from 94 countries sharing their evening meals
+          {loading 
+            ? "loading participation..." 
+            : stats.voices > 0 
+              ? `join ${stats.voices.toLocaleString()} voices from ${stats.countries} countries sharing their evening meals`
+              : "be the first to share your evening meal"
+          }
         </p>
         
         <div className="flex gap-3">
