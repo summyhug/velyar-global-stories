@@ -14,6 +14,7 @@ import VideoCreate from "./pages/VideoCreate";
 import Videos from "./pages/Videos";
 import VideoList from "./pages/VideoList";
 import NotFound from "./pages/NotFound";
+import AdminPrompts from "./pages/AdminPrompts";
 import { BottomNav } from "./components/BottomNav";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => {
               <Route path="/profile" element={<Profile />} />
               <Route path="/contributions" element={<Contributions />} />
               <Route path="/create" element={<VideoCreate />} />
+              <Route path="/admin/prompts" element={<AdminPrompts />} />
               <Route path="/video-list/:type/:id?" element={<VideoList />} />
               <Route path="/videos/:type/:id?" element={<Videos />} />
               <Route path="*" element={<NotFound />} />
