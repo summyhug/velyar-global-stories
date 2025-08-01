@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { VideoTextOverlay } from "@/components/VideoTextOverlay";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const VideoCreate = () => {
   const [step, setStep] = useState<'permission' | 'record' | 'upload' | 'edit'>('permission');
@@ -21,10 +22,11 @@ const VideoCreate = () => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
+  const [currentPrompt, setCurrentPrompt] = useState<{ text: string; theme_id: string; theme_name: string } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
 
-  // Check for existing permissions on component mount
+  // Check for existing permissions and fetch current prompt on component mount
   useEffect(() => {
     const checkPermissions = async () => {
       try {
@@ -46,8 +48,31 @@ const VideoCreate = () => {
         console.log('Permission check failed, showing permission screen');
       }
     };
+
+    const fetchCurrentPrompt = async () => {
+      const { data: promptData } = await supabase
+        .from('daily_prompts')
+        .select(`
+          prompt_text,
+          theme_id,
+          themes:theme_id (
+            name
+          )
+        `)
+        .eq('is_active', true)
+        .single();
+
+      if (promptData && promptData.themes) {
+        setCurrentPrompt({
+          text: promptData.prompt_text,
+          theme_id: promptData.theme_id,
+          theme_name: promptData.themes.name
+        });
+      }
+    };
     
     checkPermissions();
+    fetchCurrentPrompt();
   }, []);
 
   const requestPermissions = async () => {
@@ -118,10 +143,57 @@ const VideoCreate = () => {
     }
   };
 
-  const handleSubmit = () => {
-    // Submit video logic
-    console.log('Video submitted:', { caption, location, textOverlays });
-    navigate('/');
+  const handleSubmit = async () => {
+    if (!recordedVideo) return;
+
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error('User not authenticated');
+        return;
+      }
+
+      // Create video record
+      const { data: videoData, error: videoError } = await supabase
+        .from('videos')
+        .insert({
+          user_id: user.id,
+          video_url: recordedVideo,
+          title: caption || 'Daily Prompt Response',
+          description: caption,
+          location: location || null,
+          daily_prompt_id: currentPrompt ? await getCurrentPromptId() : null,
+          is_public: true
+        })
+        .select()
+        .single();
+
+      if (videoError) throw videoError;
+
+      // If there's a current prompt with a theme, assign the theme to the video
+      if (currentPrompt && currentPrompt.theme_id && videoData) {
+        await supabase
+          .from('video_themes')
+          .insert({
+            video_id: videoData.id,
+            theme_id: currentPrompt.theme_id
+          });
+      }
+
+      navigate('/');
+    } catch (error) {
+      console.error('Error submitting video:', error);
+    }
+  };
+
+  const getCurrentPromptId = async () => {
+    const { data } = await supabase
+      .from('daily_prompts')
+      .select('id')
+      .eq('is_active', true)
+      .single();
+    return data?.id;
   };
 
   const handleBack = () => {
@@ -150,6 +222,16 @@ const VideoCreate = () => {
           <h1 className="text-xl font-medium text-velyar-earth font-nunito">share your story</h1>
         </div>
       </header>
+
+      {/* Current Prompt Banner */}
+      {currentPrompt && (
+        <div className="max-w-md mx-auto px-4 py-4">
+          <div className="bg-velyar-soft/50 rounded-lg p-4 border border-velyar-earth/10">
+            <p className="text-xs text-velyar-earth/70 mb-1 font-nunito">today's prompt • {currentPrompt.theme_name} theme</p>
+            <p className="text-velyar-earth font-medium">{currentPrompt.text}</p>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="max-w-md mx-auto px-4 pb-24">

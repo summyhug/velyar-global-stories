@@ -51,6 +51,7 @@ export type Database = {
           id: string
           is_active: boolean
           prompt_text: string
+          theme_id: string | null
         }
         Insert: {
           created_at?: string
@@ -58,6 +59,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           prompt_text: string
+          theme_id?: string | null
         }
         Update: {
           created_at?: string
@@ -65,8 +67,17 @@ export type Database = {
           id?: string
           is_active?: boolean
           prompt_text?: string
+          theme_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "daily_prompts_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "themes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       geographic_analysis: {
         Row: {
