@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      archived_prompts: {
+        Row: {
+          archive_date: string
+          country_count: number
+          created_at: string
+          id: string
+          prompt_text: string
+          response_count: number
+          updated_at: string
+        }
+        Insert: {
+          archive_date: string
+          country_count?: number
+          created_at?: string
+          id?: string
+          prompt_text: string
+          response_count?: number
+          updated_at?: string
+        }
+        Update: {
+          archive_date?: string
+          country_count?: number
+          created_at?: string
+          id?: string
+          prompt_text?: string
+          response_count?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_prompts: {
         Row: {
           created_at: string
@@ -185,6 +215,36 @@ export type Database = {
         }
         Relationships: []
       }
+      themes: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       video_overlays: {
         Row: {
           content: string
@@ -219,6 +279,42 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "video_overlays_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_themes: {
+        Row: {
+          created_at: string
+          id: string
+          theme_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          theme_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          theme_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_themes_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "themes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_themes_video_id_fkey"
             columns: ["video_id"]
             isOneToOne: false
             referencedRelation: "videos"

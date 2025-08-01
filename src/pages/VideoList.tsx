@@ -39,6 +39,72 @@ const VideoList = () => {
       setLoading(true);
       setError(null);
 
+      // Handle theme-based video fetching
+      if (type === 'theme' && id) {
+        // For themes, we need to join with video_themes table
+        const { data: themeVideos, error: themeError } = await supabase
+          .from('video_themes')
+          .select(`
+            videos!inner (
+              *
+            )
+          `)
+          .eq('theme_id', id);
+
+        if (themeError) throw themeError;
+
+        // Extract videos and fetch profile data separately
+        const videoList = themeVideos?.map(item => item.videos).filter(Boolean) || [];
+        
+        const videosWithProfiles = [];
+        for (const video of videoList) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username, display_name')
+            .eq('user_id', video.user_id)
+            .single();
+          
+          videosWithProfiles.push({
+            ...video,
+            profiles: profileData
+          });
+        }
+        
+        setVideos(videosWithProfiles);
+
+        // Fetch theme title
+        const { data: themeData } = await supabase
+          .from('themes')
+          .select('name')
+          .eq('id', id)
+          .single();
+        
+        if (themeData) {
+          setMissionTitle(themeData.name);
+        }
+        return;
+      }
+
+      // Handle archived prompt video fetching
+      if (type === 'archived-prompt' && id) {
+        // For archived prompts, we don't have videos linked yet
+        // This is placeholder for future implementation
+        setVideos([]);
+        
+        // Fetch archived prompt title
+        const { data: promptData } = await supabase
+          .from('archived_prompts')
+          .select('prompt_text')
+          .eq('id', id)
+          .single();
+        
+        if (promptData) {
+          setMissionTitle(`"${promptData.prompt_text}"`);
+        }
+        return;
+      }
+
+      // Handle regular video fetching for missions and daily prompts
       let query = supabase
         .from('videos')
         .select('*')
@@ -102,14 +168,22 @@ const VideoList = () => {
   const handleBack = () => {
     if (type === 'daily-prompt') {
       navigate('/');
+    } else if (type === 'theme' || type === 'archived-prompt') {
+      navigate('/explore');
     } else {
       navigate(-1);
     }
   };
 
   const getTitle = () => {
-    if (type === 'mission' && missionTitle) {
-      return `${missionTitle} mission`;
+    if (missionTitle) {
+      if (type === 'mission') {
+        return `${missionTitle} mission`;
+      } else if (type === 'theme') {
+        return `${missionTitle} voices`;
+      } else if (type === 'archived-prompt') {
+        return missionTitle;
+      }
     }
     
     switch (type) {
@@ -117,6 +191,10 @@ const VideoList = () => {
         return 'daily prompt responses';
       case 'mission':
         return 'mission voices';
+      case 'theme':
+        return 'theme voices';
+      case 'archived-prompt':
+        return 'archived prompt';
       default:
         return 'global voices';
     }
