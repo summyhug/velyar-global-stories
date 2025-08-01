@@ -3,41 +3,56 @@ import { ArrowLeft, MapPin, Users, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MissionCard } from "@/components/MissionCard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Mission {
+  id: string;
+  title: string;
+  description: string;
+  participants: number;
+  location: string;
+  imageUrl: string;
+}
 
 const Missions = () => {
   const navigate = useNavigate();
-  
-  const activeMissions = [
-    {
-      title: "street markets of the world",
-      description: "share the vibrant energy of your local marketplace",
-      participants: 1247,
-      location: "eastern europe needed",
-      imageUrl: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop"
-    },
-    {
-      title: "morning rituals",
-      description: "how do you start your day?",
-      participants: 892,
-      location: "oceania needed",
-      imageUrl: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=200&fit=crop"
-    },
-    {
-      title: "sounds of home",
-      description: "capture the audio landscape of your daily life",
-      participants: 654,
-      location: "africa needed",
-      imageUrl: "https://images.unsplash.com/photo-1494232410401-ad00d5433cfa?w=400&h=200&fit=crop"
-    },
-    {
-      title: "local transportation",
-      description: "how do people move around in your city?",
-      participants: 423,
-      location: "south america needed",
-      imageUrl: "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&h=200&fit=crop"
-    }
-  ];
+  const [missions, setMissions] = useState<Mission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMissions = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('missions')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const formattedMissions: Mission[] = data.map(mission => ({
+          id: mission.id,
+          title: mission.title,
+          description: mission.description,
+          participants: mission.participants_count,
+          location: mission.location_needed || '',
+          imageUrl: mission.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop'
+        }));
+
+        setMissions(formattedMissions);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch missions');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMissions();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background font-quicksand">
@@ -76,13 +91,38 @@ const Missions = () => {
           <div className="flex items-center gap-2 mb-4">
             <Users className="w-5 h-5 text-velyar-earth" />
             <h2 className="text-lg font-medium text-foreground font-nunito">active missions</h2>
-            <span className="text-sm text-muted-foreground ml-auto">4 live</span>
+            <span className="text-sm text-muted-foreground ml-auto">
+              {loading ? '...' : `${missions.length} live`}
+            </span>
           </div>
           
+          {error && (
+            <Card className="bg-destructive/10 border-destructive/20 mb-4">
+              <CardContent className="p-4">
+                <p className="text-sm text-destructive">Failed to load missions: {error}</p>
+              </CardContent>
+            </Card>
+          )}
+          
           <div className="space-y-4">
-            {activeMissions.map((mission, index) => (
-              <MissionCard key={index} {...mission} />
-            ))}
+            {loading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <Card key={index} className="overflow-hidden">
+                  <div className="flex">
+                    <Skeleton className="w-24 h-20" />
+                    <div className="flex-1 p-4 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-full" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              missions.map((mission) => (
+                <MissionCard key={mission.id} {...mission} />
+              ))
+            )}
           </div>
         </section>
 
