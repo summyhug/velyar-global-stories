@@ -22,10 +22,18 @@ interface WeeklyStats {
   languages: number;
 }
 
+interface GlobalPrompt {
+  id: string;
+  message_text: string;
+  priority: number;
+  target_regions?: string[];
+}
+
 const Missions = () => {
   const navigate = useNavigate();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStats>({ voicesShared: 0, countries: 0, languages: 0 });
+  const [globalPrompt, setGlobalPrompt] = useState<GlobalPrompt | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,13 +75,13 @@ const Missions = () => {
         // Calculate statistics
         const voicesShared = weeklyVideos?.length || 0;
         
-        const uniqueCountries = new Set(
-          weeklyVideos
-            ?.map(video => video.location)
-            .filter(location => location && location.trim() !== '')
-            .map(location => location.split(',').pop()?.trim().toLowerCase())
-            .filter(Boolean)
-        ).size;
+        const countries = weeklyVideos
+          ?.map(video => video.location)
+          .filter(location => location && location.trim() !== '')
+          .map(location => location.split(',').pop()?.trim().toLowerCase())
+          .filter(Boolean) || [];
+
+        const uniqueCountries = new Set(countries).size;
 
         const uniqueLanguages = new Set(
           weeklyVideos
@@ -87,11 +95,103 @@ const Missions = () => {
           languages: uniqueLanguages
         });
 
+        // Fetch global prompts with smart geographic analysis
+        const { data: manualPrompts, error: promptsError } = await supabase
+          .from('global_prompts')
+          .select('*')
+          .eq('is_active', true)
+          .order('priority', { ascending: false })
+          .limit(1);
+
+        if (promptsError) throw promptsError;
+
+        // If we have a manual prompt, use it
+        if (manualPrompts && manualPrompts.length > 0) {
+          const prompt = manualPrompts[0];
+          setGlobalPrompt({
+            id: prompt.id,
+            message_text: prompt.message_text,
+            priority: prompt.priority,
+            target_regions: Array.isArray(prompt.target_regions) 
+              ? (prompt.target_regions as string[]) 
+              : undefined
+          });
+        } else {
+          // Generate smart prompt based on geographic analysis
+          const underrepresentedRegions = analyzeGeographicBalance(countries);
+          if (underrepresentedRegions.length > 0) {
+            setGlobalPrompt({
+              id: 'auto-generated',
+              message_text: `Help us achieve global balance! We need more voices from ${underrepresentedRegions.join(', ')} this week.`,
+              priority: 0,
+              target_regions: underrepresentedRegions
+            });
+          }
+        }
+
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch data');
       } finally {
         setLoading(false);
       }
+    };
+
+    const analyzeGeographicBalance = (countries: string[]): string[] => {
+      // Define expected regional distribution and map countries to regions
+      const regionMap: { [key: string]: string } = {
+        'united states': 'North America',
+        'canada': 'North America',
+        'mexico': 'North America',
+        'united kingdom': 'Western Europe',
+        'france': 'Western Europe',
+        'germany': 'Western Europe',
+        'spain': 'Western Europe',
+        'italy': 'Western Europe',
+        'poland': 'Eastern Europe',
+        'russia': 'Eastern Europe',
+        'ukraine': 'Eastern Europe',
+        'czech republic': 'Eastern Europe',
+        'china': 'East Asia',
+        'japan': 'East Asia',
+        'south korea': 'East Asia',
+        'india': 'South Asia',
+        'pakistan': 'South Asia',
+        'bangladesh': 'South Asia',
+        'australia': 'Oceania',
+        'new zealand': 'Oceania',
+        'fiji': 'Oceania',
+        'nigeria': 'Africa',
+        'south africa': 'Africa',
+        'kenya': 'Africa',
+        'egypt': 'Africa',
+        'morocco': 'Africa',
+        'brazil': 'South America',
+        'argentina': 'South America',
+        'colombia': 'South America',
+        'peru': 'South America',
+      };
+
+      // Count submissions by region
+      const regionCounts: { [key: string]: number } = {};
+      countries.forEach(country => {
+        const region = regionMap[country] || 'Other';
+        regionCounts[region] = (regionCounts[region] || 0) + 1;
+      });
+
+      // Identify underrepresented regions (less than 10% of total submissions)
+      const totalSubmissions = countries.length;
+      const threshold = Math.max(1, totalSubmissions * 0.1);
+      
+      const underrepresented: string[] = [];
+      const expectedRegions = ['Eastern Europe', 'Oceania', 'Africa', 'South America', 'South Asia'];
+      
+      expectedRegions.forEach(region => {
+        if ((regionCounts[region] || 0) < threshold) {
+          underrepresented.push(region.toLowerCase());
+        }
+      });
+
+      return underrepresented.slice(0, 3); // Limit to 3 regions for readability
     };
 
     fetchData();
@@ -116,18 +216,20 @@ const Missions = () => {
 
       {/* Main Content */}
       <main className="max-w-md mx-auto px-4 pb-24">
-        {/* Geographic Needs Banner */}
-        <Card className="mt-6 bg-velyar-glow/20 border-velyar-earth/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Globe className="w-4 h-4 text-velyar-earth" />
-              <span className="text-sm font-medium text-velyar-earth font-nunito">global balance needed</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              we're looking for more stories from eastern europe, oceania, and central africa this week
-            </p>
-          </CardContent>
-        </Card>
+        {/* Dynamic Global Prompt Banner */}
+        {globalPrompt && (
+          <Card className="mt-6 bg-velyar-glow/20 border-velyar-earth/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Globe className="w-4 h-4 text-velyar-earth" />
+                <span className="text-sm font-medium text-velyar-earth font-nunito">global balance needed</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {globalPrompt.message_text.toLowerCase()}
+              </p>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Active Missions */}
         <section className="mt-8">
