@@ -99,6 +99,14 @@ const VideoList = () => {
     navigate(`/videos/${type}/${videoId}`);
   };
 
+  const handleBack = () => {
+    if (type === 'daily-prompt') {
+      navigate('/');
+    } else {
+      navigate(-1);
+    }
+  };
+
   const getTitle = () => {
     if (type === 'mission' && missionTitle) {
       return `${missionTitle} mission`;
@@ -122,7 +130,7 @@ const VideoList = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="p-2 text-velyar-earth hover:bg-velyar-soft"
           >
             <ArrowLeft className="w-5 h-5" />
