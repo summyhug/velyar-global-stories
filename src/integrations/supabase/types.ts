@@ -38,6 +38,42 @@ export type Database = {
         }
         Relationships: []
       }
+      global_prompts: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          is_active: boolean
+          message_text: string
+          priority: number
+          start_date: string | null
+          target_regions: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          message_text: string
+          priority?: number
+          start_date?: string | null
+          target_regions?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          message_text?: string
+          priority?: number
+          start_date?: string | null
+          target_regions?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       missions: {
         Row: {
           created_at: string
