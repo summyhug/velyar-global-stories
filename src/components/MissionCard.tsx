@@ -11,9 +11,13 @@ interface MissionCardProps {
   participants: number;
   location: string;
   imageUrl: string;
+  targetRegions?: string[];
 }
 
-export const MissionCard = ({ id, title, description, participants, location, imageUrl }: MissionCardProps) => {
+export const MissionCard = ({ id, title, description, participants, location, imageUrl, targetRegions }: MissionCardProps) => {
+  const displayLocation = targetRegions && targetRegions.length > 0 
+    ? `${targetRegions.slice(0, 2).join(', ')}${targetRegions.length > 2 ? '...' : ''}`
+    : location;
   return (
     <Card className="overflow-hidden border-0 shadow-gentle hover:shadow-warm transition-all duration-300">
       <div className="relative h-24 overflow-hidden">
@@ -38,7 +42,7 @@ export const MissionCard = ({ id, title, description, participants, location, im
           </div>
           <div className="flex items-center gap-1 text-xs text-velyar-earth">
             <MapPin className="w-3 h-3" />
-            <span>{location}</span>
+            <span>{displayLocation}</span>
           </div>
         </div>
         

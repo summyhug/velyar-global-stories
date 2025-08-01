@@ -38,6 +38,45 @@ export type Database = {
         }
         Relationships: []
       }
+      geographic_analysis: {
+        Row: {
+          analysis_date: string
+          country_distribution: Json
+          created_at: string
+          diversity_score: number
+          id: string
+          recommended_targets: Json
+          total_countries: number
+          total_videos: number
+          underrepresented_regions: Json
+          updated_at: string
+        }
+        Insert: {
+          analysis_date?: string
+          country_distribution?: Json
+          created_at?: string
+          diversity_score?: number
+          id?: string
+          recommended_targets?: Json
+          total_countries?: number
+          total_videos?: number
+          underrepresented_regions?: Json
+          updated_at?: string
+        }
+        Update: {
+          analysis_date?: string
+          country_distribution?: Json
+          created_at?: string
+          diversity_score?: number
+          id?: string
+          recommended_targets?: Json
+          total_countries?: number
+          total_videos?: number
+          underrepresented_regions?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       global_prompts: {
         Row: {
           created_at: string
@@ -83,6 +122,7 @@ export type Database = {
           is_active: boolean
           location_needed: string | null
           participants_count: number
+          target_regions: Json | null
           title: string
           updated_at: string
         }
@@ -94,6 +134,7 @@ export type Database = {
           is_active?: boolean
           location_needed?: string | null
           participants_count?: number
+          target_regions?: Json | null
           title: string
           updated_at?: string
         }
@@ -105,6 +146,7 @@ export type Database = {
           is_active?: boolean
           location_needed?: string | null
           participants_count?: number
+          target_regions?: Json | null
           title?: string
           updated_at?: string
         }

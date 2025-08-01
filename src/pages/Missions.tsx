@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useGeographicAnalysis } from "@/hooks/useGeographicAnalysis";
 
 interface Mission {
   id: string;
@@ -14,6 +15,7 @@ interface Mission {
   participants: number;
   location: string;
   imageUrl: string;
+  targetRegions?: string[] | null;
 }
 
 interface WeeklyStats {
@@ -36,6 +38,7 @@ const Missions = () => {
   const [globalPrompt, setGlobalPrompt] = useState<GlobalPrompt | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { analysis: geoAnalysis } = useGeographicAnalysis();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,7 +58,8 @@ const Missions = () => {
           description: mission.description,
           participants: mission.participants_count,
           location: mission.location_needed || '',
-          imageUrl: mission.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop'
+          imageUrl: mission.image_url || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=200&fit=crop',
+          targetRegions: Array.isArray(mission.target_regions) ? mission.target_regions as string[] : null
         }));
 
         setMissions(formattedMissions);
@@ -95,7 +99,7 @@ const Missions = () => {
           languages: uniqueLanguages
         });
 
-        // Fetch global prompts with smart geographic analysis
+        // Use cached geographic analysis for smart prompts
         const { data: manualPrompts, error: promptsError } = await supabase
           .from('global_prompts')
           .select('*')
@@ -116,17 +120,14 @@ const Missions = () => {
               ? (prompt.target_regions as string[]) 
               : undefined
           });
-        } else {
-          // Generate smart prompt based on geographic analysis
-          const underrepresentedRegions = analyzeGeographicBalance(countries);
-          if (underrepresentedRegions.length > 0) {
-            setGlobalPrompt({
-              id: 'auto-generated',
-              message_text: `Help us achieve global balance! We need more voices from ${underrepresentedRegions.join(', ')} this week.`,
-              priority: 0,
-              target_regions: underrepresentedRegions
-            });
-          }
+        } else if (geoAnalysis && geoAnalysis.recommended_targets.length > 0) {
+          // Use cached geographic analysis for smart prompts
+          setGlobalPrompt({
+            id: 'auto-generated',
+            message_text: geoAnalysis.recommended_targets[0],
+            priority: 0,
+            target_regions: geoAnalysis.underrepresented_regions
+          });
         }
 
       } catch (err) {
@@ -136,66 +137,8 @@ const Missions = () => {
       }
     };
 
-    const analyzeGeographicBalance = (countries: string[]): string[] => {
-      // Define expected regional distribution and map countries to regions
-      const regionMap: { [key: string]: string } = {
-        'united states': 'North America',
-        'canada': 'North America',
-        'mexico': 'North America',
-        'united kingdom': 'Western Europe',
-        'france': 'Western Europe',
-        'germany': 'Western Europe',
-        'spain': 'Western Europe',
-        'italy': 'Western Europe',
-        'poland': 'Eastern Europe',
-        'russia': 'Eastern Europe',
-        'ukraine': 'Eastern Europe',
-        'czech republic': 'Eastern Europe',
-        'china': 'East Asia',
-        'japan': 'East Asia',
-        'south korea': 'East Asia',
-        'india': 'South Asia',
-        'pakistan': 'South Asia',
-        'bangladesh': 'South Asia',
-        'australia': 'Oceania',
-        'new zealand': 'Oceania',
-        'fiji': 'Oceania',
-        'nigeria': 'Africa',
-        'south africa': 'Africa',
-        'kenya': 'Africa',
-        'egypt': 'Africa',
-        'morocco': 'Africa',
-        'brazil': 'South America',
-        'argentina': 'South America',
-        'colombia': 'South America',
-        'peru': 'South America',
-      };
-
-      // Count submissions by region
-      const regionCounts: { [key: string]: number } = {};
-      countries.forEach(country => {
-        const region = regionMap[country] || 'Other';
-        regionCounts[region] = (regionCounts[region] || 0) + 1;
-      });
-
-      // Identify underrepresented regions (less than 10% of total submissions)
-      const totalSubmissions = countries.length;
-      const threshold = Math.max(1, totalSubmissions * 0.1);
-      
-      const underrepresented: string[] = [];
-      const expectedRegions = ['Eastern Europe', 'Oceania', 'Africa', 'South America', 'South Asia'];
-      
-      expectedRegions.forEach(region => {
-        if ((regionCounts[region] || 0) < threshold) {
-          underrepresented.push(region.toLowerCase());
-        }
-      });
-
-      return underrepresented.slice(0, 3); // Limit to 3 regions for readability
-    };
-
     fetchData();
-  }, []);
+  }, [geoAnalysis]);
 
   return (
     <div className="min-h-screen bg-background font-quicksand">
@@ -273,6 +216,7 @@ const Missions = () => {
                   participants={mission.participants}
                   location={mission.location}
                   imageUrl={mission.imageUrl}
+                  targetRegions={mission.targetRegions || undefined}
                 />
               ))
             )}

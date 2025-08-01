@@ -32,21 +32,11 @@ const Home = () => {
 
         if (error) throw error;
 
-        // Calculate real participant counts for each mission
-        const missionsWithCounts = await Promise.all(
-          (missionsData || []).map(async (mission) => {
-            const { data: videos } = await supabase
-              .from('videos')
-              .select('id')
-              .eq('mission_id', mission.id)
-              .eq('is_public', true);
-
-            return {
-              ...mission,
-              participants_count: videos?.length || 0
-            };
-          })
-        );
+        // Use stored participant counts from database
+        const missionsWithCounts = (missionsData || []).map(mission => ({
+          ...mission,
+          participants_count: mission.participants_count || 0
+        }));
 
         setMissions(missionsWithCounts);
       } catch (error) {
