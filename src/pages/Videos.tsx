@@ -41,8 +41,11 @@ const Videos = () => {
   }, [id, type, navigate]);
 
   const handleBack = () => {
-    if (id) {
-      // If we have an ID, go back to the video list
+    if (id && type === 'daily-prompt') {
+      // For daily prompts, go back to home page
+      navigate('/');
+    } else if (id) {
+      // For other types, go back to the video list
       navigate(`/video-list/${type}`);
     } else {
       // If no ID, go back to previous page
