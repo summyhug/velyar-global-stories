@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useNavigate } from "react-router-dom";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useNavigate, Link } from "react-router-dom";
+import { VelyarLogo } from "@/components/VelyarLogo";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,6 +19,8 @@ const Auth = () => {
     country: "",
     dob: ""
   });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,28 +38,54 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-velyar-earth/10 to-velyar-warm/10 flex items-center justify-center p-4">
-      {/* Ocean background video effect */}
+    <div className="min-h-screen bg-gradient-to-br from-velyar-earth/10 to-velyar-warm/10 flex items-center justify-center p-4 overflow-auto">
+      {/* Enhanced animated background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-velyar-earth/5 to-velyar-warm/5 animate-pulse"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-velyar-earth/5 to-velyar-warm/5">
+          <div className="absolute inset-0 bg-gradient-to-tl from-velyar-teal/5 to-transparent animate-pulse"></div>
+        </div>
+        
+        {/* Floating particles */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-velyar-earth/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-velyar-warm/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/3 right-1/3 w-64 h-64 bg-velyar-teal/8 rounded-full blur-2xl animate-pulse"></div>
+        
+        {/* Animated bubbles */}
+        <div className="absolute top-20 left-1/2 w-4 h-4 bg-velyar-warm/20 rounded-full animate-bounce"></div>
+        <div className="absolute top-40 left-1/3 w-3 h-3 bg-velyar-earth/20 rounded-full animate-bounce" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute top-60 right-1/4 w-2 h-2 bg-velyar-teal/20 rounded-full animate-bounce" style={{ animationDelay: '2s' }}></div>
+        
+        {/* Flowing tentacle-like shapes */}
+        <div className="absolute top-0 left-0 w-full h-full">
+          <div className="absolute top-1/2 left-0 w-32 h-1 bg-gradient-to-r from-velyar-earth/10 to-transparent transform -rotate-45 animate-pulse"></div>
+          <div className="absolute bottom-1/3 right-0 w-40 h-1 bg-gradient-to-l from-velyar-warm/10 to-transparent transform rotate-45 animate-pulse"></div>
+        </div>
       </div>
 
-      <Card className="w-full max-w-md mx-auto bg-background/90 backdrop-blur-sm shadow-warm border-velyar-earth/20">
+      <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="text-4xl">🐙</div>
+            <VelyarLogo size={56} className="text-velyar-earth" />
             <h1 className="text-3xl font-semibold text-velyar-earth font-nunito">velyar</h1>
           </div>
           <CardTitle className="text-xl font-medium text-velyar-earth font-nunito">
             {isLogin ? "welcome back" : "join our global community"}
           </CardTitle>
           <CardDescription className="text-muted-foreground font-quicksand">
-            {isLogin ? "share your story with the world" : "start sharing your human experiences"}
+            {isLogin ? "share your voice with the world" : "start sharing your human experiences"}
           </CardDescription>
+          {!isLogin && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsLogin(true)}
+              className="text-sm text-velyar-earth hover:text-velyar-warm font-quicksand"
+            >
+              Already have an account? Sign in
+            </Button>
+          )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="max-h-[70vh] overflow-y-auto">
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <>
@@ -156,22 +186,63 @@ const Auth = () => {
               </>
             )}
 
+            {!isLogin && (
+              <div className="space-y-3 pt-2 border-t border-velyar-earth/10">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="terms" 
+                    checked={acceptedTerms}
+                    onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
+                    className="border-velyar-earth/40"
+                  />
+                  <Label htmlFor="terms" className="text-xs text-muted-foreground leading-tight">
+                    I agree to the <Link to="/terms" className="text-velyar-earth hover:text-velyar-warm underline">Terms of Service</Link>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="privacy" 
+                    checked={acceptedPrivacy}
+                    onCheckedChange={(checked) => setAcceptedPrivacy(checked as boolean)}
+                    className="border-velyar-earth/40"
+                  />
+                  <Label htmlFor="privacy" className="text-xs text-muted-foreground leading-tight">
+                    I acknowledge the <Link to="/privacy" className="text-velyar-earth hover:text-velyar-warm underline">Privacy Policy</Link> and consent to data processing
+                  </Label>
+                </div>
+              </div>
+            )}
+
             <Button
               type="submit"
-              className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium"
+              disabled={!isLogin && (!acceptedTerms || !acceptedPrivacy)}
+              className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLogin ? "sign in" : "create account"}
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-velyar-earth hover:text-velyar-warm transition-colors font-quicksand"
-            >
-              {isLogin ? "need an account? sign up" : "already have an account? sign in"}
-            </button>
+          {isLogin && (
+            <div className="mt-6 text-center">
+              <button
+                type="button"
+                onClick={() => setIsLogin(false)}
+                className="text-velyar-earth hover:text-velyar-warm transition-colors font-quicksand"
+              >
+                need an account? sign up
+              </button>
+            </div>
+          )}
+
+          {/* Legal footer for EU compliance */}
+          <div className="mt-6 pt-4 border-t border-velyar-earth/10 text-center">
+            <div className="flex justify-center gap-4 text-xs text-muted-foreground">
+              <Link to="/terms" className="hover:text-velyar-earth transition-colors">Terms</Link>
+              <Link to="/privacy" className="hover:text-velyar-earth transition-colors">Privacy</Link>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              By using Velyar, you agree to our terms and acknowledge our privacy practices.
+            </p>
           </div>
         </CardContent>
       </Card>

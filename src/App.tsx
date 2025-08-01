@@ -15,31 +15,45 @@ import Videos from "./pages/Videos";
 import VideoList from "./pages/VideoList";
 import NotFound from "./pages/NotFound";
 import AdminPrompts from "./pages/AdminPrompts";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import { BottomNav } from "./components/BottomNav";
+import { useLocation } from "react-router-dom";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  const location = useLocation();
+  const hideBottomNav = location.pathname === '/auth';
+
+  return (
+    <div className="relative">
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/missions" element={<Missions />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/contributions" element={<Contributions />} />
+        <Route path="/create" element={<VideoCreate />} />
+        <Route path="/admin/prompts" element={<AdminPrompts />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/video-list/:type/:id?" element={<VideoList />} />
+        <Route path="/videos/:type/:id?" element={<Videos />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      {!hideBottomNav && <BottomNav />}
+    </div>
+  );
+};
 
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <TooltipProvider>
-          <div className="relative">
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/" element={<Home />} />
-              <Route path="/explore" element={<Explore />} />
-              <Route path="/missions" element={<Missions />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/contributions" element={<Contributions />} />
-              <Route path="/create" element={<VideoCreate />} />
-              <Route path="/admin/prompts" element={<AdminPrompts />} />
-              <Route path="/video-list/:type/:id?" element={<VideoList />} />
-              <Route path="/videos/:type/:id?" element={<Videos />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <BottomNav />
-          </div>
+          <AppContent />
           <Toaster />
           <Sonner />
         </TooltipProvider>
