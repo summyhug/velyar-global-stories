@@ -58,7 +58,7 @@ const Missions = () => {
 
         const { data: weeklyVideos, error: statsError } = await supabase
           .from('videos')
-          .select('id, location, language, profiles!inner(user_id)')
+          .select('id, location, language, user_id')
           .eq('is_public', true)
           .gte('created_at', weekAgo.toISOString());
 
