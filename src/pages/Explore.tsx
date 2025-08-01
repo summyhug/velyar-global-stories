@@ -60,12 +60,13 @@ const Explore = () => {
 
         setThemes(themesWithCounts);
 
-        // Fetch archived prompts
+        // Fetch recent archived prompts (last 5 days only)
         const { data: promptsData, error: promptsError } = await supabase
           .from('archived_prompts')
           .select('*')
+          .gte('archive_date', new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
           .order('archive_date', { ascending: false })
-          .limit(10);
+          .limit(5);
 
         if (promptsError) throw promptsError;
 
@@ -157,7 +158,7 @@ const Explore = () => {
 
         {/* Archived Prompts */}
         <section className="mt-8">
-          <h2 className="text-lg font-medium text-foreground mb-4 font-nunito">past prompts</h2>
+          <h2 className="text-lg font-medium text-foreground mb-4 font-nunito">recent prompts</h2>
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, i) => (
