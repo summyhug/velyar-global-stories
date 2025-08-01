@@ -9,20 +9,23 @@ import { supabase } from "@/integrations/supabase/client";
 export const DailyPrompt = () => {
   const [stats, setStats] = useState({ voices: 0, countries: 0 });
   const [loading, setLoading] = useState(true);
+  const [prompt, setPrompt] = useState("what did you eat last night?");
 
   useEffect(() => {
-    const fetchPromptStats = async () => {
+    const fetchPromptData = async () => {
       try {
         // Get today's active daily prompt
         const today = new Date().toISOString().split('T')[0];
         const { data: todayPrompt } = await supabase
           .from('daily_prompts')
-          .select('id')
+          .select('id, prompt_text')
           .eq('date', today)
           .eq('is_active', true)
           .single();
 
         if (todayPrompt) {
+          setPrompt(todayPrompt.prompt_text);
+          
           // Get videos for today's prompt
           const { data: videos } = await supabase
             .from('videos')
@@ -42,13 +45,13 @@ export const DailyPrompt = () => {
           setStats({ voices: voiceCount, countries: countrySet.size });
         }
       } catch (error) {
-        console.error('Error fetching prompt stats:', error);
+        console.error('Error fetching prompt data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPromptStats();
+    fetchPromptData();
   }, []);
   return (
     <Card className="mt-6 bg-gradient-soft border-0 shadow-gentle">
@@ -59,7 +62,7 @@ export const DailyPrompt = () => {
         </div>
         
         <h2 className="text-xl font-medium text-foreground mb-4 leading-relaxed font-nunito">
-          "what did you eat last night?"
+          "{prompt}"
         </h2>
         
         <p className="text-sm text-muted-foreground mb-6">
