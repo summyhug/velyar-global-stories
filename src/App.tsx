@@ -24,7 +24,7 @@ const queryClient = new QueryClient();
 
 const AppContent = () => {
   const location = useLocation();
-  const hideBottomNav = location.pathname === '/auth';
+  const hideBottomNav = ['/auth', '/terms', '/privacy'].includes(location.pathname);
 
   return (
     <div className="relative">

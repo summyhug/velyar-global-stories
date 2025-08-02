@@ -12,7 +12,7 @@ const Privacy = () => {
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
-          className="mb-4 text-velyar-earth hover:text-velyar-warm"
+          className="mb-4 text-foreground hover:bg-muted"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
