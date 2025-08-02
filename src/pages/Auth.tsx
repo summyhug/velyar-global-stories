@@ -1,20 +1,28 @@
+import React, { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useNavigate, Link } from 'react-router-dom';
+import { VelyarLogo } from '@/components/VelyarLogo';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import type { User, Session } from '@supabase/supabase-js';
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useNavigate, Link } from "react-router-dom";
-import { VelyarLogo } from "@/components/VelyarLogo";
-
-  const countries = [
+const countries = [
   "Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Austria", "Bangladesh", "Belgium", "Brazil", "Canada", "China", "Colombia", "Denmark", "Egypt", "Finland", "France", "Germany", "Ghana", "Greece", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Japan", "Jordan", "Kenya", "South Korea", "Malaysia", "Mexico", "Morocco", "Netherlands", "New Zealand", "Nigeria", "Norway", "Pakistan", "Peru", "Philippines", "Poland", "Portugal", "Russia", "Saudi Arabia", "South Africa", "Spain", "Sweden", "Switzerland", "Taiwan", "Thailand", "Turkey", "Ukraine", "United Kingdom", "United States", "Venezuela", "Vietnam"
 ];
 
 const Auth = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     username: "",
@@ -29,7 +37,37 @@ const Auth = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [isFormValid, setIsFormValid] = useState(false);
-  const navigate = useNavigate();
+
+  // Auth state management
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        // Redirect authenticated users to home
+        if (session?.user) {
+          navigate('/');
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      // Redirect if already authenticated
+      if (session?.user) {
+        navigate('/');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -93,12 +131,135 @@ const Auth = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle authentication logic here
-    console.log("Form submitted:", formData);
-    navigate("/");
+  const checkUsernameAvailability = async (username: string): Promise<boolean> => {
+    if (!username) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error checking username:', error);
+        return false;
+      }
+      
+      return !data; // Available if no data found
+    } catch (error) {
+      console.error('Error checking username:', error);
+      return false;
+    }
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isFormValid || submitting) {
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      if (isLogin) {
+        // Sign in
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        if (error) {
+          toast({
+            title: "Sign in failed",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (data.user) {
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully signed in.",
+          });
+          // Navigation handled by onAuthStateChange
+        }
+      } else {
+        // Check username availability first
+        const isUsernameAvailable = await checkUsernameAvailability(formData.username);
+        if (!isUsernameAvailable) {
+          toast({
+            title: "Username taken",
+            description: "This username is already taken. Please choose another.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Sign up
+        const { data, error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              username: formData.username,
+              display_name: formData.name,
+              city: formData.city,
+              country: formData.country,
+              date_of_birth: formData.dob,
+            }
+          }
+        });
+
+        if (error) {
+          toast({
+            title: "Sign up failed",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (data.user) {
+          if (data.user.email_confirmed_at) {
+            toast({
+              title: "Account created!",
+              description: "Welcome to Velyar! You can now start exploring.",
+            });
+            // Navigation handled by onAuthStateChange
+          } else {
+            toast({
+              title: "Check your email",
+              description: "We've sent you a confirmation link. Please check your email to verify your account.",
+            });
+          }
+        }
+      }
+    } catch (error: any) {
+      toast({
+        title: "An error occurred",
+        description: error.message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-ocean-light to-velyar-earth">
+        <div className="flex items-center space-x-2">
+          <VelyarLogo size={48} />
+          <span className="text-velyar-earth font-nunito">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900/20 via-teal-800/10 to-green-900/20 flex items-center justify-center p-4">
@@ -130,7 +291,7 @@ const Auth = () => {
       <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10">
         <CardHeader className="text-center pb-3 px-6">
           <div className="flex items-center justify-center mb-3">
-            <VelyarLogo size={192} className="text-velyar-earth" />
+            <VelyarLogo size={isLogin ? 64 : 96} className="text-velyar-earth" />
           </div>
           <CardTitle className="text-lg font-medium text-velyar-earth font-nunito mb-1">
             {isLogin ? "welcome back" : "leave the bubble, join the world"}
@@ -297,10 +458,10 @@ const Auth = () => {
 
              <Button
                type="submit"
-               disabled={!isFormValid}
+               disabled={!isFormValid || submitting}
                className="w-full bg-velyar-earth hover:bg-velyar-earth/90 text-white font-nunito font-medium disabled:opacity-50 disabled:cursor-not-allowed"
              >
-               {isLogin ? "sign in" : "create account"}
+               {submitting ? "Processing..." : isLogin ? "sign in" : "create account"}
              </Button>
           </form>
 
