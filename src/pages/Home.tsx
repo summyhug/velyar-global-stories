@@ -56,7 +56,7 @@ const Home = () => {
           <h1 className="text-2xl font-semibold tracking-wide text-velyar-earth font-nunito">velyar</h1>
           <div className="flex items-center gap-1">
             <img 
-              src="/lovable-uploads/7f25669d-97db-452f-b52f-a312e011f89c.png" 
+              src="/lovable-uploads/6e35e706-01c0-46b9-b5c6-8c50b1848687.png" 
               alt="Octopus" 
               className="w-5 h-5 object-contain"
             />
