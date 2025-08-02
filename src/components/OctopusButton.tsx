@@ -30,7 +30,7 @@ export const OctopusButton = ({ isLiked = false, onLike, size = "md" }: OctopusB
       onClick={handleClick}
     >
       <img 
-        src="/lovable-uploads/1f594a6c-a474-4917-ab72-71c584ff430e.png" 
+        src="/lovable-uploads/7f25669d-97db-452f-b52f-a312e011f89c.png" 
         alt="Octopus" 
         className={`object-contain transition-transform duration-300 ${liked ? 'scale-110' : 'scale-100'} ${sizeClasses[size].includes('w-6') ? 'w-4 h-4' : sizeClasses[size].includes('w-8') ? 'w-6 h-6' : 'w-8 h-8'}`}
       />
