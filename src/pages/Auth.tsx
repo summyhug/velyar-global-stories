@@ -130,7 +130,7 @@ const Auth = () => {
       <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10">
         <CardHeader className="text-center pb-3 px-6">
           <div className="flex items-center justify-center mb-3">
-            <VelyarLogo size={isLogin ? 48 : 64} className="text-velyar-earth" />
+            <VelyarLogo size={192} className="text-velyar-earth" />
           </div>
           <CardTitle className="text-lg font-medium text-velyar-earth font-nunito mb-1">
             {isLogin ? "welcome back" : "leave the bubble, join the world"}
