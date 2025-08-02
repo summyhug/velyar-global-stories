@@ -29,9 +29,11 @@ export const OctopusButton = ({ isLiked = false, onLike, size = "md" }: OctopusB
       className={`${sizeClasses[size]} rounded-full ${liked ? 'bg-velyar-warm/20 text-velyar-earth' : 'bg-black/20 text-white hover:bg-black/40'} transition-all duration-300`}
       onClick={handleClick}
     >
-      <span className={`transition-transform duration-300 ${liked ? 'scale-110' : 'scale-100'}`}>
-        🐙
-      </span>
+      <img 
+        src="/lovable-uploads/1f594a6c-a474-4917-ab72-71c584ff430e.png" 
+        alt="Octopus" 
+        className={`object-contain transition-transform duration-300 ${liked ? 'scale-110' : 'scale-100'} ${sizeClasses[size].includes('w-6') ? 'w-4 h-4' : sizeClasses[size].includes('w-8') ? 'w-6 h-6' : 'w-8 h-8'}`}
+      />
     </Button>
   );
 };

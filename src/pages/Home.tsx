@@ -55,7 +55,11 @@ const Home = () => {
         <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-wide text-velyar-earth font-nunito">velyar</h1>
           <div className="flex items-center gap-1">
-            <span className="text-lg">🐙</span>
+            <img 
+              src="/lovable-uploads/1f594a6c-a474-4917-ab72-71c584ff430e.png" 
+              alt="Octopus" 
+              className="w-5 h-5 object-contain"
+            />
             <span className="text-sm text-muted-foreground">global voices</span>
           </div>
         </div>
