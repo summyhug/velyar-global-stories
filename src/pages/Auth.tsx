@@ -9,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigate, Link } from "react-router-dom";
 import { VelyarLogo } from "@/components/VelyarLogo";
 
-const countries = [
-  "Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Austria", "Bangladesh", "Belgium", "Brazil", "Canada", "China", "Colombia", "Denmark", "Egypt", "Finland", "France", "Germany", "Ghana", "Greece", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Japan", "Jordan", "Kenya", "South Korea", "Malaysia", "Mexico", "Morocco", "Netherlands", "New Zealand", "Nigeria", "Norway", "Pakistan", "Peru", "Philippines", "Poland", "Portugal", "Russia", "Saudi Arabia", "South Africa", "Spain", "Sweden", "Switzerland", "Thailand", "Turkey", "Ukraine", "United Kingdom", "United States", "Venezuela", "Vietnam"
+  const countries = [
+  "Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Austria", "Bangladesh", "Belgium", "Brazil", "Canada", "China", "Colombia", "Denmark", "Egypt", "Finland", "France", "Germany", "Ghana", "Greece", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Japan", "Jordan", "Kenya", "South Korea", "Malaysia", "Mexico", "Morocco", "Netherlands", "New Zealand", "Nigeria", "Norway", "Pakistan", "Peru", "Philippines", "Poland", "Portugal", "Russia", "Saudi Arabia", "South Africa", "Spain", "Sweden", "Switzerland", "Taiwan", "Thailand", "Turkey", "Ukraine", "United Kingdom", "United States", "Venezuela", "Vietnam"
 ];
 
 const Auth = () => {
@@ -27,6 +27,7 @@ const Auth = () => {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [isFormValid, setIsFormValid] = useState(false);
   const navigate = useNavigate();
 
@@ -74,10 +75,21 @@ const Auth = () => {
     });
   };
 
+  const handleBlur = (fieldName: string) => {
+    setTouchedFields({
+      ...touchedFields,
+      [fieldName]: true
+    });
+  };
+
   const handleCountryChange = (value: string) => {
     setFormData({
       ...formData,
       country: value
+    });
+    setTouchedFields({
+      ...touchedFields,
+      country: true
     });
   };
 
@@ -117,9 +129,8 @@ const Auth = () => {
 
       <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10">
         <CardHeader className="text-center pb-3 px-6">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <VelyarLogo size={48} className="text-velyar-earth" />
-            <h1 className="text-2xl font-semibold text-velyar-earth font-nunito">velyar</h1>
+          <div className="flex items-center justify-center mb-3">
+            <VelyarLogo size={isLogin ? 48 : 64} className="text-velyar-earth" />
           </div>
           <CardTitle className="text-lg font-medium text-velyar-earth font-nunito mb-1">
             {isLogin ? "welcome back" : "leave the bubble, join the world"}
@@ -143,82 +154,87 @@ const Auth = () => {
             {!isLogin && (
               <>
                  <div className="space-y-1">
-                   <Label htmlFor="name" className="text-velyar-earth font-nunito text-sm">full name *</Label>
+                   <Label htmlFor="name" className="text-velyar-earth font-nunito text-sm">full name</Label>
                    <Input
                      id="name"
                      name="name"
                      type="text"
                      value={formData.name}
                      onChange={handleInputChange}
+                     onBlur={() => handleBlur('name')}
                      required={!isLogin}
                      className="border-velyar-earth/20 focus:border-velyar-earth"
                    />
-                   {formErrors.name && <p className="text-red-500 text-xs">{formErrors.name}</p>}
+                   {formErrors.name && touchedFields.name && <p className="text-red-500 text-xs">{formErrors.name}</p>}
                  </div>
                  <div className="space-y-1">
-                   <Label htmlFor="username" className="text-velyar-earth font-nunito text-sm">username *</Label>
+                   <Label htmlFor="username" className="text-velyar-earth font-nunito text-sm">username</Label>
                    <Input
                      id="username"
                      name="username"
                      type="text"
                      value={formData.username}
                      onChange={handleInputChange}
+                     onBlur={() => handleBlur('username')}
                      required={!isLogin}
                      className="border-velyar-earth/20 focus:border-velyar-earth"
                      placeholder="Minimum 3 characters"
                    />
-                   {formErrors.username && <p className="text-red-500 text-xs">{formErrors.username}</p>}
+                   {formErrors.username && touchedFields.username && <p className="text-red-500 text-xs">{formErrors.username}</p>}
                  </div>
               </>
             )}
             
              <div className="space-y-1">
-               <Label htmlFor="email" className="text-velyar-earth font-nunito text-sm">email *</Label>
+               <Label htmlFor="email" className="text-velyar-earth font-nunito text-sm">email</Label>
                <Input
                  id="email"
                  name="email"
                  type="email"
                  value={formData.email}
                  onChange={handleInputChange}
+                 onBlur={() => handleBlur('email')}
                  required
                  className="border-velyar-earth/20 focus:border-velyar-earth"
                />
-               {formErrors.email && <p className="text-red-500 text-xs">{formErrors.email}</p>}
+               {formErrors.email && touchedFields.email && <p className="text-red-500 text-xs">{formErrors.email}</p>}
              </div>
              
              <div className="space-y-1">
-               <Label htmlFor="password" className="text-velyar-earth font-nunito text-sm">password *</Label>
+               <Label htmlFor="password" className="text-velyar-earth font-nunito text-sm">password</Label>
                <Input
                  id="password"
                  name="password"
                  type="password"
                  value={formData.password}
                  onChange={handleInputChange}
+                 onBlur={() => handleBlur('password')}
                  required
                  className="border-velyar-earth/20 focus:border-velyar-earth"
                  placeholder={!isLogin ? "8+ chars, uppercase, lowercase, number" : ""}
                />
-               {formErrors.password && <p className="text-red-500 text-xs">{formErrors.password}</p>}
+               {formErrors.password && touchedFields.password && <p className="text-red-500 text-xs">{formErrors.password}</p>}
              </div>
 
             {!isLogin && (
               <>
                  <div className="grid grid-cols-2 gap-2">
                    <div className="space-y-1">
-                     <Label htmlFor="city" className="text-velyar-earth font-nunito text-sm">city *</Label>
+                     <Label htmlFor="city" className="text-velyar-earth font-nunito text-sm">city</Label>
                      <Input
                        id="city"
                        name="city"
                        type="text"
                        value={formData.city}
                        onChange={handleInputChange}
+                       onBlur={() => handleBlur('city')}
                        required={!isLogin}
                        className="border-velyar-earth/20 focus:border-velyar-earth"
                      />
-                     {formErrors.city && <p className="text-red-500 text-xs">{formErrors.city}</p>}
+                     {formErrors.city && touchedFields.city && <p className="text-red-500 text-xs">{formErrors.city}</p>}
                    </div>
                    <div className="space-y-1">
-                     <Label htmlFor="country" className="text-velyar-earth font-nunito text-sm">country *</Label>
+                     <Label htmlFor="country" className="text-velyar-earth font-nunito text-sm">country</Label>
                      <Select value={formData.country} onValueChange={handleCountryChange}>
                        <SelectTrigger className="border-velyar-earth/20 focus:border-velyar-earth">
                          <SelectValue placeholder="Select country" />
@@ -231,22 +247,23 @@ const Auth = () => {
                          ))}
                        </SelectContent>
                      </Select>
-                     {formErrors.country && <p className="text-red-500 text-xs">{formErrors.country}</p>}
+                     {formErrors.country && touchedFields.country && <p className="text-red-500 text-xs">{formErrors.country}</p>}
                    </div>
                  </div>
                  
                  <div className="space-y-1">
-                   <Label htmlFor="dob" className="text-velyar-earth font-nunito text-sm">date of birth *</Label>
+                   <Label htmlFor="dob" className="text-velyar-earth font-nunito text-sm">date of birth</Label>
                    <Input
                      id="dob"
                      name="dob"
                      type="date"
                      value={formData.dob}
                      onChange={handleInputChange}
+                     onBlur={() => handleBlur('dob')}
                      required={!isLogin}
                      className="border-velyar-earth/20 focus:border-velyar-earth"
                    />
-                   {formErrors.dob && <p className="text-red-500 text-xs">{formErrors.dob}</p>}
+                   {formErrors.dob && touchedFields.dob && <p className="text-red-500 text-xs">{formErrors.dob}</p>}
                  </div>
               </>
             )}
