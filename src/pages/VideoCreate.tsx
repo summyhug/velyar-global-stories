@@ -13,11 +13,19 @@ import { useMobile } from "@/hooks/useMobile";
 import { Capacitor } from "@capacitor/core";
 
 const VideoCreate = () => {
-  const [step, setStep] = useState<'record' | 'edit'>('record');
-  const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
+  const [step, setStep] = useState<'record' | 'edit'>(() => {
+    return localStorage.getItem('videoCreate_step') as 'record' | 'edit' || 'record';
+  });
+  const [recordedVideo, setRecordedVideo] = useState<string | null>(() => {
+    return localStorage.getItem('videoCreate_recordedVideo') || null;
+  });
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [caption, setCaption] = useState("");
-  const [location, setLocation] = useState("");
+  const [caption, setCaption] = useState(() => {
+    return localStorage.getItem('videoCreate_caption') || "";
+  });
+  const [location, setLocation] = useState(() => {
+    return localStorage.getItem('videoCreate_location') || "";
+  });
   const [videoDuration, setVideoDuration] = useState(0);
   const [textOverlays, setTextOverlays] = useState([]);
   const [currentPrompt, setCurrentPrompt] = useState<{ text: string; theme_id: string; theme_name: string; type: 'daily' | 'mission'; title?: string } | null>(null);
@@ -76,6 +84,33 @@ const VideoCreate = () => {
     
     fetchContent();
   }, [missionId]);
+
+  // Persist state to localStorage
+  useEffect(() => {
+    localStorage.setItem('videoCreate_step', step);
+  }, [step]);
+
+  useEffect(() => {
+    if (recordedVideo) {
+      localStorage.setItem('videoCreate_recordedVideo', recordedVideo);
+    }
+  }, [recordedVideo]);
+
+  useEffect(() => {
+    localStorage.setItem('videoCreate_caption', caption);
+  }, [caption]);
+
+  useEffect(() => {
+    localStorage.setItem('videoCreate_location', location);
+  }, [location]);
+
+  // Clear localStorage when leaving the page or submitting
+  const clearVideoState = () => {
+    localStorage.removeItem('videoCreate_step');
+    localStorage.removeItem('videoCreate_recordedVideo');
+    localStorage.removeItem('videoCreate_caption');
+    localStorage.removeItem('videoCreate_location');
+  };
 
   const startNativeRecording = async () => {
     try {
@@ -206,6 +241,7 @@ const VideoCreate = () => {
       }
 
       console.log('Video submission complete, navigating to home...');
+      clearVideoState();
       navigate('/');
     } catch (error) {
       console.error('Error submitting video:', error);
@@ -225,6 +261,7 @@ const VideoCreate = () => {
 
   const handleBack = () => {
     if (step === 'record') {
+      clearVideoState();
       navigate(-1);
     } else if (step === 'edit') {
       setStep('record');
