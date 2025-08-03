@@ -144,11 +144,21 @@ const VideoCreate = () => {
       // Force camera recording on mobile platforms
       if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
         console.log('VideoCreate: Attempting native video recording...');
-        const videoResult = await recordVideo();
+        
+        // Add timeout to handle cases where the file chooser doesn't respond
+        const recordingPromise = recordVideo();
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Recording timeout')), 30000); // 30 second timeout
+        });
+        
+        const videoResult = await Promise.race([recordingPromise, timeoutPromise]) as { file: File; url: string };
+        
         console.log('VideoCreate: Video recording result:', {
           hasFile: !!videoResult.file,
           hasUrl: !!videoResult.url,
-          fileSize: videoResult.file?.size || 0
+          fileSize: videoResult.file?.size || 0,
+          fileName: videoResult.file?.name || 'unknown',
+          fileType: videoResult.file?.type || 'unknown'
         });
         
         console.log('VideoCreate: Setting video state and moving to edit step');
