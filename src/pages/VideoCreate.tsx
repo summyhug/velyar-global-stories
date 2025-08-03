@@ -10,6 +10,7 @@ import { VideoTextOverlay } from "@/components/VideoTextOverlay";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useMobile } from "@/hooks/useMobile";
+import { useToast } from "@/hooks/use-toast";
 import { Capacitor } from "@capacitor/core";
 
 const VideoCreate = () => {
@@ -29,6 +30,7 @@ const VideoCreate = () => {
   const [currentPrompt, setCurrentPrompt] = useState<{ text: string; theme_id: string; theme_name: string; type: 'daily' | 'mission'; title?: string } | null>(null);
   const { missionId } = useParams();
   const { isNative, recordVideo, getCurrentLocation } = useMobile();
+  const { toast } = useToast();
   
   console.log('VideoCreate: isNative =', isNative, 'platform:', Capacitor.getPlatform());
   const navigate = useNavigate();
@@ -294,7 +296,6 @@ const VideoCreate = () => {
       console.log('Video submission complete, showing success message...');
       
       // Show success toast
-      const { toast } = await import("@/hooks/use-toast");
       toast({
         title: "Video uploaded successfully!",
         description: "Your video has been saved and will appear in the feed.",

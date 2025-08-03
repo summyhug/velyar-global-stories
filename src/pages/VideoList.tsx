@@ -107,7 +107,13 @@ const VideoList = () => {
       // Handle regular video fetching for missions and daily prompts
       let query = supabase
         .from('videos')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (
+            username,
+            display_name
+          )
+        `)
         .eq('is_public', true)
         .order('created_at', { ascending: false });
 
@@ -254,7 +260,7 @@ const VideoList = () => {
               <Card 
                 key={video.id} 
                 className="cursor-pointer hover:shadow-gentle transition-shadow border-velyar-earth/10"
-                onClick={() => handleVideoClick(video.id)}
+                  onClick={() => handleVideoClick(video.id)}
               >
                 <CardContent className="p-0">
                   <div className="relative aspect-[3/4] rounded-t-lg overflow-hidden">
