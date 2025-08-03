@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { VideoTextOverlay } from "@/components/VideoTextOverlay";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useMobile } from "@/hooks/useMobile";
 import { Capacitor } from "@capacitor/core";
@@ -19,38 +19,60 @@ const VideoCreate = () => {
   const [location, setLocation] = useState("");
   const [videoDuration, setVideoDuration] = useState(0);
   const [textOverlays, setTextOverlays] = useState([]);
-  const [currentPrompt, setCurrentPrompt] = useState<{ text: string; theme_id: string; theme_name: string } | null>(null);
+  const [currentPrompt, setCurrentPrompt] = useState<{ text: string; theme_id: string; theme_name: string; type: 'daily' | 'mission'; title?: string } | null>(null);
+  const { missionId } = useParams();
   const { isNative, recordVideo, getCurrentLocation } = useMobile();
   
   console.log('VideoCreate: isNative =', isNative); // Debug log
   const navigate = useNavigate();
 
-  // Fetch current prompt on component mount
+  // Fetch current prompt or mission on component mount
   useEffect(() => {
-    const fetchCurrentPrompt = async () => {
-      const { data: promptData } = await supabase
-        .from('daily_prompts')
-        .select(`
-          prompt_text,
-          theme_id,
-          themes:theme_id (
-            name
-          )
-        `)
-        .eq('is_active', true)
-        .single();
+    const fetchContent = async () => {
+      if (missionId) {
+        // Fetch mission data
+        const { data: missionData } = await supabase
+          .from('missions')
+          .select('title, description, target_regions')
+          .eq('id', missionId)
+          .single();
 
-      if (promptData && promptData.themes) {
-        setCurrentPrompt({
-          text: promptData.prompt_text,
-          theme_id: promptData.theme_id,
-          theme_name: promptData.themes.name
-        });
+        if (missionData) {
+          setCurrentPrompt({
+            text: missionData.description,
+            theme_id: '',
+            theme_name: 'nature', // Default theme for missions
+            type: 'mission',
+            title: missionData.title
+          });
+        }
+      } else {
+        // Fetch daily prompt
+        const { data: promptData } = await supabase
+          .from('daily_prompts')
+          .select(`
+            prompt_text,
+            theme_id,
+            themes:theme_id (
+              name
+            )
+          `)
+          .eq('is_active', true)
+          .single();
+
+        if (promptData && promptData.themes) {
+          setCurrentPrompt({
+            text: promptData.prompt_text,
+            theme_id: promptData.theme_id,
+            theme_name: promptData.themes.name,
+            type: 'daily'
+          });
+        }
       }
     };
     
-    fetchCurrentPrompt();
-  }, []);
+    fetchContent();
+  }, [missionId]);
 
   const startNativeRecording = async () => {
     try {
@@ -178,7 +200,12 @@ const VideoCreate = () => {
       {currentPrompt && (
         <div className="max-w-md mx-auto px-4 py-4">
           <div className="bg-velyar-soft/50 rounded-lg p-4 border border-velyar-earth/10">
-            <p className="text-xs text-velyar-earth/70 mb-1 font-nunito">today's prompt • {currentPrompt.theme_name} theme</p>
+            <p className="text-xs text-velyar-earth/70 mb-1 font-nunito">
+              {currentPrompt.type === 'mission' ? 'mission' : "today's prompt"} • {currentPrompt.theme_name} theme
+            </p>
+            {currentPrompt.type === 'mission' && currentPrompt.title && (
+              <p className="text-sm text-velyar-earth/80 mb-2 font-nunito font-medium">{currentPrompt.title}</p>
+            )}
             <p className="text-velyar-earth font-medium">{currentPrompt.text}</p>
           </div>
         </div>

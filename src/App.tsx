@@ -36,6 +36,8 @@ const AppContent = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/contributions" element={<Contributions />} />
         <Route path="/create" element={<VideoCreate />} />
+        <Route path="/create/mission/:missionId" element={<VideoCreate />} />
+        <Route path="/create/daily-prompt" element={<VideoCreate />} />
         <Route path="/admin/prompts" element={<AdminPrompts />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
