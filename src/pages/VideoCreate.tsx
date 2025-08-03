@@ -254,8 +254,20 @@ const VideoCreate = () => {
           <div className="mt-8 space-y-6">
             <Card className="border-velyar-earth/10">
               <CardContent className="p-4">
-                <div className="aspect-[9/16] bg-muted rounded-lg flex items-center justify-center mb-4">
-                  <Video className="w-16 h-16 text-muted-foreground" />
+                <div className="aspect-[9/16] bg-black rounded-lg overflow-hidden mb-4">
+                  {recordedVideo ? (
+                    <video 
+                      src={recordedVideo} 
+                      className="w-full h-full object-cover"
+                      controls
+                      playsInline
+                      muted
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <Video className="w-16 h-16 text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
