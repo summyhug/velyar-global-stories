@@ -20,6 +20,8 @@ const VideoCreate = () => {
   const [textOverlays, setTextOverlays] = useState([]);
   const [currentPrompt, setCurrentPrompt] = useState<{ text: string; theme_id: string; theme_name: string } | null>(null);
   const { isNative, recordVideo, getCurrentLocation } = useMobile();
+  
+  console.log('VideoCreate: isNative =', isNative); // Debug log
   const navigate = useNavigate();
 
   // Fetch current prompt on component mount
@@ -51,7 +53,15 @@ const VideoCreate = () => {
 
   const startNativeRecording = async () => {
     try {
+      console.log('Starting native recording, isNative:', isNative);
+      if (!isNative) {
+        console.log('Not on native platform, using file upload instead');
+        return;
+      }
+      
       const videoPath = await recordVideo();
+      console.log('Video recording result:', videoPath);
+      
       if (videoPath) {
         setRecordedVideo(videoPath);
         setVideoDuration(30); // We'll calculate actual duration later
@@ -144,8 +154,8 @@ const VideoCreate = () => {
   return (
     <div className="min-h-screen bg-background font-quicksand safe-area-inset">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border pt-safe-top">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3 pt-safe-top">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -179,19 +189,23 @@ const VideoCreate = () => {
                 <p className="text-muted-foreground mb-6">
                   {isNative ? 'tap to open your camera and record a video' : 'use the file upload to share a video'}
                 </p>
-                {isNative ? (
-                  <Button
-                    onClick={startNativeRecording}
-                    className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium"
-                  >
-                    <Video className="w-5 h-5 mr-2" />
-                    record video
-                  </Button>
-                ) : (
-                  <Label htmlFor="video-upload" className="cursor-pointer">
+                <div className="space-y-4">
+                  {isNative && (
+                    <Button
+                      onClick={startNativeRecording}
+                      className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium"
+                    >
+                      <Video className="w-5 h-5 mr-2" />
+                      record video
+                    </Button>
+                  )}
+                  
+                  <Label htmlFor="video-upload" className="cursor-pointer block">
                     <div className="border-2 border-dashed border-velyar-earth/20 rounded-lg p-6 hover:bg-velyar-soft transition-colors">
                       <Upload className="w-8 h-8 mx-auto mb-2 text-velyar-earth" />
-                      <span className="text-velyar-earth">choose video file</span>
+                      <span className="text-velyar-earth">
+                        {isNative ? 'or choose existing video file' : 'choose video file'}
+                      </span>
                     </div>
                     <Input
                       id="video-upload"
@@ -201,7 +215,7 @@ const VideoCreate = () => {
                       className="hidden"
                     />
                   </Label>
-                )}
+                </div>
               </CardContent>
             </Card>
           </div>
