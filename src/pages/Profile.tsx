@@ -21,7 +21,7 @@ const Profile = () => {
 
   if (authLoading || profileLoading) {
     return (
-      <div className="min-h-screen bg-background font-quicksand flex items-center justify-center">
+      <div className="min-h-screen-safe bg-background font-quicksand flex items-center justify-center">
         <div className="text-center">
           <div className="text-lg font-medium text-foreground font-nunito">Loading...</div>
         </div>
@@ -44,9 +44,9 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background font-quicksand">
+    <div className="min-h-screen-safe bg-background font-quicksand content-safe-bottom">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <header className="sticky-header header-safe">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
           <Button variant="ghost" size="sm" className="p-2" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />

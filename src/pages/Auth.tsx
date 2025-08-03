@@ -254,7 +254,7 @@ const Auth = () => {
   // Show loading state while checking auth
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-ocean-light to-velyar-earth">
+      <div className="min-h-screen-safe flex items-center justify-center bg-gradient-to-br from-ocean-light to-velyar-earth">
         <div className="flex items-center space-x-2">
           <VelyarLogo size={48} />
           <span className="text-velyar-earth font-nunito">Loading...</span>
@@ -264,7 +264,7 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900/20 via-teal-800/10 to-green-900/20 flex items-center justify-center p-4">
+    <div className="min-h-screen-safe bg-gradient-to-br from-blue-900/20 via-teal-800/10 to-green-900/20 flex items-center justify-center p-4">
       {/* Ocean-like animated background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {/* Base ocean gradient */}

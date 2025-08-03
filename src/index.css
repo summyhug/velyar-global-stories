@@ -139,7 +139,7 @@
   }
 
   .pt-safe-top {
-    padding-top: env(safe-area-inset-top);
+    padding-top: max(env(safe-area-inset-top), 12px);
   }
 
   .pb-safe-bottom {
@@ -148,14 +148,45 @@
 
   .nav-safe-bottom {
     bottom: env(safe-area-inset-bottom);
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
   }
 
-  /* Mobile app safe areas */
-  .mobile-safe-top {
-    padding-top: max(env(safe-area-inset-top), 0px);
+  /* Headers that stick to top safe area */
+  .header-safe {
+    padding-top: max(env(safe-area-inset-top), 12px);
   }
 
-  .mobile-header {
-    top: env(safe-area-inset-top);
+  /* Full height containers accounting for safe areas */
+  .min-h-screen-safe {
+    min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
+  }
+
+  /* Content areas that account for bottom nav + safe area */
+  .content-safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 88px); /* 80px nav + 8px extra */
+  }
+
+  /* For sticky headers */
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: hsl(var(--background) / 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  /* For bottom navigation */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: hsl(var(--background) / 0.8);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid hsl(var(--border));
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
   }
 }

@@ -7,7 +7,7 @@ const Privacy = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-velyar-earth/10 to-velyar-warm/10 p-4">
+    <div className="min-h-screen-safe bg-gradient-to-br from-velyar-earth/10 to-velyar-warm/10 p-4 content-safe-bottom">
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"

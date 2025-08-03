@@ -14,6 +14,9 @@ const config: CapacitorConfig = {
       backgroundColor: '#fffbf0',
       showSpinner: false
     },
+    StatusBar: {
+      style: 'DARK'
+    },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"]
     },
@@ -27,6 +30,12 @@ const config: CapacitorConfig = {
         location: "Location access is required to tag your videos with location."
       }
     }
+  },
+  ios: {
+    contentInset: 'automatic'
+  },
+  android: {
+    allowMixedContent: true
   }
 };
 

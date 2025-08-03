@@ -41,7 +41,7 @@ const Contributions = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-velyar-beige">
+    <div className="min-h-screen-safe bg-velyar-beige content-safe-bottom">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-velyar-beige border-b border-velyar-teal/10">
         <div className="flex items-center justify-between p-4">

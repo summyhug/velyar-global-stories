@@ -141,9 +141,9 @@ const Missions = () => {
   }, [geoAnalysis]);
 
   return (
-    <div className="min-h-screen bg-background font-quicksand">
+    <div className="min-h-screen-safe bg-background font-quicksand content-safe-bottom">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <header className="sticky-header header-safe">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
           <Button 
             variant="ghost" 

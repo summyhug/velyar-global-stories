@@ -49,10 +49,10 @@ const Home = () => {
     fetchMissions();
   }, []);
   return (
-    <div className="min-h-screen bg-background font-quicksand safe-area-inset">
+    <div className="min-h-screen-safe bg-background font-quicksand safe-area-inset">
       {/* Header */}
-      <header className="sticky mobile-header z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between mobile-safe-top">
+      <header className="sticky-header header-safe">
+        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-wide text-velyar-earth font-nunito">velyar</h1>
           <div className="flex items-center gap-1">
             <img 
