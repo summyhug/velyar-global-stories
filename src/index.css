@@ -139,7 +139,7 @@
   }
 
   .pt-safe-top {
-    padding-top: max(env(safe-area-inset-top), 20px);
+    padding-top: env(safe-area-inset-top);
   }
 
   .pb-safe-bottom {
@@ -148,5 +148,14 @@
 
   .nav-safe-bottom {
     bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Mobile app safe areas */
+  .mobile-safe-top {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+
+  .mobile-header {
+    top: env(safe-area-inset-top);
   }
 }

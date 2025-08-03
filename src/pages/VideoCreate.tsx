@@ -80,8 +80,9 @@ const VideoCreate = () => {
     try {
       console.log('Starting native recording, platform:', Capacitor.getPlatform());
       
-      // Use mobile camera if we're on mobile platform OR if native capabilities are available
-      if (Capacitor.getPlatform() !== 'web' || isNative) {
+      // Force camera recording on mobile platforms
+      if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
+        console.log('Attempting to use native camera...');
         const videoPath = await recordVideo();
         console.log('Video recording result:', videoPath);
         
@@ -97,15 +98,17 @@ const VideoCreate = () => {
           } catch (error) {
             console.log('Location access denied or unavailable');
           }
+        } else {
+          console.log('No video path returned, falling back to file input');
+          document.getElementById('video-file-input')?.click();
         }
       } else {
-        console.log('Not on mobile platform, showing file upload');
-        // Trigger file input on web
+        console.log('Web platform detected, using file upload');
         document.getElementById('video-file-input')?.click();
       }
     } catch (error) {
       console.error('Video recording failed:', error);
-      // Fallback to file upload if camera fails
+      console.log('Falling back to file upload due to error');
       document.getElementById('video-file-input')?.click();
     }
   };
