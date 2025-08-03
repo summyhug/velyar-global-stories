@@ -122,18 +122,27 @@ const VideoCreate = () => {
   };
 
   const handleSubmit = async () => {
-    if (!recordedVideo || !videoFile) return;
+    if (!recordedVideo || !videoFile) {
+      console.error('Missing video or file');
+      return;
+    }
 
     try {
+      console.log('Starting video submission process...');
+      
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.error('User not authenticated');
+        alert('Please log in to upload videos');
         return;
       }
 
+      console.log('User authenticated:', user.id);
+
       // Upload video to Supabase storage
       const fileName = `${user.id}/${Date.now()}.${videoFile.name.split('.').pop() || 'mp4'}`;
+      console.log('Uploading file:', fileName, 'Size:', videoFile.size);
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('videos')
@@ -144,13 +153,18 @@ const VideoCreate = () => {
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        throw uploadError;
+        alert(`Upload failed: ${uploadError.message}`);
+        return;
       }
+
+      console.log('Upload successful:', uploadData);
 
       // Get public URL for the uploaded video
       const { data: { publicUrl } } = supabase.storage
         .from('videos')
         .getPublicUrl(fileName);
+
+      console.log('Public URL generated:', publicUrl);
 
       // Create video record with storage URL
       const { data: videoData, error: videoError } = await supabase
@@ -167,21 +181,36 @@ const VideoCreate = () => {
         .select()
         .single();
 
-      if (videoError) throw videoError;
+      if (videoError) {
+        console.error('Database error:', videoError);
+        alert(`Database error: ${videoError.message}`);
+        return;
+      }
+
+      console.log('Video record created:', videoData);
 
       // If there's a current prompt with a theme, assign the theme to the video
       if (currentPrompt && currentPrompt.theme_id && videoData) {
-        await supabase
+        console.log('Adding theme to video...');
+        const { error: themeError } = await supabase
           .from('video_themes')
           .insert({
             video_id: videoData.id,
             theme_id: currentPrompt.theme_id
           });
+        
+        if (themeError) {
+          console.error('Theme assignment error:', themeError);
+          // Don't block the submission for this
+        }
       }
 
+      console.log('Video submission complete, navigating to home...');
       navigate('/');
     } catch (error) {
       console.error('Error submitting video:', error);
+      alert(`An error occurred: ${error.message || 'Unknown error'}`);
+      // Don't reset to capture screen on error - stay on edit screen
     }
   };
 
