@@ -16,9 +16,7 @@ const VideoCreate = () => {
   const [step, setStep] = useState<'record' | 'edit'>(() => {
     return localStorage.getItem('videoCreate_step') as 'record' | 'edit' || 'record';
   });
-  const [recordedVideo, setRecordedVideo] = useState<string | null>(() => {
-    return localStorage.getItem('videoCreate_recordedVideo') || null;
-  });
+  const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [caption, setCaption] = useState(() => {
     return localStorage.getItem('videoCreate_caption') || "";
@@ -85,6 +83,38 @@ const VideoCreate = () => {
     fetchContent();
   }, [missionId]);
 
+  // Restore video file from localStorage on mount
+  useEffect(() => {
+    const restoreVideoState = async () => {
+      const savedVideoData = localStorage.getItem('videoCreate_videoData');
+      if (savedVideoData && !recordedVideo && !videoFile) {
+        try {
+          const { name, type, data } = JSON.parse(savedVideoData);
+          // Convert base64 back to file
+          const byteCharacters = atob(data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const file = new File([byteArray], name, { type });
+          
+          // Create new blob URL
+          const url = URL.createObjectURL(file);
+          setRecordedVideo(url);
+          setVideoFile(file);
+          setVideoDuration(30);
+        } catch (error) {
+          console.error('Failed to restore video:', error);
+          // Clear corrupted data
+          localStorage.removeItem('videoCreate_videoData');
+        }
+      }
+    };
+    
+    restoreVideoState();
+  }, []);
+
   // Persist state to localStorage
   useEffect(() => {
     localStorage.setItem('videoCreate_step', step);
@@ -110,6 +140,25 @@ const VideoCreate = () => {
     localStorage.removeItem('videoCreate_recordedVideo');
     localStorage.removeItem('videoCreate_caption');
     localStorage.removeItem('videoCreate_location');
+    localStorage.removeItem('videoCreate_videoData');
+  };
+
+  // Helper function to save video file as base64
+  const saveVideoToStorage = async (file: File) => {
+    return new Promise<void>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result as string;
+        const videoData = {
+          name: file.name,
+          type: file.type,
+          data: base64.split(',')[1] // Remove the data:video/mp4;base64, prefix
+        };
+        localStorage.setItem('videoCreate_videoData', JSON.stringify(videoData));
+        resolve();
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const startNativeRecording = async () => {
@@ -124,6 +173,7 @@ const VideoCreate = () => {
         
         setRecordedVideo(videoResult.url);
         setVideoFile(videoResult.file);
+        await saveVideoToStorage(videoResult.file);
         setVideoDuration(30);
         setStep('edit');
         
@@ -145,12 +195,13 @@ const VideoCreate = () => {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
       setRecordedVideo(url);
       setVideoFile(file);
+      await saveVideoToStorage(file);
       setVideoDuration(30); // Mock duration
       setStep('edit');
     }
