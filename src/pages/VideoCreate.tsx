@@ -15,6 +15,7 @@ import { Capacitor } from "@capacitor/core";
 const VideoCreate = () => {
   const [step, setStep] = useState<'record' | 'edit'>('record');
   const [recordedVideo, setRecordedVideo] = useState<string | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [caption, setCaption] = useState("");
   const [location, setLocation] = useState("");
   const [videoDuration, setVideoDuration] = useState(0);
@@ -83,10 +84,11 @@ const VideoCreate = () => {
       // Force camera recording on mobile platforms
       if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
         console.log('Attempting to use native video recording...');
-        const videoPath = await recordVideo();
-        console.log('Video recording result:', videoPath);
+        const videoResult = await recordVideo();
+        console.log('Video recording result:', videoResult);
         
-        setRecordedVideo(videoPath);
+        setRecordedVideo(videoResult.url);
+        setVideoFile(videoResult.file);
         setVideoDuration(30);
         setStep('edit');
         
@@ -113,13 +115,14 @@ const VideoCreate = () => {
     if (file) {
       const url = URL.createObjectURL(file);
       setRecordedVideo(url);
+      setVideoFile(file);
       setVideoDuration(30); // Mock duration
       setStep('edit');
     }
   };
 
   const handleSubmit = async () => {
-    if (!recordedVideo) return;
+    if (!recordedVideo || !videoFile) return;
 
     try {
       // Get current user
@@ -129,12 +132,32 @@ const VideoCreate = () => {
         return;
       }
 
-      // Create video record
+      // Upload video to Supabase storage
+      const fileName = `${user.id}/${Date.now()}.${videoFile.name.split('.').pop() || 'mp4'}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(fileName, videoFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      // Get public URL for the uploaded video
+      const { data: { publicUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(fileName);
+
+      // Create video record with storage URL
       const { data: videoData, error: videoError } = await supabase
         .from('videos')
         .insert({
           user_id: user.id,
-          video_url: recordedVideo,
+          video_url: publicUrl,
           title: caption || 'Daily Prompt Response',
           description: caption,
           location: location || null,

@@ -48,12 +48,12 @@ export const useMobile = () => {
     }
   };
 
-  const recordVideo = async () => {
+  const recordVideo = async (): Promise<{ file: File; url: string }> => {
     try {
       // For native platforms, use a custom video recording approach
       if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
         // Create a promise that will resolve when the user selects a video
-        return new Promise<string>((resolve, reject) => {
+        return new Promise<{ file: File; url: string }>((resolve, reject) => {
           // Create a temporary input element for video capture
           const input = document.createElement('input');
           input.type = 'file';
@@ -64,8 +64,9 @@ export const useMobile = () => {
           input.onchange = (event) => {
             const file = (event.target as HTMLInputElement).files?.[0];
             if (file) {
+              // Return both the file and blob URL
               const url = URL.createObjectURL(file);
-              resolve(url);
+              resolve({ file, url });
             } else {
               reject(new Error('No video selected'));
             }
