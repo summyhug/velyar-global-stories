@@ -13,6 +13,19 @@ const config: CapacitorConfig = {
       launchShowDuration: 2000,
       backgroundColor: '#fffbf0',
       showSpinner: false
+    },
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"]
+    },
+    Camera: {
+      permissions: {
+        camera: "Camera access is required to record videos and take photos."
+      }
+    },
+    Geolocation: {
+      permissions: {
+        location: "Location access is required to tag your videos with location."
+      }
     }
   }
 };
