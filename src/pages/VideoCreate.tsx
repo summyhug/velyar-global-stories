@@ -291,9 +291,21 @@ const VideoCreate = () => {
         }
       }
 
-      console.log('Video submission complete, navigating to home...');
-      clearVideoState();
-      navigate('/');
+      console.log('Video submission complete, showing success message...');
+      
+      // Show success toast
+      const { toast } = await import("@/hooks/use-toast");
+      toast({
+        title: "Video uploaded successfully!",
+        description: "Your video has been saved and will appear in the feed.",
+        duration: 3000,
+      });
+      
+      // Clear state and navigate home after a brief delay
+      setTimeout(() => {
+        clearVideoState();
+        navigate('/');
+      }, 1500);
     } catch (error) {
       console.error('Error submitting video:', error);
       alert(`An error occurred: ${error.message || 'Unknown error'}`);
