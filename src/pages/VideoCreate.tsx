@@ -82,25 +82,20 @@ const VideoCreate = () => {
       
       // Force camera recording on mobile platforms
       if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
-        console.log('Attempting to use native camera...');
+        console.log('Attempting to use native video recording...');
         const videoPath = await recordVideo();
         console.log('Video recording result:', videoPath);
         
-        if (videoPath) {
-          setRecordedVideo(videoPath);
-          setVideoDuration(30);
-          setStep('edit');
-          
-          // Try to get current location
-          try {
-            const coords = await getCurrentLocation();
-            setLocation(`${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
-          } catch (error) {
-            console.log('Location access denied or unavailable');
-          }
-        } else {
-          console.log('No video path returned, falling back to file input');
-          document.getElementById('video-file-input')?.click();
+        setRecordedVideo(videoPath);
+        setVideoDuration(30);
+        setStep('edit');
+        
+        // Try to get current location
+        try {
+          const coords = await getCurrentLocation();
+          setLocation(`${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+        } catch (error) {
+          console.log('Location access denied or unavailable');
         }
       } else {
         console.log('Web platform detected, using file upload');
@@ -235,19 +230,20 @@ const VideoCreate = () => {
                     <Video className="w-5 h-5 mr-2" />
                     record video
                   </Button>
-                  <div className="relative">
-                    <input
-                      id="video-file-input"
-                      type="file"
-                      accept="video/*"
-                      onChange={handleFileUpload}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <Button variant="outline" className="w-full">
-                      <Upload className="w-5 h-5 mr-2" />
-                      or upload video
-                    </Button>
-                  </div>
+                    <div className="relative">
+                      <input
+                        id="video-file-input"
+                        type="file"
+                        accept="video/*"
+                        capture="environment"
+                        onChange={handleFileUpload}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                      <Button variant="outline" className="w-full">
+                        <Upload className="w-5 h-5 mr-2" />
+                        or upload video
+                      </Button>
+                    </div>
                 </div>
               </CardContent>
             </Card>

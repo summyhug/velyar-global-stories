@@ -50,14 +50,39 @@ export const useMobile = () => {
 
   const recordVideo = async () => {
     try {
-      const video = await Camera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.Uri,
-        source: CameraSource.Camera
-      });
-      
-      return video.webPath;
+      // For native platforms, use a custom video recording approach
+      if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
+        // Create a promise that will resolve when the user selects a video
+        return new Promise<string>((resolve, reject) => {
+          // Create a temporary input element for video capture
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'video/*';
+          input.capture = 'environment'; // Use rear camera by default
+          input.style.display = 'none';
+          
+          input.onchange = (event) => {
+            const file = (event.target as HTMLInputElement).files?.[0];
+            if (file) {
+              const url = URL.createObjectURL(file);
+              resolve(url);
+            } else {
+              reject(new Error('No video selected'));
+            }
+            document.body.removeChild(input);
+          };
+          
+          input.oncancel = () => {
+            reject(new Error('Video recording cancelled'));
+            document.body.removeChild(input);
+          };
+          
+          document.body.appendChild(input);
+          input.click();
+        });
+      } else {
+        throw new Error('Video recording not supported on this platform');
+      }
     } catch (error) {
       console.error('Video recording error:', error);
       throw error;
