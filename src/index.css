@@ -147,7 +147,6 @@
   }
 
   .nav-safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-    margin-bottom: env(safe-area-inset-bottom);
+    bottom: env(safe-area-inset-bottom);
   }
 }

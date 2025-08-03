@@ -23,7 +23,7 @@ const VideoCreate = () => {
   const { missionId } = useParams();
   const { isNative, recordVideo, getCurrentLocation } = useMobile();
   
-  console.log('VideoCreate: isNative =', isNative); // Debug log
+  console.log('VideoCreate: isNative =', isNative, 'platform:', Capacitor.getPlatform());
   const navigate = useNavigate();
 
   // Fetch current prompt or mission on component mount
@@ -48,6 +48,7 @@ const VideoCreate = () => {
         }
       } else {
         // Fetch daily prompt
+        const today = new Date().toISOString().split('T')[0];
         const { data: promptData } = await supabase
           .from('daily_prompts')
           .select(`
@@ -57,6 +58,7 @@ const VideoCreate = () => {
               name
             )
           `)
+          .eq('date', today)
           .eq('is_active', true)
           .single();
 
@@ -76,10 +78,10 @@ const VideoCreate = () => {
 
   const startNativeRecording = async () => {
     try {
-      console.log('Starting native recording, isNative:', isNative, 'platform:', Capacitor.getPlatform());
+      console.log('Starting native recording, platform:', Capacitor.getPlatform());
       
-      // Force use mobile camera if we're on mobile platform
-      if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
+      // Use mobile camera if we're on mobile platform OR if native capabilities are available
+      if (Capacitor.getPlatform() !== 'web' || isNative) {
         const videoPath = await recordVideo();
         console.log('Video recording result:', videoPath);
         
