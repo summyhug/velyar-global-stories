@@ -10,6 +10,7 @@ import { VideoTextOverlay } from "@/components/VideoTextOverlay";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useMobile } from "@/hooks/useMobile";
+import { Capacitor } from "@capacitor/core";
 
 const VideoCreate = () => {
   const [step, setStep] = useState<'record' | 'edit'>('record');
@@ -53,30 +54,35 @@ const VideoCreate = () => {
 
   const startNativeRecording = async () => {
     try {
-      console.log('Starting native recording, isNative:', isNative);
-      if (!isNative) {
-        console.log('Not on native platform, using file upload instead');
-        return;
-      }
+      console.log('Starting native recording, isNative:', isNative, 'platform:', Capacitor.getPlatform());
       
-      const videoPath = await recordVideo();
-      console.log('Video recording result:', videoPath);
-      
-      if (videoPath) {
-        setRecordedVideo(videoPath);
-        setVideoDuration(30); // We'll calculate actual duration later
-        setStep('edit');
+      // Force use mobile camera if we're on mobile platform
+      if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
+        const videoPath = await recordVideo();
+        console.log('Video recording result:', videoPath);
         
-        // Try to get current location
-        try {
-          const coords = await getCurrentLocation();
-          setLocation(`${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
-        } catch (error) {
-          console.log('Location access denied or unavailable');
+        if (videoPath) {
+          setRecordedVideo(videoPath);
+          setVideoDuration(30);
+          setStep('edit');
+          
+          // Try to get current location
+          try {
+            const coords = await getCurrentLocation();
+            setLocation(`${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+          } catch (error) {
+            console.log('Location access denied or unavailable');
+          }
         }
+      } else {
+        console.log('Not on mobile platform, showing file upload');
+        // Trigger file input on web
+        document.getElementById('video-file-input')?.click();
       }
     } catch (error) {
       console.error('Video recording failed:', error);
+      // Fallback to file upload if camera fails
+      document.getElementById('video-file-input')?.click();
     }
   };
 
@@ -190,31 +196,26 @@ const VideoCreate = () => {
                   {isNative ? 'tap to open your camera and record a video' : 'use the file upload to share a video'}
                 </p>
                 <div className="space-y-4">
-                  {isNative && (
-                    <Button
-                      onClick={startNativeRecording}
-                      className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium"
-                    >
-                      <Video className="w-5 h-5 mr-2" />
-                      record video
-                    </Button>
-                  )}
-                  
-                  <Label htmlFor="video-upload" className="cursor-pointer block">
-                    <div className="border-2 border-dashed border-velyar-earth/20 rounded-lg p-6 hover:bg-velyar-soft transition-colors">
-                      <Upload className="w-8 h-8 mx-auto mb-2 text-velyar-earth" />
-                      <span className="text-velyar-earth">
-                        {isNative ? 'or choose existing video file' : 'choose video file'}
-                      </span>
-                    </div>
-                    <Input
-                      id="video-upload"
+                  <Button
+                    onClick={startNativeRecording}
+                    className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium"
+                  >
+                    <Video className="w-5 h-5 mr-2" />
+                    record video
+                  </Button>
+                  <div className="relative">
+                    <input
+                      id="video-file-input"
                       type="file"
                       accept="video/*"
                       onChange={handleFileUpload}
-                      className="hidden"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
-                  </Label>
+                    <Button variant="outline" className="w-full">
+                      <Upload className="w-5 h-5 mr-2" />
+                      or upload video
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
