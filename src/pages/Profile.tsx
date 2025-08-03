@@ -11,7 +11,7 @@ import { useEffect } from "react";
 const Profile = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { profile, userStats, contributions, loading: profileLoading } = useProfile(user?.id);
+  const { profile, userStats, contributions, location, loading: profileLoading } = useProfile(user?.id);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -70,7 +70,7 @@ const Profile = () => {
               <h2 className="text-lg font-medium text-foreground mb-1 font-nunito">{displayName}</h2>
               <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground mb-3">
                 <MapPin className="w-4 h-4" />
-                <span>{profile?.bio || 'location not set'}</span>
+                <span>{location || 'location not set'}</span>
               </div>
               <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground">
                 <Calendar className="w-4 h-4" />

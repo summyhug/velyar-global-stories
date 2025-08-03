@@ -29,6 +29,7 @@ export function useProfile(userId: string | undefined) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [userStats, setUserStats] = useState<UserStats>({ mediaShared: 0, octosReceived: 0, countriesReached: 0 });
   const [contributions, setContributions] = useState<MissionContribution[]>([]);
+  const [location, setLocation] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +50,16 @@ export function useProfile(userId: string | undefined) {
 
         if (profileError) throw profileError;
         setProfile(profileData);
+
+        // Get user metadata for location info
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (!userError && user && user.id === userId) {
+          const city = user.user_metadata?.city;
+          const country = user.user_metadata?.country;
+          if (city && country) {
+            setLocation(`${city}, ${country}`);
+          }
+        }
 
         // Fetch user videos for stats
         const { data: videosData, error: videosError } = await supabase
@@ -122,6 +133,7 @@ export function useProfile(userId: string | undefined) {
     profile,
     userStats,
     contributions,
+    location,
     loading,
     error
   };
