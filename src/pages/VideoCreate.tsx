@@ -85,22 +85,35 @@ const VideoCreate = () => {
 
   // Check if we need to reset to capture screen after app restart
   useEffect(() => {
+    console.log('VideoCreate: Component mounted/updated');
+    console.log('VideoCreate: Current step:', step);
+    console.log('VideoCreate: recordedVideo exists:', !!recordedVideo);
+    console.log('VideoCreate: videoFile exists:', !!videoFile);
+    
     const hasVideoData = localStorage.getItem('videoCreate_hasVideo');
-    if (hasVideoData === 'true' && step === 'edit' && !recordedVideo && !videoFile) {
-      // Video was lost due to app restart, go back to capture
+    const savedStep = localStorage.getItem('videoCreate_step');
+    
+    console.log('VideoCreate: localStorage hasVideo:', hasVideoData);
+    console.log('VideoCreate: localStorage step:', savedStep);
+    
+    if (hasVideoData === 'true' && savedStep === 'edit' && !recordedVideo && !videoFile) {
+      console.log('VideoCreate: Video was lost due to app restart, resetting to capture');
       setStep('record');
       localStorage.removeItem('videoCreate_hasVideo');
+      localStorage.removeItem('videoCreate_step');
     }
-  }, []);
+  }, [recordedVideo, videoFile, step]);
 
-  // Persist state to localStorage
+  // Persist state to localStorage with logging
   useEffect(() => {
+    console.log('VideoCreate: Persisting step to localStorage:', step);
     localStorage.setItem('videoCreate_step', step);
   }, [step]);
 
   useEffect(() => {
     if (recordedVideo) {
-      localStorage.setItem('videoCreate_recordedVideo', recordedVideo);
+      console.log('VideoCreate: Persisting recordedVideo existence to localStorage');
+      localStorage.setItem('videoCreate_hasVideo', 'true');
     }
   }, [recordedVideo]);
 
@@ -114,6 +127,7 @@ const VideoCreate = () => {
 
   // Clear localStorage when leaving the page or submitting
   const clearVideoState = () => {
+    console.log('VideoCreate: Clearing localStorage state');
     localStorage.removeItem('videoCreate_step');
     localStorage.removeItem('videoCreate_recordedVideo');
     localStorage.removeItem('videoCreate_caption');
@@ -123,14 +137,21 @@ const VideoCreate = () => {
 
   const startNativeRecording = async () => {
     try {
-      console.log('Starting native recording, platform:', Capacitor.getPlatform());
+      console.log('VideoCreate: Starting native recording');
+      console.log('VideoCreate: Platform:', Capacitor.getPlatform());
+      console.log('VideoCreate: isNative:', isNative);
       
       // Force camera recording on mobile platforms
       if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
-        console.log('Attempting to use native video recording...');
+        console.log('VideoCreate: Attempting native video recording...');
         const videoResult = await recordVideo();
-        console.log('Video recording result:', videoResult);
+        console.log('VideoCreate: Video recording result:', {
+          hasFile: !!videoResult.file,
+          hasUrl: !!videoResult.url,
+          fileSize: videoResult.file?.size || 0
+        });
         
+        console.log('VideoCreate: Setting video state and moving to edit step');
         setRecordedVideo(videoResult.url);
         setVideoFile(videoResult.file);
         localStorage.setItem('videoCreate_hasVideo', 'true');
@@ -139,18 +160,21 @@ const VideoCreate = () => {
         
         // Try to get current location
         try {
+          console.log('VideoCreate: Getting current location...');
           const coords = await getCurrentLocation();
-          setLocation(`${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+          const locationString = `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
+          console.log('VideoCreate: Location obtained:', locationString);
+          setLocation(locationString);
         } catch (error) {
-          console.log('Location access denied or unavailable');
+          console.log('VideoCreate: Location access denied or unavailable:', error);
         }
       } else {
-        console.log('Web platform detected, using file upload');
+        console.log('VideoCreate: Web platform detected, using file upload');
         document.getElementById('video-file-input')?.click();
       }
     } catch (error) {
-      console.error('Video recording failed:', error);
-      console.log('Falling back to file upload due to error');
+      console.error('VideoCreate: Video recording failed:', error);
+      console.log('VideoCreate: Falling back to file upload due to error');
       document.getElementById('video-file-input')?.click();
     }
   };
@@ -158,12 +182,18 @@ const VideoCreate = () => {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('VideoCreate: File upload - file selected:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
       const url = URL.createObjectURL(file);
       setRecordedVideo(url);
       setVideoFile(file);
       localStorage.setItem('videoCreate_hasVideo', 'true');
       setVideoDuration(30); // Mock duration
       setStep('edit');
+      console.log('VideoCreate: File upload complete, moved to edit step');
     }
   };
 
