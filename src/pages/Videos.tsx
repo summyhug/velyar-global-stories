@@ -82,13 +82,32 @@ const Videos = () => {
     }
   };
 
-  // If we have an ID, show the video viewer
-  if (id && showVideoViewer && !loading) {
+  // Show loading while fetching videos
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center text-muted-foreground">Loading video...</div>
+      </div>
+    );
+  }
+
+  // If we have an ID and videos are loaded, show the video viewer
+  if (id && showVideoViewer && videos.length > 0) {
     const startIndex = videos.findIndex(video => video.id === id);
+    
+    // If video not found, show error
+    if (startIndex === -1) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center text-muted-foreground">Video not found</div>
+        </div>
+      );
+    }
+    
     return (
       <VideoViewer
         videos={videos}
-        initialIndex={startIndex >= 0 ? startIndex : 0}
+        initialIndex={startIndex}
         onBack={handleBack}
       />
     );
