@@ -107,13 +107,7 @@ const VideoList = () => {
       // Handle regular video fetching for missions and daily prompts
       let query = supabase
         .from('videos')
-        .select(`
-          *,
-          profiles:user_id (
-            username,
-            display_name
-          )
-        `)
+        .select('*')
         .eq('is_public', true)
         .order('created_at', { ascending: false });
 
