@@ -12,24 +12,36 @@ const Videos = () => {
   const mockVideos = [
     {
       id: "1",
-      author: "maria_santos",
-      country: "brazil",
-      videoUrl: "/placeholder-video.mp4",
-      caption: "Homemade pasta with my grandmother's secret sauce"
+      user_id: "mock-user-1",
+      video_url: "/placeholder-video.mp4",
+      title: "Homemade pasta with my grandmother's secret sauce",
+      profiles: {
+        username: "maria_santos",
+        display_name: "Maria Santos"
+      },
+      location: "Brazil"
     },
     {
       id: "2",
-      author: "kenji_tanaka",
-      country: "japan",
-      videoUrl: "/placeholder-video.mp4",
-      caption: "Traditional ramen from a local shop in Tokyo"
+      user_id: "mock-user-2", 
+      video_url: "/placeholder-video.mp4",
+      title: "Traditional ramen from a local shop in Tokyo",
+      profiles: {
+        username: "kenji_tanaka",
+        display_name: "Kenji Tanaka"
+      },
+      location: "Japan"
     },
     {
       id: "3",
-      author: "anna_petrov",
-      country: "russia",
-      videoUrl: "/placeholder-video.mp4",
-      caption: "Borscht with fresh bread from the market"
+      user_id: "mock-user-3",
+      video_url: "/placeholder-video.mp4", 
+      title: "Borscht with fresh bread from the market",
+      profiles: {
+        username: "anna_petrov",
+        display_name: "Anna Petrov"
+      },
+      location: "Russia"
     }
   ];
 

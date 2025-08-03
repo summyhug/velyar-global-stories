@@ -31,33 +31,19 @@ export const useVideoComments = (videoId: string) => {
     try {
       setLoading(true);
       
-      // Fetch comments
-      const { data: commentsData } = await supabase
-        .from('video_comments')
-        .select(`
-          id,
-          content,
-          user_id,
-          created_at,
-          profiles:user_id (
-            username,
-            display_name
-          )
-        `)
-        .eq('video_id', videoId)
-        .order('created_at', { ascending: true });
-
+      // Check if current user liked this video
+      const { data: { user } } = await supabase.auth.getUser();
+      
       // Fetch likes
       const { data: likesData } = await supabase
         .from('video_likes')
         .select('id, user_id')
         .eq('video_id', videoId);
 
-      // Check if current user liked this video
-      const { data: { user } } = await supabase.auth.getUser();
       const userLiked = user && likesData?.some(like => like.user_id === user.id);
 
-      setComments(commentsData || []);
+      // For now, set empty comments until migration is approved
+      setComments([]);
       setLikes(likesData || []);
       setIsLiked(!!userLiked);
     } catch (error) {
@@ -68,21 +54,7 @@ export const useVideoComments = (videoId: string) => {
   };
 
   const addComment = async (content: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
-    const { error } = await supabase
-      .from('video_comments')
-      .insert({
-        video_id: videoId,
-        user_id: user.id,
-        content: content.trim()
-      });
-
-    if (!error) {
-      fetchData();
-      return true;
-    }
+    // For now, return false until migration is approved
     return false;
   };
 
