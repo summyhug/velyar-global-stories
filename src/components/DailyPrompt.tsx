@@ -75,7 +75,7 @@ export const DailyPrompt = () => {
         </p>
         
         <div className="flex gap-3">
-          <Link to="/video-create" className="flex-1">
+          <Link to="/create" className="flex-1">
             <Button 
               className="w-full bg-velyar-earth hover:bg-velyar-warm transition-colors"
               size="lg"

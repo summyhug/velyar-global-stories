@@ -47,7 +47,7 @@ export const MissionCard = ({ id, title, description, participants, location, im
         </div>
         
         <div className="flex gap-2">
-          <Link to="/video-create" className="flex-1">
+          <Link to="/create" className="flex-1">
             <Button variant="outline" size="sm" className="w-full">
               join mission
               <ArrowRight className="w-3 h-3 ml-2" />
