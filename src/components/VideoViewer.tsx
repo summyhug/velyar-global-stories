@@ -184,12 +184,12 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="text-white text-center flex-1">
-            <div className="font-medium font-nunito">
+            {currentVideo.location && (
+              <div className="text-lg font-medium">{currentVideo.location}</div>
+            )}
+            <div className="text-sm text-white/80">
               {currentVideo.profiles?.display_name || currentVideo.profiles?.username || 'Unknown User'}
             </div>
-            {currentVideo.location && (
-              <div className="text-sm text-white/80">{currentVideo.location}</div>
-            )}
           </div>
           <div className="flex items-center gap-2">
             {currentUser?.id === currentVideo.user_id && (
@@ -205,6 +205,20 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => {
+                if (navigator.share) {
+                  navigator.share({
+                    title: currentVideo.title || 'Check out this video',
+                    url: window.location.href,
+                  });
+                } else {
+                  navigator.clipboard.writeText(window.location.href);
+                  toast({
+                    title: "Link copied to clipboard",
+                    duration: 2000,
+                  });
+                }
+              }}
               className="text-white hover:bg-white/20"
             >
               <Share2 className="w-5 h-5" />
@@ -219,18 +233,9 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
           videoUrl={currentVideo.video_url}
           onVideoEnd={handleVideoEnd}
           autoPlay={true}
-          className="w-full h-full"
+          className="w-full h-full object-contain"
         />
 
-        {/* Video Title Overlay */}
-        {currentVideo.title && (
-          <div className="absolute bottom-20 left-4 right-4 text-white">
-            <p className="text-lg font-medium mb-1">{currentVideo.title}</p>
-            {currentVideo.description && (
-              <p className="text-sm text-white/80">{currentVideo.description}</p>
-            )}
-          </div>
-        )}
 
         {/* Navigation arrows */}
         <div className="absolute inset-y-0 left-0 flex items-center pl-4">
@@ -260,6 +265,18 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
 
       {/* Bottom Controls */}
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-safe">
+        {/* Video Title and Description */}
+        {(currentVideo.title || currentVideo.description) && (
+          <div className="text-white mb-4">
+            {currentVideo.title && (
+              <p className="text-lg font-medium mb-1">{currentVideo.title}</p>
+            )}
+            {currentVideo.description && (
+              <p className="text-sm text-white/80">{currentVideo.description}</p>
+            )}
+          </div>
+        )}
+        
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">

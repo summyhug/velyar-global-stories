@@ -41,7 +41,7 @@ export const VideoPlayer = ({
     <video
       ref={videoRef}
       src={videoUrl}
-      className={`w-full h-full object-cover ${className}`}
+      className={`w-full h-full ${className}`}
       controls={false}
       playsInline
       muted={false}
