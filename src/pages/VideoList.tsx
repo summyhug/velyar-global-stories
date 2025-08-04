@@ -258,11 +258,19 @@ const VideoList = () => {
               >
                 <CardContent className="p-0">
                   <div className="relative aspect-[3/4] rounded-t-lg overflow-hidden">
-                    <img 
-                      src={video.thumbnail_url || "https://images.unsplash.com/photo-1626544590736-4a351aaa2fe7?w=300&h=400&fit=crop"} 
-                      alt={video.title || video.description || "Video"}
-                      className="w-full h-full object-cover"
-                    />
+                    {video.thumbnail_url ? (
+                      <img 
+                        src={video.thumbnail_url} 
+                        alt={video.title || "Video thumbnail"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-velyar-earth/20 to-velyar-warm/20 flex items-center justify-center">
+                        <div className="text-velyar-earth/60 text-xs text-center px-2">
+                          Video Preview
+                        </div>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                       <Play className="w-8 h-8 text-white" />
                     </div>
