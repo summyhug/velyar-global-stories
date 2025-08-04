@@ -86,14 +86,27 @@ const Videos = () => {
   }, [id, type, navigate]);
 
   const handleBack = () => {
-    if (id && type === 'daily-prompt') {
-      // For daily prompts, go back to home page
-      navigate('/');
-    } else if (id) {
+    if (type === 'daily-prompt' && videos.length > 0) {
+      // For daily prompts, go back to video list view
+      const dailyPromptId = videos.find(v => v.daily_prompt_id)?.daily_prompt_id;
+      if (dailyPromptId) {
+        navigate(`/video-list/daily-prompt/${dailyPromptId}`);
+      } else {
+        navigate('/');
+      }
+    } else if (type === 'mission' && videos.length > 0) {
+      // For missions, go back to mission video list
+      const missionId = videos.find(v => v.mission_id)?.mission_id;
+      if (missionId) {
+        navigate(`/video-list/mission/${missionId}`);
+      } else {
+        navigate('/missions');
+      }
+    } else if (type && videos.length > 0) {
       // For other types, go back to the video list
       navigate(`/video-list/${type}`);
     } else {
-      // If no ID, go back to previous page
+      // If no type info, go back to previous page
       navigate(-1);
     }
   };

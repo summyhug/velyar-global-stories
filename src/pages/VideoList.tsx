@@ -269,14 +269,11 @@ const VideoList = () => {
                   </div>
                   <div className="p-3">
                     <div className="font-medium text-velyar-earth font-nunito text-sm mb-1">
-                      {video.profiles?.display_name || video.profiles?.username || 'Anonymous'}
-                    </div>
-                    <div className="text-xs text-muted-foreground mb-2">
                       {video.location || 'Unknown location'}
                     </div>
-                    <p className="text-xs text-foreground line-clamp-2">
-                      {video.description || video.title || 'No description'}
-                    </p>
+                    <div className="text-xs text-muted-foreground">
+                      {video.profiles?.display_name || video.profiles?.username || 'Anonymous'}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
