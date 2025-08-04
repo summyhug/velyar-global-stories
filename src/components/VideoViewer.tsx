@@ -173,7 +173,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
   return (
     <div ref={containerRef} className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
+      <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4 pt-safe-top">
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
@@ -264,7 +264,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
       </div>
 
       {/* Bottom Controls */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-safe-bottom">
         {/* Video Title and Description */}
         {(currentVideo.title || currentVideo.description) && (
           <div className="text-white mb-4">
