@@ -184,9 +184,9 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="text-white text-center flex-1">
-            {currentVideo.location && (
-              <div className="text-lg font-medium">{currentVideo.location}</div>
-            )}
+            <div className="text-xl font-bold">
+              {currentVideo.location || 'Unknown Location'}
+            </div>
             <div className="text-sm text-white/80">
               {currentVideo.profiles?.display_name || currentVideo.profiles?.username || 'Unknown User'}
             </div>
@@ -327,7 +327,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
               </div>
               
               {/* Comment Input */}
-              <div className="flex items-end gap-2 border-t pt-3">
+              <div className="flex items-end gap-2 border-t pt-3 pb-8">
                 <div className="flex-1">
                   <Textarea
                     placeholder="Add a thoughtful comment (max 100 characters)..."
