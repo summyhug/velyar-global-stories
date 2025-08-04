@@ -2,60 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Velyar Brand Design System */
-
 @layer base {
   :root {
-    /* Velyar Brand Colors */
-    --background: 43 33% 94%; /* #F5F1E1 - Warm Beige */
-    --foreground: 194 42% 28%; /* #285A66 - Dark Teal */
-
+    --background: 43 33% 94%;
+    --foreground: 194 42% 28%;
     --card: 43 33% 96%;
     --card-foreground: 194 42% 28%;
-
     --popover: 43 33% 96%;
     --popover-foreground: 194 42% 28%;
-
-    /* Dark Teal primary */
-    --primary: 194 42% 28%; /* #285A66 */
+    --primary: 194 42% 28%;
     --primary-foreground: 43 33% 94%;
-
-    /* Warm Brown secondary */
-    --secondary: 37 37% 60%; /* #D1A15D */
+    --secondary: 37 37% 60%;
     --secondary-foreground: 194 42% 28%;
-
     --muted: 43 20% 88%;
     --muted-foreground: 194 20% 45%;
-
-    /* Warm Brown accent */
-    --accent: 37 37% 60%; /* #D1A15D */
+    --accent: 37 37% 60%;
     --accent-foreground: 194 42% 28%;
-
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 43 33% 94%;
-
     --border: 43 20% 85%;
     --input: 43 20% 90%;
     --ring: 194 42% 28%;
-
     --radius: 1rem;
-
-    /* Velyar-specific design tokens */
-    --velyar-warm: 37 37% 60%; /* #D1A15D - Warm Brown */
-    --velyar-earth: 194 42% 28%; /* #285A66 - Dark Teal */
-    --velyar-soft: 43 33% 96%; /* Lighter Warm Beige */
-    --velyar-glow: 37 37% 70%; /* Lighter Warm Brown */
-    --velyar-coral: 13 100% 67%; /* #FF7F5A - Muted Coral */
-    --velyar-olive: 78 44% 39%; /* #6E8A3D - Olive Green */
-    
-    /* Gradients */
+    --velyar-warm: 37 37% 60%;
+    --velyar-earth: 194 42% 28%;
+    --velyar-soft: 43 33% 96%;
+    --velyar-glow: 37 37% 70%;
+    --velyar-coral: 13 100% 67%;
+    --velyar-olive: 78 44% 39%;
     --gradient-warm: linear-gradient(135deg, hsl(var(--velyar-earth)), hsl(var(--velyar-warm)));
     --gradient-soft: linear-gradient(180deg, hsl(var(--background)), hsl(var(--velyar-soft)));
-    
-    /* Shadows */
     --shadow-gentle: 0 4px 16px -8px hsl(var(--velyar-earth) / 0.15);
     --shadow-warm: 0 8px 32px -12px hsl(var(--velyar-earth) / 0.2);
-
     --sidebar-background: 43 33% 96%;
     --sidebar-foreground: 194 42% 28%;
     --sidebar-primary: 194 42% 28%;
@@ -67,42 +45,31 @@
   }
 
   .dark {
-    /* Dark mode with Velyar brand colors */
     --background: 194 42% 12%;
     --foreground: 43 33% 94%;
-
     --card: 194 42% 15%;
     --card-foreground: 43 33% 94%;
-
     --popover: 194 42% 15%;
     --popover-foreground: 43 33% 94%;
-
     --primary: 37 37% 60%;
     --primary-foreground: 194 42% 12%;
-
     --secondary: 194 30% 25%;
     --secondary-foreground: 43 33% 90%;
-
     --muted: 194 30% 20%;
     --muted-foreground: 43 20% 70%;
-
     --accent: 37 37% 55%;
     --accent-foreground: 194 42% 12%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 43 33% 94%;
-
     --border: 194 30% 25%;
     --input: 194 30% 25%;
     --ring: 37 37% 60%;
-
     --velyar-warm: 37 37% 55%;
     --velyar-earth: 194 42% 40%;
     --velyar-soft: 194 42% 15%;
     --velyar-glow: 37 37% 50%;
     --velyar-coral: 13 100% 60%;
     --velyar-olive: 78 44% 35%;
-    
     --sidebar-background: 194 42% 15%;
     --sidebar-foreground: 43 33% 94%;
     --sidebar-primary: 37 37% 60%;
@@ -118,7 +85,6 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground;
   }
@@ -128,64 +94,13 @@
   .center {
     @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
   }
-
-  /* Safe area utilities for mobile devices */
-  .safe-area-inset {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-  }
-
   .pt-safe-top {
     padding-top: max(env(safe-area-inset-top), 12px);
   }
-
   .pb-safe-bottom {
     padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
   }
-
-  .nav-safe-bottom {
-    bottom: env(safe-area-inset-bottom);
-    padding-bottom: max(env(safe-area-inset-bottom), 0px);
-  }
-
-  /* Headers that stick to top safe area */
-  .header-safe {
-    padding-top: max(env(safe-area-inset-top), 12px);
-  }
-
-  /* Full height containers accounting for safe areas */
-  .min-h-screen-safe {
-    min-height: 100vh;
-    min-height: 100dvh; /* Dynamic viewport height for mobile */
-  }
-
-  /* Content areas that account for bottom nav + safe area */
   .content-safe-bottom {
-    padding-bottom: calc(env(safe-area-inset-bottom) + 88px); /* 80px nav + 8px extra */
-  }
-
-  /* For sticky headers */
-  .sticky-header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: hsl(var(--background) / 0.8);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid hsl(var(--border));
-  }
-
-  /* For bottom navigation */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 50;
-    background: hsl(var(--background) / 0.8);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid hsl(var(--border));
-    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 88px);
   }
 }
