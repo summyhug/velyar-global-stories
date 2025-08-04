@@ -19,11 +19,14 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import { BottomNav } from "./components/BottomNav";
 import { useLocation } from "react-router-dom";
+import { useHardwareBackButton } from "./hooks/useHardwareBackButton";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
   const location = useLocation();
+  useHardwareBackButton();
+  
   const hideBottomNav = ['/auth', '/terms', '/privacy'].includes(location.pathname) || location.pathname.startsWith('/videos/');
 
   return (
