@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { VideoTextOverlay } from "@/components/VideoTextOverlay";
 import { useNavigate, useParams } from "react-router-dom";
+import { generateVideoThumbnail, uploadThumbnailToStorage } from "@/utils/videoThumbnail";
 import { supabase } from "@/integrations/supabase/client";
 import { useMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/use-toast";
@@ -228,6 +229,18 @@ const VideoCreate = () => {
 
       console.log('User authenticated:', user.id);
 
+      // Generate thumbnail first
+      let thumbnailUrl = null;
+      try {
+        console.log('Generating video thumbnail...');
+        const thumbnail = await generateVideoThumbnail(videoFile, 2);
+        thumbnailUrl = await uploadThumbnailToStorage(thumbnail, `${user.id}_${Date.now()}`);
+        console.log('Thumbnail generated and uploaded:', thumbnailUrl);
+      } catch (error) {
+        console.error('Thumbnail generation failed:', error);
+        // Continue without thumbnail
+      }
+
       // Upload video to Supabase storage
       const fileName = `${user.id}/${Date.now()}.${videoFile.name.split('.').pop() || 'mp4'}`;
       console.log('Uploading file:', fileName, 'Size:', videoFile.size);
@@ -254,16 +267,29 @@ const VideoCreate = () => {
 
       console.log('Public URL generated:', publicUrl);
 
+      // Get current prompt ID if responding to daily prompt
+      let promptId = null;
+      if (currentPrompt && currentPrompt.type === 'daily') {
+        const { data } = await supabase
+          .from('daily_prompts')
+          .select('id')
+          .eq('is_active', true)
+          .single();
+        promptId = data?.id;
+      }
+
       // Create video record with storage URL
       const { data: videoData, error: videoError } = await supabase
         .from('videos')
         .insert({
           user_id: user.id,
           video_url: publicUrl,
-          title: caption || 'Daily Prompt Response',
+          thumbnail_url: thumbnailUrl,
+          title: caption || (currentPrompt?.type === 'mission' ? 'Mission Response' : 'Daily Prompt Response'),
           description: caption,
           location: location || null,
-          daily_prompt_id: currentPrompt ? await getCurrentPromptId() : null,
+          daily_prompt_id: promptId,
+          mission_id: missionId || null,
           is_public: true
         })
         .select()
@@ -290,6 +316,8 @@ const VideoCreate = () => {
         if (themeError) {
           console.error('Theme assignment error:', themeError);
           // Don't block the submission for this
+        } else {
+          console.log('Theme assigned successfully');
         }
       }
 
