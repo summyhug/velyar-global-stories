@@ -31,6 +31,9 @@ export const VideoPlayer = ({
 
     return () => {
       video.removeEventListener('ended', handleEnded);
+      // Pause video and reset when component unmounts or videoUrl changes
+      video.pause();
+      video.currentTime = 0;
     };
   }, [videoUrl, onVideoEnd, autoPlay]);
 
