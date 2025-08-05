@@ -252,16 +252,13 @@ const VideoCreate = () => {
         });
       } catch (error) {
         console.error('Thumbnail generation failed:', error);
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack,
-          videoFile: videoFile ? 'exists' : 'missing'
-        });
+        console.error('Error message:', error?.message || 'No message');
+        console.error('Error string:', JSON.stringify(error, null, 2));
         
         // Show error toast
         toast({
-          title: "Thumbnail generation failed",
-          description: "Video will be uploaded without thumbnail",
+          title: "Thumbnail generation failed", 
+          description: error?.message || "Video will be uploaded without thumbnail",
           variant: "destructive",
           duration: 3000,
         });

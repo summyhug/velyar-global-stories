@@ -156,6 +156,8 @@ export const uploadThumbnailToStorage = async (
     return urlData.publicUrl;
   } catch (error) {
     console.error('Thumbnail upload failed:', error);
+    console.error('Error message:', error?.message || 'No message');
+    console.error('Error details:', JSON.stringify(error, null, 2));
     throw error;
   }
 };
