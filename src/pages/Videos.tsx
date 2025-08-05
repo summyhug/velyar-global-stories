@@ -82,8 +82,10 @@ const Videos = () => {
 
   // Handle navigation - must be before any conditional returns
   useEffect(() => {
-    if (!id) {
+    if (!id && type) {
       navigate(`/video-list/${type}`);
+    } else if (!id && !type) {
+      navigate('/');
     }
   }, [id, type, navigate]);
 
