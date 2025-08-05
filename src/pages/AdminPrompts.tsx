@@ -158,7 +158,44 @@ const AdminPrompts = () => {
     try {
       console.log('Activating prompt:', id);
       
-      // First, deactivate all currently active prompts (simpler approach)
+      // First, get all currently active prompts to archive them
+      const { data: activePrompts } = await supabase
+        .from('daily_prompts')
+        .select('*')
+        .eq('is_active', true);
+
+      // Archive the currently active prompts
+      if (activePrompts && activePrompts.length > 0) {
+        for (const prompt of activePrompts) {
+          // Calculate stats for the archived prompt
+          const { data: videos } = await supabase
+            .from('videos')
+            .select('id, location')
+            .eq('daily_prompt_id', prompt.id)
+            .eq('is_public', true);
+
+          const voiceCount = videos?.length || 0;
+          const countrySet = new Set(
+            videos
+              ?.map(video => video.location)
+              .filter(location => location && location.trim() !== '')
+              .map(location => location.split(',').pop()?.trim().toLowerCase())
+              .filter(Boolean)
+          );
+
+          // Insert into archived_prompts
+          await supabase
+            .from('archived_prompts')
+            .insert({
+              prompt_text: prompt.prompt_text,
+              archive_date: new Date().toISOString().split('T')[0],
+              response_count: voiceCount,
+              country_count: countrySet.size
+            });
+        }
+      }
+
+      // Deactivate all currently active prompts
       await supabase
         .from('daily_prompts')
         .update({ is_active: false })
@@ -172,7 +209,7 @@ const AdminPrompts = () => {
 
       console.log('Prompt activation complete');
       
-      toast({ title: "Success", description: "Prompt activated successfully" });
+      toast({ title: "Success", description: "Prompt activated and previous prompt archived" });
       fetchData();
     } catch (error) {
       console.error('Activation error:', error);

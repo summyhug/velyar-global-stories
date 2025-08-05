@@ -10,6 +10,7 @@ export const DailyPrompt = () => {
   const [stats, setStats] = useState({ voices: 0, countries: 0 });
   const [loading, setLoading] = useState(true);
   const [prompt, setPrompt] = useState("");
+  const [currentPromptId, setCurrentPromptId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchPromptData = async () => {
@@ -38,6 +39,7 @@ export const DailyPrompt = () => {
 
         if (todayPrompt) {
           setPrompt(todayPrompt.prompt_text);
+          setCurrentPromptId(todayPrompt.id);
           
           // Get videos for today's prompt
           const { data: videos } = await supabase
@@ -100,7 +102,7 @@ export const DailyPrompt = () => {
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>
-          <Link to="/videos/daily-prompt" className="flex-1">
+          <Link to={currentPromptId ? `/videos/daily-prompt/${currentPromptId}` : "/videos/daily-prompt"} className="flex-1">
             <Button 
               variant="outline"
               className="w-full"
