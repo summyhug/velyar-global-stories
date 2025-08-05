@@ -9,19 +9,32 @@ import { supabase } from "@/integrations/supabase/client";
 export const DailyPrompt = () => {
   const [stats, setStats] = useState({ voices: 0, countries: 0 });
   const [loading, setLoading] = useState(true);
-  const [prompt, setPrompt] = useState("what did you eat last night?");
+  const [prompt, setPrompt] = useState("");
 
   useEffect(() => {
     const fetchPromptData = async () => {
       try {
-        // Get today's active daily prompt
+        // Get today's active daily prompt first, then fall back to most recent active
         const today = new Date().toISOString().split('T')[0];
-        const { data: todayPrompt } = await supabase
+        let { data: todayPrompt } = await supabase
           .from('daily_prompts')
           .select('id, prompt_text')
           .eq('date', today)
           .eq('is_active', true)
           .maybeSingle();
+
+        // If no prompt for today, get the most recent active prompt
+        if (!todayPrompt) {
+          const { data: recentPrompt } = await supabase
+            .from('daily_prompts')
+            .select('id, prompt_text')
+            .eq('is_active', true)
+            .order('date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          todayPrompt = recentPrompt;
+        }
 
         if (todayPrompt) {
           setPrompt(todayPrompt.prompt_text);
@@ -43,6 +56,9 @@ export const DailyPrompt = () => {
           );
 
           setStats({ voices: voiceCount, countries: countrySet.size });
+        } else {
+          // Fallback prompt if no active prompt found
+          setPrompt("what did you eat last night?");
         }
       } catch (error) {
         console.error('Error fetching prompt data:', error);
