@@ -156,58 +156,26 @@ const AdminPrompts = () => {
 
   const activatePrompt = async (id: string, date: string) => {
     try {
-      // First, archive all currently active prompts
-      const { data: activePrompts } = await supabase
+      console.log('Activating prompt:', id);
+      
+      // First, deactivate all currently active prompts (simpler approach)
+      await supabase
         .from('daily_prompts')
-        .select('*')
+        .update({ is_active: false })
         .eq('is_active', true);
 
-      if (activePrompts && activePrompts.length > 0) {
-        // Move active prompts to archived_prompts table
-        for (const prompt of activePrompts) {
-          // Calculate stats for the archived prompt
-          const { data: videos } = await supabase
-            .from('videos')
-            .select('id, location')
-            .eq('daily_prompt_id', prompt.id)
-            .eq('is_public', true);
-
-          const voiceCount = videos?.length || 0;
-          const countrySet = new Set(
-            videos
-              ?.map(video => video.location)
-              .filter(location => location && location.trim() !== '')
-              .map(location => location.split(',').pop()?.trim().toLowerCase())
-              .filter(Boolean)
-          );
-
-          // Insert into archived_prompts
-          await supabase
-            .from('archived_prompts')
-            .insert({
-              prompt_text: prompt.prompt_text,
-              archive_date: new Date().toISOString().split('T')[0],
-              response_count: voiceCount,
-              country_count: countrySet.size
-            });
-        }
-
-        // Deactivate all current prompts
-        await supabase
-          .from('daily_prompts')
-          .update({ is_active: false })
-          .eq('is_active', true);
-      }
-
-      // Activate selected prompt
+      // Then activate the selected prompt
       await supabase
         .from('daily_prompts')
         .update({ is_active: true })
         .eq('id', id);
 
-      toast({ title: "Success", description: "Prompt activated and previous prompt archived" });
+      console.log('Prompt activation complete');
+      
+      toast({ title: "Success", description: "Prompt activated successfully" });
       fetchData();
     } catch (error) {
+      console.error('Activation error:', error);
       toast({
         title: "Error",
         description: "Failed to activate prompt",
