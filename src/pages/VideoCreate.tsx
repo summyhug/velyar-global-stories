@@ -223,45 +223,49 @@ const VideoCreate = () => {
 
       // Check if compression is needed
       const fileSizeMB = file.size / (1024 * 1024);
-      let processedFile = file;
       
-      if (fileSizeMB > MAX_FILE_SIZE_MB) {
-        setIsCompressing(true);
-        toast({
-          title: "Compressing video",
-          description: "Large video detected, compressing to optimize upload...",
-        });
-        
-        try {
-          processedFile = await compressVideo(file, {
-            maxSizeMB: MAX_FILE_SIZE_MB,
-            maxWidthOrHeight: 1280,
-          });
-          
-          toast({
-            title: "Video compressed",
-            description: `Size reduced from ${fileSizeMB.toFixed(1)}MB to ${(processedFile.size / (1024 * 1024)).toFixed(1)}MB`,
-          });
-        } catch (compressionError) {
-          console.error('Compression failed:', compressionError);
-          toast({
-            title: "Compression failed",
-            description: "Please try recording a shorter video or lower quality",
-            variant: "destructive",
-          });
-          return;
-        } finally {
-          setIsCompressing(false);
-        }
-      }
-
-      const url = URL.createObjectURL(processedFile);
+      // Navigate to edit step immediately
+      const url = URL.createObjectURL(file);
       setRecordedVideo(url);
-      setVideoFile(processedFile);
+      setVideoFile(file); // Use original file initially
       localStorage.setItem('videoCreate_hasVideo', 'true');
       setVideoDuration(videoInfo.duration);
       setStep('edit');
       console.log('VideoCreate: File upload complete, moved to edit step');
+      
+      // Compress in background if needed
+      if (fileSizeMB > MAX_FILE_SIZE_MB) {
+        setIsCompressing(true);
+        toast({
+          title: "Compressing video",
+          description: "Large video detected, compressing in background...",
+        });
+        
+        // Compress in background
+        compressVideo(file, {
+          maxSizeMB: MAX_FILE_SIZE_MB,
+          maxWidthOrHeight: 1280,
+        }).then((compressedFile) => {
+          // Update with compressed file
+          const compressedUrl = URL.createObjectURL(compressedFile);
+          setRecordedVideo(compressedUrl);
+          setVideoFile(compressedFile);
+          setIsCompressing(false);
+          
+          toast({
+            title: "Video compressed",
+            description: `Size reduced from ${fileSizeMB.toFixed(1)}MB to ${(compressedFile.size / (1024 * 1024)).toFixed(1)}MB`,
+          });
+        }).catch((compressionError) => {
+          console.error('Compression failed:', compressionError);
+          setIsCompressing(false);
+          toast({
+            title: "Compression failed",
+            description: "Video will be uploaded as-is",
+            variant: "destructive",
+          });
+        });
+      }
     } catch (error) {
       console.error('Error processing video:', error);
       toast({

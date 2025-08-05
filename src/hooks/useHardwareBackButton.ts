@@ -1,7 +1,14 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { App } from '@capacitor/app';
-import { Capacitor } from '@capacitor/core';
+
+// Only import Capacitor modules in native environment
+let App: any;
+let Capacitor: any;
+
+if (typeof window !== 'undefined' && window.Capacitor) {
+  App = require('@capacitor/app').App;
+  Capacitor = require('@capacitor/core').Capacitor;
+}
 
 export const useHardwareBackButton = () => {
   const navigate = useNavigate();
