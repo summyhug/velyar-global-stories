@@ -103,7 +103,7 @@ const AdminPrompts = () => {
       const promptData = {
         date: formData.date,
         prompt_text: formData.prompt_text,
-        theme_id: formData.theme_id || null,
+        theme_id: formData.theme_id === 'no-theme' ? null : formData.theme_id || null,
         manual_override: true,
         is_active: formData.date === new Date().toISOString().split('T')[0]
       };
@@ -129,7 +129,7 @@ const AdminPrompts = () => {
 
       setIsDialogOpen(false);
       setEditingPrompt(null);
-      setFormData({ date: '', prompt_text: '', theme_id: '' });
+      setFormData({ date: '', prompt_text: '', theme_id: 'no-theme' });
       fetchData();
     } catch (error) {
       toast({
@@ -184,7 +184,7 @@ const AdminPrompts = () => {
     setFormData({
       date: prompt.date,
       prompt_text: prompt.prompt_text,
-      theme_id: prompt.theme_id || '',
+      theme_id: prompt.theme_id || 'no-theme',
     });
     setIsDialogOpen(true);
   };
@@ -205,7 +205,7 @@ const AdminPrompts = () => {
           <DialogTrigger asChild>
             <Button onClick={() => {
               setEditingPrompt(null);
-              setFormData({ date: '', prompt_text: '', theme_id: '' });
+              setFormData({ date: '', prompt_text: '', theme_id: 'no-theme' });
             }}>
               <Plus className="w-4 h-4 mr-2" />
               Create Prompt
@@ -255,7 +255,7 @@ const AdminPrompts = () => {
                     <SelectValue placeholder="Select a theme" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No theme</SelectItem>
+                    <SelectItem value="no-theme">No theme</SelectItem>
                     {themes.map((theme) => (
                       <SelectItem key={theme.id} value={theme.id}>
                         {theme.name}
