@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { VideoTextOverlay } from "@/components/VideoTextOverlay";
 import { useNavigate, useParams } from "react-router-dom";
 import { generateVideoThumbnail, uploadThumbnailToStorage } from "@/utils/videoThumbnail";
+import { compressVideo, getVideoInfo } from "@/utils/videoCompression";
 import { supabase } from "@/integrations/supabase/client";
 import { useMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/use-toast";
@@ -29,6 +30,10 @@ const VideoCreate = () => {
   const [videoDuration, setVideoDuration] = useState(0);
   const [textOverlays, setTextOverlays] = useState([]);
   const [currentPrompt, setCurrentPrompt] = useState<{ text: string; theme_id: string; theme_name: string; type: 'daily' | 'mission'; title?: string } | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  
+  const MAX_RECORDING_TIME = 30; // 30 seconds
+  const MAX_FILE_SIZE_MB = 50; // 50MB after compression
   const { missionId } = useParams();
   const { isNative, recordVideo, getCurrentLocation } = useMobile();
   const { toast } = useToast();
@@ -192,21 +197,78 @@ const VideoCreate = () => {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    try {
       console.log('VideoCreate: File upload - file selected:', {
         name: file.name,
         size: file.size,
         type: file.type
       });
-      const url = URL.createObjectURL(file);
+      
+      // Get video info first
+      const videoInfo = await getVideoInfo(file);
+      
+      // Check duration limit
+      if (videoInfo.duration > MAX_RECORDING_TIME) {
+        toast({
+          title: "Video too long",
+          description: `Please record a video under ${MAX_RECORDING_TIME} seconds. Current: ${Math.round(videoInfo.duration)}s`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if compression is needed
+      const fileSizeMB = file.size / (1024 * 1024);
+      let processedFile = file;
+      
+      if (fileSizeMB > MAX_FILE_SIZE_MB) {
+        setIsCompressing(true);
+        toast({
+          title: "Compressing video",
+          description: "Large video detected, compressing to optimize upload...",
+        });
+        
+        try {
+          processedFile = await compressVideo(file, {
+            maxSizeMB: MAX_FILE_SIZE_MB,
+            maxWidthOrHeight: 1280,
+          });
+          
+          toast({
+            title: "Video compressed",
+            description: `Size reduced from ${fileSizeMB.toFixed(1)}MB to ${(processedFile.size / (1024 * 1024)).toFixed(1)}MB`,
+          });
+        } catch (compressionError) {
+          console.error('Compression failed:', compressionError);
+          toast({
+            title: "Compression failed",
+            description: "Please try recording a shorter video or lower quality",
+            variant: "destructive",
+          });
+          return;
+        } finally {
+          setIsCompressing(false);
+        }
+      }
+
+      const url = URL.createObjectURL(processedFile);
       setRecordedVideo(url);
-      setVideoFile(file);
+      setVideoFile(processedFile);
       localStorage.setItem('videoCreate_hasVideo', 'true');
-      setVideoDuration(30); // Mock duration
+      setVideoDuration(videoInfo.duration);
       setStep('edit');
       console.log('VideoCreate: File upload complete, moved to edit step');
+    } catch (error) {
+      console.error('Error processing video:', error);
+      toast({
+        title: "Error processing video",
+        description: "Please try again with a different video",
+        variant: "destructive",
+      });
     }
   };
 
@@ -434,8 +496,11 @@ const VideoCreate = () => {
               <CardContent className="p-6 text-center">
                 <div className="text-6xl mb-4">🎥</div>
                 <h2 className="text-velyar-earth font-nunito font-medium text-lg mb-4">record your story</h2>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-muted-foreground mb-4">
                   {isNative ? 'tap to open your camera and record a video' : 'use the file upload to share a video'}
+                </p>
+                <p className="text-sm text-muted-foreground mb-6">
+                  ⏱️ Maximum duration: {MAX_RECORDING_TIME} seconds | 📁 Videos will be compressed if over {MAX_FILE_SIZE_MB}MB
                 </p>
                 <div className="space-y-4">
                   <Button
@@ -453,10 +518,11 @@ const VideoCreate = () => {
                         capture="environment"
                         onChange={handleFileUpload}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={isCompressing}
                       />
-                      <Button variant="outline" className="w-full">
+                      <Button variant="outline" className={`w-full ${isCompressing ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         <Upload className="w-5 h-5 mr-2" />
-                        or upload video
+                        {isCompressing ? 'processing...' : 'or upload video'}
                       </Button>
                     </div>
                 </div>
@@ -519,9 +585,10 @@ const VideoCreate = () => {
 
             <Button 
               onClick={handleSubmit}
-              className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium"
+              disabled={!videoFile || !caption.trim() || !location.trim() || isCompressing}
+              className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium disabled:opacity-50"
             >
-              share your story
+              {isCompressing ? "compressing..." : "share your story"}
             </Button>
           </div>
         )}
