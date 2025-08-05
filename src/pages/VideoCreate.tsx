@@ -233,11 +233,38 @@ const VideoCreate = () => {
       let thumbnailUrl = null;
       try {
         console.log('Generating video thumbnail...');
+        console.log('Video file details:', {
+          name: videoFile.name,
+          size: videoFile.size,
+          type: videoFile.type
+        });
+        
         const thumbnail = await generateVideoThumbnail(videoFile, 2);
+        console.log('Thumbnail generated successfully, uploading to storage...');
         thumbnailUrl = await uploadThumbnailToStorage(thumbnail, `${user.id}_${Date.now()}`);
         console.log('Thumbnail generated and uploaded:', thumbnailUrl);
+        
+        // Show success message
+        toast({
+          title: "Thumbnail generated",
+          description: "Video thumbnail created successfully",
+          duration: 2000,
+        });
       } catch (error) {
         console.error('Thumbnail generation failed:', error);
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack,
+          videoFile: videoFile ? 'exists' : 'missing'
+        });
+        
+        // Show error toast
+        toast({
+          title: "Thumbnail generation failed",
+          description: "Video will be uploaded without thumbnail",
+          variant: "destructive",
+          duration: 3000,
+        });
         // Continue without thumbnail
       }
 
