@@ -20,14 +20,19 @@ export const generateVideoThumbnail = (
 
     video.preload = 'metadata';
     video.muted = true;
+    video.crossOrigin = 'anonymous';
     
     video.addEventListener('loadedmetadata', () => {
-      // Set canvas dimensions to video dimensions
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      
-      // Seek to specified time
-      video.currentTime = Math.min(timeInSeconds, video.duration);
+      try {
+        // Set canvas dimensions to video dimensions
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Seek to specified time
+        video.currentTime = Math.min(timeInSeconds, video.duration);
+      } catch (error) {
+        reject(new Error('Failed to set video metadata: ' + error));
+      }
     });
 
     video.addEventListener('seeked', () => {
@@ -44,17 +49,23 @@ export const generateVideoThumbnail = (
         
         resolve(thumbnail);
       } catch (error) {
+        console.error('Thumbnail generation error:', error);
         reject(error);
       }
     });
 
     video.addEventListener('error', (error) => {
+      console.error('Video loading error:', error);
       reject(new Error('Video loading failed: ' + error));
     });
 
     // Create object URL and set as video source
-    const url = URL.createObjectURL(videoFile);
-    video.src = url;
+    try {
+      const url = URL.createObjectURL(videoFile);
+      video.src = url;
+    } catch (error) {
+      reject(new Error('Failed to create object URL: ' + error));
+    }
   });
 };
 
