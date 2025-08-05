@@ -28,7 +28,7 @@ const AppContent = () => {
   const location = useLocation();
   useHardwareBackButton();
   
-  const hideBottomNav = ['/auth', '/terms', '/privacy'].includes(location.pathname) || location.pathname.startsWith('/videos/');
+  const hideBottomNav = ['/auth', '/terms', '/privacy'].includes(location.pathname) || location.pathname.startsWith('/videos/') || location.pathname.startsWith('/admin/');
 
   return (
     <div className="relative">
