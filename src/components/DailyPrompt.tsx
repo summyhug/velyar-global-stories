@@ -85,8 +85,8 @@ export const DailyPrompt = () => {
           {loading 
             ? "loading participation..." 
             : stats.voices > 0 
-              ? `join ${stats.voices.toLocaleString()} voices from ${stats.countries} countries sharing their evening meals`
-              : "be the first to share your evening meal"
+              ? `join ${stats.voices.toLocaleString()} voices from ${stats.countries} countries sharing their stories`
+              : "be the first to share your story"
           }
         </p>
         
