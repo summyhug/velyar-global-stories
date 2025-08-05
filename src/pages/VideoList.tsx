@@ -87,11 +87,7 @@ const VideoList = () => {
 
       // Handle archived prompt video fetching
       if (type === 'archived-prompt' && id) {
-        // For archived prompts, we don't have videos linked yet
-        // This is placeholder for future implementation
-        setVideos([]);
-        
-        // Fetch archived prompt title
+        // Get archived prompt details
         const { data: promptData } = await supabase
           .from('archived_prompts')
           .select('prompt_text')
@@ -100,6 +96,42 @@ const VideoList = () => {
         
         if (promptData) {
           setMissionTitle(`"${promptData.prompt_text}"`);
+          
+          // Find original daily prompt to get videos
+          const { data: originalPrompt } = await supabase
+            .from('daily_prompts')
+            .select('id')
+            .eq('prompt_text', promptData.prompt_text)
+            .limit(1)
+            .single();
+          
+          if (originalPrompt) {
+            // Get videos for this prompt
+            const { data: videosData } = await supabase
+              .from('videos')
+              .select('*')
+              .eq('daily_prompt_id', originalPrompt.id)
+              .eq('is_public', true)
+              .order('created_at', { ascending: false });
+            
+            // Fetch profile data for each video
+            const videosWithProfiles = [];
+            if (videosData) {
+              for (const video of videosData) {
+                const { data: profileData } = await supabase
+                  .from('profiles')
+                  .select('username, display_name')
+                  .eq('user_id', video.user_id)
+                  .single();
+                
+                videosWithProfiles.push({
+                  ...video,
+                  profiles: profileData
+                });
+              }
+            }
+            setVideos(videosWithProfiles);
+          }
         }
         return;
       }

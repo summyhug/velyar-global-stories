@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Calendar, Wand2, Edit, Trash2 } from "lucide-react";
+import { Plus, Calendar, Wand2, Edit, Trash2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -50,6 +50,7 @@ const AdminPrompts = () => {
         supabase
           .from('daily_prompts')
           .select('*')
+          .eq('is_active', true)  // Only show active prompts
           .order('date', { ascending: false })
           .limit(30),
         supabase
@@ -156,11 +157,48 @@ const AdminPrompts = () => {
 
   const activatePrompt = async (id: string, date: string) => {
     try {
-      // Deactivate all prompts for this date
-      await supabase
+      // First, archive all currently active prompts
+      const { data: activePrompts } = await supabase
         .from('daily_prompts')
-        .update({ is_active: false })
-        .eq('date', date);
+        .select('*')
+        .eq('is_active', true);
+
+      if (activePrompts && activePrompts.length > 0) {
+        // Move active prompts to archived_prompts table
+        for (const prompt of activePrompts) {
+          // Calculate stats for the archived prompt
+          const { data: videos } = await supabase
+            .from('videos')
+            .select('id, location')
+            .eq('daily_prompt_id', prompt.id)
+            .eq('is_public', true);
+
+          const voiceCount = videos?.length || 0;
+          const countrySet = new Set(
+            videos
+              ?.map(video => video.location)
+              .filter(location => location && location.trim() !== '')
+              .map(location => location.split(',').pop()?.trim().toLowerCase())
+              .filter(Boolean)
+          );
+
+          // Insert into archived_prompts
+          await supabase
+            .from('archived_prompts')
+            .insert({
+              prompt_text: prompt.prompt_text,
+              archive_date: new Date().toISOString().split('T')[0],
+              response_count: voiceCount,
+              country_count: countrySet.size
+            });
+        }
+
+        // Deactivate all current prompts
+        await supabase
+          .from('daily_prompts')
+          .update({ is_active: false })
+          .eq('is_active', true);
+      }
 
       // Activate selected prompt
       await supabase
@@ -168,7 +206,7 @@ const AdminPrompts = () => {
         .update({ is_active: true })
         .eq('id', id);
 
-      toast({ title: "Success", description: "Prompt activated successfully" });
+      toast({ title: "Success", description: "Prompt activated and previous prompt archived" });
       fetchData();
     } catch (error) {
       toast({
@@ -306,9 +344,11 @@ const AdminPrompts = () => {
                   {!prompt.is_active && (
                     <Button
                       size="sm"
+                      variant="default"
                       onClick={() => activatePrompt(prompt.id, prompt.date)}
+                      title="Activate this prompt"
                     >
-                      <Calendar className="w-4 h-4" />
+                      <Play className="w-4 h-4" />
                     </Button>
                   )}
                   <Button
