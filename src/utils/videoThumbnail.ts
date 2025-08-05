@@ -136,7 +136,13 @@ export const uploadThumbnailToStorage = async (
     const response = await fetch(base64Thumbnail);
     const blob = await response.blob();
     
-    const thumbnailPath = `thumbnails/${fileName}_${Date.now()}.jpg`;
+    // Get user ID for proper folder structure
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    
+    const thumbnailPath = `${user.id}/thumbnails/${fileName}_${Date.now()}.jpg`;
     
     const { data, error } = await supabase.storage
       .from('videos')
