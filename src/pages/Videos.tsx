@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { VideoViewer } from "@/components/VideoViewer";
 import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
 const Videos = () => {
@@ -116,6 +118,39 @@ const Videos = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center text-muted-foreground">Loading video...</div>
+      </div>
+    );
+  }
+
+  // Handle case when we have an ID but no videos (empty daily prompt)
+  if (id && !loading && videos.length === 0) {
+    return (
+      <div className="min-h-screen-safe bg-background font-quicksand content-safe-bottom">
+        {/* Header */}
+        <header className="sticky-header header-safe">
+          <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBack}
+              className="p-2 text-velyar-earth hover:bg-velyar-soft"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-xl font-medium text-velyar-earth font-nunito">
+              {type === 'daily-prompt' ? 'daily prompt responses' : 
+               type === 'mission' ? 'mission voices' : 'videos'}
+            </h1>
+          </div>
+        </header>
+
+        {/* Empty state */}
+        <main className="max-w-md mx-auto px-4 pb-24">
+          <div className="mt-8 text-center text-muted-foreground">
+            <p>No videos found for this {type === 'mission' ? 'mission' : 'prompt'} yet.</p>
+            <p className="text-sm mt-2">Be the first to share!</p>
+          </div>
+        </main>
       </div>
     );
   }
