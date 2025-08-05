@@ -278,7 +278,17 @@ const VideoCreate = () => {
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        alert(`Upload failed: ${uploadError.message}`);
+        console.error('Upload error message:', uploadError?.message || 'No message');
+        console.error('Upload error details:', JSON.stringify(uploadError, null, 2));
+        console.error('File size:', videoFile.size, 'bytes');
+        console.error('File type:', videoFile.type);
+        
+        toast({
+          title: "Video upload failed",
+          description: uploadError?.message || "Unknown upload error",
+          variant: "destructive",
+          duration: 5000,
+        });
         return;
       }
 
