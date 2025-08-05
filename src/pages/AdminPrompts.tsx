@@ -50,7 +50,6 @@ const AdminPrompts = () => {
         supabase
           .from('daily_prompts')
           .select('*')
-          .eq('is_active', true)  // Only show active prompts
           .order('date', { ascending: false })
           .limit(30),
         supabase
