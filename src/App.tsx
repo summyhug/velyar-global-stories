@@ -15,6 +15,7 @@ import Videos from "./pages/Videos";
 import VideoList from "./pages/VideoList";
 import NotFound from "./pages/NotFound";
 import AdminPrompts from "./pages/AdminPrompts";
+import AdminMissions from "./pages/AdminMissions";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import { BottomNav } from "./components/BottomNav";
@@ -42,6 +43,7 @@ const AppContent = () => {
         <Route path="/create/mission/:missionId" element={<VideoCreate />} />
         <Route path="/create/daily-prompt" element={<VideoCreate />} />
         <Route path="/admin/prompts" element={<AdminPrompts />} />
+        <Route path="/admin/missions" element={<AdminMissions />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/video-list/:type/:id?" element={<VideoList />} />

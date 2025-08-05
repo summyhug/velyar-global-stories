@@ -33,7 +33,9 @@ export const MissionCard = ({ id, title, description, participants, location, im
       </div>
       
       <CardContent className="p-4">
-        <p className="text-sm text-muted-foreground mb-3">{description}</p>
+        <p className="text-sm text-muted-foreground mb-3">
+          {description.length > 80 ? `${description.substring(0, 80)}...` : description}
+        </p>
         
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">

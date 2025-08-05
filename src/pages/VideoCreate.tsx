@@ -77,11 +77,11 @@ const VideoCreate = () => {
           .eq('is_active', true)
           .single();
 
-        if (promptData && promptData.themes) {
+        if (promptData) {
           setCurrentPrompt({
             text: promptData.prompt_text,
             theme_id: promptData.theme_id,
-            theme_name: promptData.themes.name,
+            theme_name: promptData.themes?.name || 'No theme',
             type: 'daily'
           });
         }
