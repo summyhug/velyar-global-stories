@@ -69,8 +69,13 @@ Generate a daily prompt that will inspire people worldwide to share authentic ex
       }),
     });
 
+    console.log('OpenAI Response Status:', response.status);
+    console.log('OpenAI Response:', response.statusText);
+
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('OpenAI Error Details:', errorText);
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
