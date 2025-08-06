@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { PushNotifications } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
 
 export const usePushNotifications = () => {
@@ -14,6 +13,8 @@ export const usePushNotifications = () => {
 
   const initializePushNotifications = async () => {
     try {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      
       // Request permission
       const result = await PushNotifications.requestPermissions();
       
