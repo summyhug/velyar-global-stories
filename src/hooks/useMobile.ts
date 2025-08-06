@@ -1,9 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-import { Device } from '@capacitor/device';
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
 
 export const useMobile = () => {
@@ -20,6 +15,10 @@ export const useMobile = () => {
 
   const initializeMobile = async () => {
     try {
+      // Dynamic imports for native platform only
+      const { Device } = await import('@capacitor/device');
+      const { StatusBar, Style } = await import('@capacitor/status-bar');
+      
       // Get device info
       const info = await Device.getInfo();
       setDeviceInfo(info);
@@ -34,6 +33,11 @@ export const useMobile = () => {
 
   const takePhoto = async () => {
     try {
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error('Camera not available on web platform');
+      }
+      
+      const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
       const image = await Camera.getPhoto({
         quality: 90,
         allowEditing: false,
@@ -50,6 +54,11 @@ export const useMobile = () => {
 
   const recordVideo = async () => {
     try {
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error('Video recording not available on web platform');
+      }
+      
+      const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
       const video = await Camera.getPhoto({
         quality: 90,
         allowEditing: false,
@@ -66,6 +75,11 @@ export const useMobile = () => {
 
   const getCurrentLocation = async () => {
     try {
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error('Geolocation not available on web platform');
+      }
+      
+      const { Geolocation } = await import('@capacitor/geolocation');
       const coordinates = await Geolocation.getCurrentPosition();
       return {
         lat: coordinates.coords.latitude,
@@ -79,6 +93,11 @@ export const useMobile = () => {
 
   const saveFile = async (data: string, fileName: string) => {
     try {
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error('File system not available on web platform');
+      }
+      
+      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
       await Filesystem.writeFile({
         path: fileName,
         data: data,
@@ -94,6 +113,11 @@ export const useMobile = () => {
 
   const readFile = async (fileName: string) => {
     try {
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error('File system not available on web platform');
+      }
+      
+      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
       const contents = await Filesystem.readFile({
         path: fileName,
         directory: Directory.Documents,
