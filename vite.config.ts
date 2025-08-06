@@ -26,9 +26,18 @@ export default defineConfig(({ mode }) => ({
     target: 'es2015',
     rollupOptions: {
       external: (id) => {
-        // Only exclude Node.js modules from the bundle - keep Capacitor plugins bundled
-        const nodeModules = ['path', 'fs', 'os', 'crypto'];
-        return nodeModules.includes(id);
+        // Exclude Node.js modules and Capacitor plugins from the bundle
+        const nodeModules = ['path', 'fs', 'os', 'crypto', 'tailwindcss-animate'];
+        const capacitorPlugins = [
+          '@capacitor/app',
+          '@capacitor/camera',
+          '@capacitor/device',
+          '@capacitor/filesystem',
+          '@capacitor/geolocation',
+          '@capacitor/push-notifications',
+          '@capacitor/status-bar'
+        ];
+        return nodeModules.includes(id) || capacitorPlugins.some(plugin => id.startsWith(plugin));
       }
     }
   }
