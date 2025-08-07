@@ -45,18 +45,26 @@ const VideoCreate = () => {
   useEffect(() => {
     const fetchContent = async () => {
       if (missionId) {
-        // Fetch mission data
+        // Fetch mission data with theme
         const { data: missionData } = await supabase
           .from('missions')
-          .select('title, description, target_regions')
+          .select(`
+            title, 
+            description, 
+            target_regions, 
+            theme_id,
+            themes:theme_id (
+              name
+            )
+          `)
           .eq('id', missionId)
           .single();
 
         if (missionData) {
           setCurrentPrompt({
             text: missionData.description,
-            theme_id: '',
-            theme_name: 'nature', // Default theme for missions
+            theme_id: missionData.theme_id || '',
+            theme_name: missionData.themes?.name || 'No theme',
             type: 'mission',
             title: missionData.title
           });
@@ -403,9 +411,13 @@ const VideoCreate = () => {
 
       console.log('Video record created:', videoData);
 
-      // If there's a current prompt with a theme, assign the theme to the video
+      // If there's a current prompt or mission with a theme, assign the theme to the video
       if (currentPrompt && currentPrompt.theme_id && videoData) {
-        console.log('Adding theme to video...');
+        console.log('Adding theme to video...', {
+          videoId: videoData.id,
+          themeId: currentPrompt.theme_id,
+          promptType: currentPrompt.type
+        });
         const { error: themeError } = await supabase
           .from('video_themes')
           .insert({

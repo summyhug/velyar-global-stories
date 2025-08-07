@@ -164,6 +164,7 @@ export type Database = {
           location_needed: string | null
           participants_count: number
           target_regions: Json | null
+          theme_id: string | null
           title: string
           updated_at: string
         }
@@ -176,6 +177,7 @@ export type Database = {
           location_needed?: string | null
           participants_count?: number
           target_regions?: Json | null
+          theme_id?: string | null
           title: string
           updated_at?: string
         }
@@ -188,10 +190,19 @@ export type Database = {
           location_needed?: string | null
           participants_count?: number
           target_regions?: Json | null
+          theme_id?: string | null
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "missions_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "themes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

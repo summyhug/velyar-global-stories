@@ -20,14 +20,17 @@ interface Mission {
   is_active: boolean;
   participants_count: number;
   target_regions: any;
+  theme_id: string | null;
   created_at: string;
 }
 
 interface Theme {
   id: string;
   name: string;
+  icon: string;
   description: string;
 }
+
 
 const AdminMissions = () => {
   const [missions, setMissions] = useState<Mission[]>([]);
@@ -85,6 +88,7 @@ const AdminMissions = () => {
         location_needed: formData.location_needed || null,
         image_url: formData.image_url || null,
         target_regions: formData.target_regions ? formData.target_regions.split(',').map(r => r.trim()) : null,
+        theme_id: formData.theme_id || null,
         is_active: true
       };
 
@@ -136,9 +140,15 @@ const AdminMissions = () => {
       location_needed: mission.location_needed || '',
       image_url: mission.image_url || '',
       target_regions: mission.target_regions ? mission.target_regions.join(', ') : '',
-      theme_id: '',
+      theme_id: mission.theme_id || '',
     });
     setIsDialogOpen(true);
+  };
+
+  const getThemeName = (themeId: string | null) => {
+    if (!themeId) return null;
+    const theme = themes.find(t => t.id === themeId);
+    return theme ? `${theme.icon} ${theme.name}` : null;
   };
 
   if (loading) {
@@ -208,6 +218,27 @@ const AdminMissions = () => {
               </div>
 
               <div>
+                <Label htmlFor="theme">Theme</Label>
+                <Select 
+                  value={formData.theme_id} 
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, theme_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a theme (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {themes.map((theme) => (
+                      <SelectItem key={theme.id} value={theme.id}>
+                        <span className="flex items-center gap-2">
+                          {theme.icon} {theme.name}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label htmlFor="image">Image URL</Label>
                 <Input
                   id="image"
@@ -269,6 +300,11 @@ const AdminMissions = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-2">{mission.description}</p>
+              {getThemeName(mission.theme_id) && (
+                <p className="text-xs text-muted-foreground mb-1">
+                  Theme: {getThemeName(mission.theme_id)}
+                </p>
+              )}
               {mission.target_regions && (
                 <p className="text-xs text-muted-foreground">
                   Regions: {mission.target_regions.join(', ')}
