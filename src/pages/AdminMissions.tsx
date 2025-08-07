@@ -81,6 +81,21 @@ const AdminMissions = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('AdminMissions: Starting form submission...', formData);
+    
+    // Check if user is authenticated
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('AdminMissions: Current user:', user?.id || 'Not authenticated');
+    
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to create missions",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       const missionData = {
         title: formData.title,
@@ -92,16 +107,34 @@ const AdminMissions = () => {
         is_active: true
       };
 
+      console.log('AdminMissions: Mission data to submit:', missionData);
+
       if (editingMission) {
-        await supabase
+        console.log('AdminMissions: Updating existing mission:', editingMission.id);
+        const { data, error } = await supabase
           .from('missions')
           .update(missionData)
-          .eq('id', editingMission.id);
+          .eq('id', editingMission.id)
+          .select();
+        
+        if (error) {
+          console.error('AdminMissions: Update error:', error);
+          throw error;
+        }
+        console.log('AdminMissions: Update successful:', data);
         toast({ title: "Success", description: "Mission updated successfully" });
       } else {
-        await supabase
+        console.log('AdminMissions: Creating new mission...');
+        const { data, error } = await supabase
           .from('missions')
-          .insert(missionData);
+          .insert(missionData)
+          .select();
+        
+        if (error) {
+          console.error('AdminMissions: Insert error:', error);
+          throw error;
+        }
+        console.log('AdminMissions: Insert successful:', data);
         toast({ title: "Success", description: "Mission created successfully" });
       }
 
@@ -110,9 +143,10 @@ const AdminMissions = () => {
       setFormData({ title: '', description: '', location_needed: '', image_url: '', target_regions: '', theme_id: '' });
       fetchData();
     } catch (error) {
+      console.error('AdminMissions: Submission error:', error);
       toast({
         title: "Error",
-        description: "Failed to save mission",
+        description: error.message || "Failed to save mission",
         variant: "destructive",
       });
     }
