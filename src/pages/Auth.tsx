@@ -237,6 +237,10 @@ const Auth = () => {
               title: "Check your email",
               description: "We've sent you a confirmation link. Please check your email to verify your account.",
             });
+            // Switch back to login mode after showing the toast
+            setTimeout(() => {
+              setIsLogin(true);
+            }, 2000); // Wait 2 seconds for user to read the toast
           }
         }
       }
@@ -254,7 +258,7 @@ const Auth = () => {
   // Show loading state while checking auth
   if (loading) {
     return (
-      <div className="min-h-screen-safe flex items-center justify-center bg-gradient-to-br from-ocean-light to-velyar-earth">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-ocean-light to-velyar-earth">
         <div className="flex items-center space-x-2">
           <VelyarLogo size={48} />
           <span className="text-velyar-earth font-nunito">Loading...</span>
@@ -264,7 +268,7 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen-safe bg-gradient-to-br from-blue-900/20 via-teal-800/10 to-green-900/20 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900/20 via-teal-800/10 to-green-900/20 flex items-center justify-center p-4">
       {/* Ocean-like animated background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {/* Base ocean gradient */}
@@ -292,8 +296,8 @@ const Auth = () => {
 
       <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10">
         <CardHeader className="text-center pb-3 px-6">
-          <div className="flex items-center justify-center mb-3">
-            <VelyarLogo size={isLogin ? 64 : 96} className="text-velyar-earth" />
+          <div className="flex items-center justify-center mb-4">
+            <VelyarLogo size={120} className="text-velyar-earth" />
           </div>
           <CardTitle className="text-lg font-medium text-velyar-earth font-nunito mb-1">
             {isLogin ? "welcome back" : "leave the bubble, join the world"}
@@ -301,16 +305,6 @@ const Auth = () => {
           <CardDescription className="text-muted-foreground font-quicksand text-sm">
             {isLogin ? "more connects us than separates us" : "share and learn about humanity"}
           </CardDescription>
-          {!isLogin && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setIsLogin(true)}
-              className="text-xs text-velyar-earth/70 hover:text-velyar-earth hover:bg-velyar-earth/10 font-quicksand mt-1 h-auto p-1"
-            >
-              Already have an account? Sign in
-            </Button>
-          )}
         </CardHeader>
         <CardContent className="px-6 pb-6">
           <form onSubmit={handleSubmit} className="space-y-3">
@@ -482,17 +476,29 @@ const Auth = () => {
              </Button>
           </form>
 
-           {isLogin && (
-             <div className="mt-3 text-center">
-               <button
-                 type="button"
-                 onClick={() => setIsLogin(false)}
-                 className="text-velyar-earth/70 hover:text-velyar-earth hover:bg-velyar-earth/10 transition-colors font-quicksand text-sm p-2 rounded"
-               >
-                 need an account? sign up
-               </button>
-             </div>
-           )}
+          {!isLogin && (
+            <div className="mt-3 text-center">
+              <button
+                type="button"
+                onClick={() => setIsLogin(true)}
+                className="text-velyar-earth/70 hover:text-velyar-earth hover:bg-velyar-earth/10 transition-colors font-quicksand text-sm p-2 rounded"
+              >
+                Already have an account? Sign in
+              </button>
+            </div>
+          )}
+
+                     {isLogin && (
+            <div className="mt-3 text-center">
+              <button
+                type="button"
+                onClick={() => setIsLogin(false)}
+                className="text-velyar-earth/70 hover:text-velyar-earth hover:bg-velyar-earth/10 transition-colors font-quicksand text-sm p-2 rounded"
+              >
+                need an account? sign up
+              </button>
+            </div>
+          )}
 
            {/* Legal footer for EU compliance - only show for login */}
            {isLogin && (

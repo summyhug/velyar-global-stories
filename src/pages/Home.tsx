@@ -49,10 +49,10 @@ const Home = () => {
     fetchMissions();
   }, []);
   return (
-    <div className="min-h-screen-safe bg-background font-quicksand safe-area-inset">
+    <div className="min-h-screen-safe bg-background font-quicksand flex flex-col">
       {/* Header */}
-      <header className="sticky-header header-safe">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
+      <header className="sticky-header header-safe px-4">
+        <div className="max-w-md mx-auto py-3 flex items-center justify-between">
           <h1 className="text-2xl font-semibold tracking-wide text-velyar-earth font-nunito">velyar</h1>
           <div className="flex items-center gap-1">
             <img 
@@ -66,7 +66,8 @@ const Home = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-md mx-auto px-4 pb-safe-bottom">
+      <main className="flex-1 overflow-auto content-safe-bottom px-4">
+        <div className="max-w-md mx-auto">
         {/* Daily Global Prompt */}
         <DailyPrompt />
 
@@ -112,6 +113,7 @@ const Home = () => {
             )}
           </div>
         </section>
+        </div>
       </main>
     </div>
   );

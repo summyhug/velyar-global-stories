@@ -8,10 +8,33 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Check if we're in development mode
+const isDevelopment = import.meta.env.DEV;
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
-    persistSession: true,
+    persistSession: isDevelopment, // Only persist sessions in development
     autoRefreshToken: true,
   }
 });
+
+// Function to clear all authentication data (useful for SDK distribution)
+export const clearAuthData = () => {
+  // Clear Supabase session
+  supabase.auth.signOut({ scope: 'global' });
+  
+  // Clear localStorage items that might contain auth data
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.includes('supabase') || key.includes('auth') || key.includes('session'))) {
+      keysToRemove.push(key);
+    }
+  }
+  
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+  
+  // Force page reload to ensure clean state
+  window.location.reload();
+};

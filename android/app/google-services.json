@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "562914536333",
+    "project_id": "velyar-8a3c9",
+    "storage_bucket": "velyar-8a3c9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:562914536333:android:6563c0eef983f2b762ebc4",
+        "android_client_info": {
+          "package_name": "app.lovable.e717c17b39ea497bb3f0803db35e66f4"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0fyWffUzCRPZUjLLkA3bKFXRn1aanWTw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

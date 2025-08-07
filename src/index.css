@@ -116,12 +116,21 @@
 }
 
 @layer base {
-  * {
-    @apply border-border;
+  html, body {
+    padding: 0;
+    margin: 0;
+    height: 100dvh;
+    min-height: 100dvh;
+    background-color: hsl(var(--background));
+    box-sizing: border-box;
   }
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  * {
+    @apply border-border;
   }
 }
 
@@ -164,7 +173,7 @@
 
   /* Content areas that account for bottom nav + safe area */
   .content-safe-bottom {
-    padding-bottom: calc(env(safe-area-inset-bottom) + 88px); /* 80px nav + 8px extra */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 80px); /* 80px nav height */
   }
 
   /* For sticky headers */
@@ -187,6 +196,6 @@
     background: hsl(var(--background) / 0.8);
     backdrop-filter: blur(12px);
     border-top: 1px solid hsl(var(--border));
-    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

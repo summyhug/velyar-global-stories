@@ -21,8 +21,13 @@ import Privacy from "./pages/Privacy";
 import { BottomNav } from "./components/BottomNav";
 import { useLocation } from "react-router-dom";
 import { useHardwareBackButton } from "./hooks/useHardwareBackButton";
+import { clearAuthData } from "./integrations/supabase/client";
 
 const queryClient = new QueryClient();
+
+// Utility function to clear auth data for SDK distribution
+// Call this function before distributing your SDK
+window.clearAuthForDistribution = clearAuthData;
 
 const AppContent = () => {
   const location = useLocation();
