@@ -29,7 +29,9 @@ const config: CapacitorConfig = {
     }
   },
   ios: {
-    contentInset: 'automatic'
+    contentInset: 'automatic',
+    allowsLinkPreview: false,
+    handleApplicationNotifications: false
   },
   android: {
     allowMixedContent: true

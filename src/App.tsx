@@ -27,7 +27,7 @@ const queryClient = new QueryClient();
 
 // Utility function to clear auth data for SDK distribution
 // Call this function before distributing your SDK
-window.clearAuthForDistribution = clearAuthData;
+(window as any).clearAuthForDistribution = clearAuthData;
 
 const AppContent = () => {
   const location = useLocation();
