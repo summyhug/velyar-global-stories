@@ -4,15 +4,20 @@ const config: CapacitorConfig = {
   appId: 'app.lovable.e717c17b39ea497bb3f0803db35e66f4',
   appName: 'velyar-global-stories',
   webDir: 'dist',
-  // Remove server config for production APK builds - use local files instead
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
       backgroundColor: '#fffbf0',
-      showSpinner: false
+      showSpinner: false,
+      androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP',
+      iosSpinnerStyle: 'small',
+      splashFullScreen: true,
+      splashImmersive: true
     },
     StatusBar: {
-      style: 'DARK'
+      style: 'DARK',
+      backgroundColor: '#fffbf0'
     },
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"]
@@ -26,15 +31,29 @@ const config: CapacitorConfig = {
       permissions: {
         location: "Location access is required to tag your videos with location."
       }
+    },
+    Keyboard: {
+      resize: 'body',
+      style: 'dark',
+      resizeOnFullScreen: true
     }
   },
   ios: {
     contentInset: 'automatic',
     allowsLinkPreview: false,
-    handleApplicationNotifications: false
+    handleApplicationNotifications: false,
+    backgroundColor: '#fffbf0',
+    preferredContentMode: 'mobile',
+    scrollEnabled: true,
+    swipeBackEnabled: true,
+    keyboardDisplayRequiresUserAction: false,
+    suppressesIncrementalRendering: false
   },
   android: {
-    allowMixedContent: true
+    allowMixedContent: true,
+    backgroundColor: '#fffbf0',
+    loggingBehavior: 'production',
+    webContentsDebuggingEnabled: false
   }
 };
 

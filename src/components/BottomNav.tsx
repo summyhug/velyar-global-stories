@@ -1,8 +1,10 @@
 import { Home, Compass, Film, User } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
+import { useIOSDetection } from "@/hooks/useIOSDetection";
 
 export const BottomNav = () => {
   const location = useLocation();
+  const { isIOS } = useIOSDetection();
   
   const navItems = [
     { icon: Home, label: "home", path: "/" },
@@ -12,7 +14,7 @@ export const BottomNav = () => {
   ];
 
   return (
-    <nav className="bottom-nav">
+    <nav className={`bottom-nav ${isIOS ? 'pb-safe-bottom' : ''}`}>
       <div className="max-w-md mx-auto px-4 py-3">
         <div className="flex items-center justify-around">
           {navItems.map((item) => {

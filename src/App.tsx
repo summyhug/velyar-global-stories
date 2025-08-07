@@ -19,6 +19,8 @@ import AdminMissions from "./pages/AdminMissions";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import { BottomNav } from "./components/BottomNav";
+import { IOSStatusBar } from "./components/IOSStatusBar";
+import { IOSSafeAreaWrapper } from "./components/IOSSafeAreaWrapper";
 import { useLocation } from "react-router-dom";
 import { useHardwareBackButton } from "./hooks/useHardwareBackButton";
 import { clearAuthData } from "./integrations/supabase/client";
@@ -37,7 +39,9 @@ const AppContent = () => {
 
   return (
     <div className="relative">
-      <Routes>
+      <IOSStatusBar />
+      <IOSSafeAreaWrapper>
+        <Routes>
         <Route path="/auth" element={<Auth />} />
         <Route path="/" element={<Home />} />
         <Route path="/explore" element={<Explore />} />
@@ -55,6 +59,7 @@ const AppContent = () => {
         <Route path="/videos/:type/:id?" element={<Videos />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </IOSSafeAreaWrapper>
       {!hideBottomNav && <BottomNav />}
     </div>
   );
