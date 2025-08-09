@@ -44,6 +44,97 @@ export type Database = {
         }
         Relationships: []
       }
+      content_appeals: {
+        Row: {
+          appeal_reason: string
+          created_at: string
+          id: string
+          response: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          status: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          appeal_reason: string
+          created_at?: string
+          id?: string
+          response?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          appeal_reason?: string
+          created_at?: string
+          id?: string
+          response?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          status?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_appeals_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_reports: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewer_notes: string | null
+          status: string
+          video_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          video_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_reports_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_prompts: {
         Row: {
           created_at: string
@@ -204,11 +295,52 @@ export type Database = {
           },
         ]
       }
+      moderation_actions: {
+        Row: {
+          action_type: string
+          automated: boolean | null
+          created_at: string
+          id: string
+          moderator_id: string | null
+          reason: string
+          video_id: string
+        }
+        Insert: {
+          action_type: string
+          automated?: boolean | null
+          created_at?: string
+          id?: string
+          moderator_id?: string | null
+          reason: string
+          video_id: string
+        }
+        Update: {
+          action_type?: string
+          automated?: boolean | null
+          created_at?: string
+          id?: string
+          moderator_id?: string | null
+          reason?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_actions_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
+          account_status: string | null
+          age_verified: boolean | null
           avatar_url: string | null
           bio: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
           id: string
           updated_at: string
@@ -216,9 +348,12 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          account_status?: string | null
+          age_verified?: boolean | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           id?: string
           updated_at?: string
@@ -226,9 +361,12 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          account_status?: string | null
+          age_verified?: boolean | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           id?: string
           updated_at?: string
@@ -264,6 +402,42 @@ export type Database = {
           is_active?: boolean
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_consent: {
+        Row: {
+          age_verification: boolean
+          community_guidelines: boolean
+          content_moderation: boolean
+          created_at: string
+          data_processing: boolean
+          id: string
+          marketing_emails: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age_verification?: boolean
+          community_guidelines?: boolean
+          content_moderation?: boolean
+          created_at?: string
+          data_processing?: boolean
+          id?: string
+          marketing_emails?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age_verification?: boolean
+          community_guidelines?: boolean
+          content_moderation?: boolean
+          created_at?: string
+          data_processing?: boolean
+          id?: string
+          marketing_emails?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -415,10 +589,14 @@ export type Database = {
           description: string | null
           duration: number | null
           id: string
+          is_hidden: boolean | null
           is_public: boolean
           language: string | null
           location: string | null
           mission_id: string | null
+          moderation_status: string | null
+          removal_reason: string | null
+          report_count: number | null
           thumbnail_url: string | null
           title: string | null
           updated_at: string
@@ -431,10 +609,14 @@ export type Database = {
           description?: string | null
           duration?: number | null
           id?: string
+          is_hidden?: boolean | null
           is_public?: boolean
           language?: string | null
           location?: string | null
           mission_id?: string | null
+          moderation_status?: string | null
+          removal_reason?: string | null
+          report_count?: number | null
           thumbnail_url?: string | null
           title?: string | null
           updated_at?: string
@@ -447,10 +629,14 @@ export type Database = {
           description?: string | null
           duration?: number | null
           id?: string
+          is_hidden?: boolean | null
           is_public?: boolean
           language?: string | null
           location?: string | null
           mission_id?: string | null
+          moderation_status?: string | null
+          removal_reason?: string | null
+          report_count?: number | null
           thumbnail_url?: string | null
           title?: string | null
           updated_at?: string
