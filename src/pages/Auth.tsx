@@ -239,7 +239,7 @@ const Auth = () => {
         if (data.user) {
           // Create user consent record
           const ageVerification = verifyAge(formData.dob);
-          await supabase
+          await (supabase as any)
             .from('user_consent')
             .insert({
               user_id: data.user.id,

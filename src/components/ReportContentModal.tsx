@@ -47,7 +47,7 @@ export const ReportContentModal = ({ videoId, children }: ReportContentModalProp
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('content_reports')
         .insert({
           video_id: videoId,

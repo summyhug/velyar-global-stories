@@ -28,7 +28,7 @@ const Home = () => {
           .select('*')
           .eq('is_active', true)
           .order('created_at', { ascending: false })
-          .limit(2);
+          .limit(4);
 
         if (error) throw error;
 
@@ -80,7 +80,7 @@ const Home = () => {
           <div className="space-y-4">
             {loading ? (
               // Loading skeletons
-              Array.from({ length: 2 }).map((_, index) => (
+              Array.from({ length: 4 }).map((_, index) => (
                 <Card key={index} className="overflow-hidden">
                   <div className="flex">
                     <Skeleton className="w-24 h-20" />

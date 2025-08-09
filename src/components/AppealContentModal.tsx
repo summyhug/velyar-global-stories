@@ -82,7 +82,7 @@ export const AppealContentModal = ({ videoId, removalReason, children }: AppealC
       }
 
       // Check if appeal already exists
-      const { data: existingAppeal } = await supabase
+      const { data: existingAppeal } = await (supabase as any)
         .from('content_appeals')
         .select('id, status')
         .eq('video_id', videoId)
@@ -100,7 +100,7 @@ export const AppealContentModal = ({ videoId, removalReason, children }: AppealC
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('content_appeals')
         .insert({
           video_id: videoId,
