@@ -1,11 +1,13 @@
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, MessageCircle, Share2, Trash2, Heart } from "lucide-react";
+import { ArrowLeft, MessageCircle, Share2, Trash2, Heart, Flag, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { OctopusButton } from "@/components/OctopusButton";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { ReportContentModal } from "@/components/ReportContentModal";
+import { AppealContentModal } from "@/components/AppealContentModal";
 import { useVideoComments } from "@/hooks/useVideoComments";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +24,9 @@ interface VideoViewerProps {
       display_name?: string;
     };
     location?: string;
+    moderation_status?: string;
+    is_hidden?: boolean;
+    removal_reason?: string;
   }>;
   initialIndex?: number;
   onBack: () => void;
@@ -173,7 +178,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
   return (
     <div ref={containerRef} className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4 pt-safe">
+      <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4 header-safe">
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
@@ -202,6 +207,37 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
                 <Trash2 className="w-5 h-5" />
               </Button>
             )}
+            
+            {/* Report button - only show for other users' content */}
+            {currentUser?.id !== currentVideo.user_id && (
+              <ReportContentModal videoId={currentVideo.id}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-red-500/20"
+                >
+                  <Flag className="w-5 h-5" />
+                </Button>
+              </ReportContentModal>
+            )}
+            
+            {/* Appeal button - only show for own content that's been flagged/hidden */}
+            {currentUser?.id === currentVideo.user_id && 
+             (currentVideo.moderation_status === 'flagged' || currentVideo.is_hidden) && (
+              <AppealContentModal 
+                videoId={currentVideo.id} 
+                removalReason={currentVideo.removal_reason}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-blue-500/20"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                </Button>
+              </AppealContentModal>
+            )}
+            
             <Button
               variant="ghost"
               size="sm"
@@ -264,7 +300,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
       </div>
 
       {/* Bottom Controls */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-safe">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-safe-only">
         {/* Video Title and Description */}
         {(currentVideo.title || currentVideo.description) && (
           <div className="text-white mb-4">
@@ -327,7 +363,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
               </div>
               
               {/* Comment Input */}
-              <div className="flex items-end gap-2 border-t pt-3 pb-8">
+              <div className="flex items-end gap-2 border-t pt-3">
                 <div className="flex-1">
                   <Textarea
                     placeholder="Add a thoughtful comment (max 100 characters)..."

@@ -155,6 +155,11 @@
     padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
   }
 
+  /* For video viewers without bottom navigation */
+  .pb-safe-only {
+    padding-bottom: max(env(safe-area-inset-bottom), 12px);
+  }
+
   .nav-safe-bottom {
     bottom: env(safe-area-inset-bottom);
     padding-bottom: max(env(safe-area-inset-bottom), 0px);

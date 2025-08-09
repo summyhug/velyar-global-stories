@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/use-toast";
 import { Capacitor } from "@capacitor/core";
+import { validateVideoContent, getContentViolationMessage } from "@/utils/contentModeration";
 
 const VideoCreate = () => {
   const [step, setStep] = useState<'record' | 'edit'>(() => {
@@ -286,7 +287,22 @@ const VideoCreate = () => {
 
   const handleSubmit = async () => {
     if (!recordedVideo || !videoFile) {
-      console.error('Missing video or file');
+      toast({
+        title: "No video selected",
+        description: "Please record or upload a video first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate content before upload
+    const contentValidation = validateVideoContent(caption, location);
+    if (!contentValidation.isValid) {
+      toast({
+        title: "Content policy violation",
+        description: contentValidation.message,
+        variant: "destructive",
+      });
       return;
     }
 
@@ -398,7 +414,8 @@ const VideoCreate = () => {
           location: location || null,
           daily_prompt_id: promptId,
           mission_id: missionId || null,
-          is_public: true
+          is_public: true,
+          moderation_status: 'approved' // Content passed basic filtering
         })
         .select()
         .single();

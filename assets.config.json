@@ -1,0 +1,10 @@
+{
+  "resources": {
+    "icon": {
+      "source": "assets/icon.svg",
+      "platforms": {
+        "pwa": true
+      }
+    }
+  }
+}

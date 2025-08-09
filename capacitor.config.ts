@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'app.lovable.e717c17b39ea497bb3f0803db35e66f4',
-  appName: 'velyar-global-stories',
+  appName: 'Velyar',
   webDir: 'dist',
   plugins: {
     SplashScreen: {

@@ -9,8 +9,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { VelyarLogo } from '@/components/VelyarLogo';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff } from 'lucide-react';
-import type { User, Session } from '@supabase/supabase-js';
+  import { Eye, EyeOff } from 'lucide-react';
+  import type { User, Session } from '@supabase/supabase-js';
+  import { verifyAge, calculateAge } from "@/utils/contentModeration";
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Austria", "Bangladesh", "Belgium", "Brazil", "Canada", "China", "Colombia", "Denmark", "Egypt", "Finland", "France", "Germany", "Ghana", "Greece", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Japan", "Jordan", "Kenya", "South Korea", "Malaysia", "Mexico", "Morocco", "Netherlands", "New Zealand", "Nigeria", "Norway", "Pakistan", "Peru", "Philippines", "Poland", "Portugal", "Russia", "Saudi Arabia", "South Africa", "Spain", "Sweden", "Switzerland", "Taiwan", "Thailand", "Turkey", "Ukraine", "United Kingdom", "United States", "Venezuela", "Vietnam"
@@ -80,7 +81,17 @@ const Auth = () => {
       if (formData.username.length < 3) errors.username = "Username must be at least 3 characters";
       if (!formData.city.trim()) errors.city = "City is required";
       if (!formData.country) errors.country = "Country is required";
-      if (!formData.dob) errors.dob = "Date of birth is required";
+      if (!formData.dob) {
+        errors.dob = "Date of birth is required";
+      } else {
+        const ageVerification = verifyAge(formData.dob);
+        if (!ageVerification.isValid) {
+          errors.dob = ageVerification.reason;
+        } else if (ageVerification.accountType === 'restricted') {
+          // We'll show a warning but allow signup
+          console.log('User will have restricted account:', ageVerification.reason);
+        }
+      }
     }
     
     if (!formData.email.trim()) {
@@ -226,6 +237,19 @@ const Auth = () => {
         }
 
         if (data.user) {
+          // Create user consent record
+          const ageVerification = verifyAge(formData.dob);
+          await supabase
+            .from('user_consent')
+            .insert({
+              user_id: data.user.id,
+              content_moderation: true,
+              data_processing: true,
+              community_guidelines: acceptedTerms,
+              age_verification: ageVerification.isValid,
+              marketing_emails: false
+            });
+
           if (data.user.email_confirmed_at) {
             toast({
               title: "Account created!",
@@ -436,6 +460,11 @@ const Auth = () => {
                      className="border-velyar-earth/20 focus:border-velyar-earth"
                    />
                    {formErrors.dob && touchedFields.dob && <p className="text-red-500 text-xs">{formErrors.dob}</p>}
+                   {formData.dob && !formErrors.dob && verifyAge(formData.dob).accountType === 'restricted' && (
+                     <p className="text-orange-600 text-xs mt-1">
+                       ⚠️ Users under 16 have limited features for data protection compliance.
+                     </p>
+                   )}
                  </div>
               </>
             )}
