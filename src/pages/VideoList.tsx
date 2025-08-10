@@ -194,7 +194,12 @@ const VideoList = () => {
   };
 
   const handleVideoClick = (videoId: string) => {
-    navigate(`/videos/${type}/${videoId}`);
+    // For mission videos, we need to pass both mission ID and video ID
+    if (type === 'mission') {
+      navigate(`/videos/${type}/${id}?video=${videoId}`);
+    } else {
+      navigate(`/videos/${type}/${videoId}`);
+    }
   };
 
   const handleBack = () => {

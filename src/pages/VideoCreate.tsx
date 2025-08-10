@@ -15,6 +15,7 @@ import { useMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/use-toast";
 import { Capacitor } from "@capacitor/core";
 import { validateVideoContent, getContentViolationMessage } from "@/utils/contentModeration";
+import { useVideoCreate } from "@/contexts/VideoCreateContext";
 
 const VideoCreate = () => {
   const [step, setStep] = useState<'record' | 'edit'>(() => {
@@ -38,6 +39,7 @@ const VideoCreate = () => {
   const { missionId } = useParams();
   const { isNative, recordVideo, getCurrentLocation } = useMobile();
   const { toast } = useToast();
+  const { setIsEditing } = useVideoCreate();
   
   console.log('VideoCreate: isNative =', isNative, 'platform:', Capacitor.getPlatform());
   const navigate = useNavigate();
@@ -125,7 +127,10 @@ const VideoCreate = () => {
   useEffect(() => {
     console.log('VideoCreate: Persisting step to localStorage:', step);
     localStorage.setItem('videoCreate_step', step);
-  }, [step]);
+    
+    // Update global editing state
+    setIsEditing(step === 'edit');
+  }, [step, setIsEditing]);
 
   useEffect(() => {
     if (recordedVideo) {
@@ -150,6 +155,7 @@ const VideoCreate = () => {
     localStorage.removeItem('videoCreate_caption');
     localStorage.removeItem('videoCreate_location');
     localStorage.removeItem('videoCreate_hasVideo');
+    setIsEditing(false);
   };
 
   const startNativeRecording = async () => {
@@ -490,7 +496,7 @@ const VideoCreate = () => {
   };
 
   return (
-    <div className="min-h-screen-safe bg-background font-quicksand safe-area-inset">
+    <div className="min-h-screen-safe bg-background font-quicksand">
       {/* Header */}
       <header className="sticky-header header-safe">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">

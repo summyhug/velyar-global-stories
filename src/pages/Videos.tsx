@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { VideoViewer } from "@/components/VideoViewer";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 const Videos = () => {
   const { type, id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [showVideoViewer, setShowVideoViewer] = useState(!!id);
 
   const [videos, setVideos] = useState([]);
@@ -159,7 +160,15 @@ const Videos = () => {
 
   // If we have an ID and videos are loaded, show the video viewer
   if (id && showVideoViewer && videos.length > 0) {
-    const startIndex = videos.findIndex(video => video.id === id);
+    // For mission videos, check for video query parameter
+    const videoId = searchParams.get('video');
+    let startIndex = 0;
+    
+    if (videoId) {
+      startIndex = videos.findIndex(video => video.id === videoId);
+    } else {
+      startIndex = videos.findIndex(video => video.id === id);
+    }
     
     // If video not found, show error
     if (startIndex === -1) {

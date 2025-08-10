@@ -24,6 +24,7 @@ import { IOSSafeAreaWrapper } from "./components/IOSSafeAreaWrapper";
 import { useLocation } from "react-router-dom";
 import { useHardwareBackButton } from "./hooks/useHardwareBackButton";
 import { clearAuthData } from "./integrations/supabase/client";
+import { VideoCreateProvider, useVideoCreate } from "./contexts/VideoCreateContext";
 
 const queryClient = new QueryClient();
 
@@ -31,11 +32,15 @@ const queryClient = new QueryClient();
 // Call this function before distributing your SDK
 (window as any).clearAuthForDistribution = clearAuthData;
 
-const AppContent = () => {
+const AppContentInner = () => {
   const location = useLocation();
+  const { isEditing } = useVideoCreate();
   useHardwareBackButton();
   
-  const hideBottomNav = ['/auth', '/terms', '/privacy'].includes(location.pathname) || location.pathname.startsWith('/videos/') || location.pathname.startsWith('/admin/');
+  const hideBottomNav = ['/auth', '/terms', '/privacy'].includes(location.pathname) || 
+                       location.pathname.startsWith('/videos/') || 
+                       location.pathname.startsWith('/admin/') ||
+                       isEditing;
 
   return (
     <div className="relative">
@@ -62,6 +67,14 @@ const AppContent = () => {
       </IOSSafeAreaWrapper>
       {!hideBottomNav && <BottomNav />}
     </div>
+  );
+};
+
+const AppContent = () => {
+  return (
+    <VideoCreateProvider>
+      <AppContentInner />
+    </VideoCreateProvider>
   );
 };
 
