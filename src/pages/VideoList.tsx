@@ -159,6 +159,7 @@ const VideoList = () => {
         }
       } else if (type === 'daily-prompt' && id) {
         query = query.eq('daily_prompt_id', id);
+        console.log('VideoList: Fetching videos for daily prompt ID:', id);
       }
 
       const { data: videosData, error: fetchError } = await query;
@@ -184,6 +185,8 @@ const VideoList = () => {
         }
       }
 
+      console.log('VideoList: Found videos:', videosWithProfiles.length);
+      console.log('VideoList: Video IDs:', videosWithProfiles.map(v => v.id));
       setVideos(videosWithProfiles);
     } catch (err) {
       console.error('Error fetching videos:', err);
@@ -197,6 +200,8 @@ const VideoList = () => {
     // For mission videos, we need to pass both mission ID and video ID
     if (type === 'mission') {
       navigate(`/videos/${type}/${id}?video=${videoId}`);
+    } else if (type === 'daily-prompt') {
+      navigate(`/videos/${type}/${id}?video=${videoId}`); // Pass prompt ID and video ID as query param
     } else {
       navigate(`/videos/${type}/${videoId}`);
     }

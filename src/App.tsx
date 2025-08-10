@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -34,8 +35,15 @@ const queryClient = new QueryClient();
 
 const AppContentInner = () => {
   const location = useLocation();
-  const { isEditing } = useVideoCreate();
+  const { isEditing, setIsEditing } = useVideoCreate();
   useHardwareBackButton();
+  
+  // Reset isEditing when not on video create pages
+  React.useEffect(() => {
+    if (!location.pathname.startsWith('/create')) {
+      setIsEditing(false);
+    }
+  }, [location.pathname, setIsEditing]);
   
   const hideBottomNav = ['/auth', '/terms', '/privacy'].includes(location.pathname) || 
                        location.pathname.startsWith('/videos/') || 

@@ -104,26 +104,43 @@ const AdminPrompts = () => {
         date: formData.date,
         prompt_text: formData.prompt_text,
         theme_id: formData.theme_id === 'no-theme' ? null : formData.theme_id || null,
-        manual_override: true,
         is_active: formData.date === new Date().toISOString().split('T')[0]
       };
 
       if (editingPrompt) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('daily_prompts')
           .update(promptData)
           .eq('id', editingPrompt.id);
+          
+        if (updateError) {
+          console.error('Update error:', updateError);
+          throw updateError;
+        }
+        
         toast({ title: "Success", description: "Prompt updated successfully" });
       } else {
+        console.log('Creating new prompt with data:', promptData);
+        
         // Deactivate other prompts for this date
-        await supabase
+        const { error: deactivateError } = await supabase
           .from('daily_prompts')
           .update({ is_active: false })
           .eq('date', formData.date);
+          
+        if (deactivateError) {
+          console.error('Deactivate error:', deactivateError);
+        }
 
-        await supabase
+        const { error: insertError } = await supabase
           .from('daily_prompts')
           .insert(promptData);
+          
+        if (insertError) {
+          console.error('Insert error:', insertError);
+          throw insertError;
+        }
+        
         toast({ title: "Success", description: "Prompt created successfully" });
       }
 
@@ -149,6 +166,277 @@ const AdminPrompts = () => {
       toast({
         title: "Error",
         description: "Failed to delete prompt",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteProblematicVideo = async () => {
+    try {
+      const videoId = 'bfc9d6f5-3fe2-41c8-abd0-dc5562ea802c';
+      const { error } = await supabase.from('videos').delete().eq('id', videoId);
+      
+      if (error) throw error;
+      
+      toast({ 
+        title: "Success", 
+        description: `Video ${videoId} deleted successfully` 
+      });
+    } catch (error) {
+      console.error('Error deleting video:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete video",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteThirdProblematicVideo = async () => {
+    try {
+      const videoId = '4663d991-cc93-4cb4-8b5e-f6f2b4690840';
+      const { error } = await supabase.from('videos').delete().eq('id', videoId);
+      
+      if (error) throw error;
+      
+      toast({ 
+        title: "Success", 
+        description: `Third problematic video ${videoId} deleted successfully` 
+      });
+    } catch (error) {
+      console.error('Error deleting third problematic video:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete third problematic video",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteCorruptedPrompt = async () => {
+    try {
+      const promptId = 'bfc9d6f5-3fe2-41c8-abd0-dc5562ea802c';
+      const { error } = await supabase.from('daily_prompts').delete().eq('id', promptId);
+      
+      if (error) throw error;
+      
+      toast({ 
+        title: "Success", 
+        description: `Corrupted prompt ${promptId} deleted successfully` 
+      });
+    } catch (error) {
+      console.error('Error deleting corrupted prompt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete corrupted prompt",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteSecondCorruptedPrompt = async () => {
+    try {
+      const promptId = '2804ea20-9bd0-4b9b-87a5-81187575f7a1';
+      const { error } = await supabase.from('daily_prompts').delete().eq('id', promptId);
+      
+      if (error) throw error;
+      
+      toast({ 
+        title: "Success", 
+        description: `Second corrupted prompt ${promptId} deleted successfully` 
+      });
+    } catch (error) {
+      console.error('Error deleting second corrupted prompt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete second corrupted prompt",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const createBasicPrompt = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      console.log('Creating basic prompt for date:', today);
+      
+      const promptData = {
+        date: today,
+        prompt_text: "What's your favorite place in nature?",
+        is_active: true
+      };
+      
+      console.log('Prompt data:', promptData);
+      
+      const { error } = await supabase
+        .from('daily_prompts')
+        .insert(promptData);
+        
+      if (error) {
+        console.error('Create basic prompt error:', error);
+        throw error;
+      }
+      
+      toast({ 
+        title: "Success", 
+        description: "Basic prompt created successfully" 
+      });
+      
+      fetchData(); // Refresh the list
+    } catch (error) {
+      console.error('Error creating basic prompt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create basic prompt",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fixCurrentUserProfile = async () => {
+    try {
+      console.log('Fixing current user profile...');
+      
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error('Error getting current user:', userError);
+        throw userError || new Error('No user found');
+      }
+      
+      console.log('Current user:', user.email);
+      console.log('User metadata:', user.user_metadata);
+      
+      const metadata = user.user_metadata;
+      const city = metadata?.city;
+      const country = metadata?.country;
+      const dateOfBirth = metadata?.date_of_birth;
+      
+      if (city || country || dateOfBirth) {
+        console.log('Fixing profile for current user:', { city, country, dateOfBirth });
+        
+        // Update the profile with the missing data
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            city: city || null,
+            country: country || null,
+            date_of_birth: dateOfBirth ? new Date(dateOfBirth) : null
+          })
+          .eq('user_id', user.id);
+        
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+          throw updateError;
+        } else {
+          toast({ 
+            title: "Success", 
+            description: "Your profile has been updated with missing data" 
+          });
+        }
+      } else {
+        toast({ 
+          title: "No Data Found", 
+          description: "No city, country, or date of birth found in your signup data" 
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error fixing current user profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fix your profile",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const testDataFlow = async () => {
+    try {
+      console.log('Testing data flow...');
+      
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.error('Error getting current user:', userError);
+        throw userError || new Error('No user found');
+      }
+      
+      console.log('=== USER DATA ===');
+      console.log('User ID:', user.id);
+      console.log('User Email:', user.email);
+      console.log('User Metadata:', user.user_metadata);
+      
+      // Get profile data
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+        throw profileError;
+      }
+      
+      console.log('=== PROFILE DATA ===');
+      console.log('Profile:', profile);
+      
+      // Compare metadata vs profile
+      console.log('=== COMPARISON ===');
+      console.log('Metadata city:', user.user_metadata?.city, '| Profile city:', profile.city);
+      console.log('Metadata country:', user.user_metadata?.country, '| Profile country:', profile.country);
+      console.log('Metadata DOB:', user.user_metadata?.date_of_birth, '| Profile DOB:', profile.date_of_birth);
+      
+      toast({ 
+        title: "Data Flow Test Complete", 
+        description: "Check console for detailed comparison" 
+      });
+      
+    } catch (error) {
+      console.error('Error testing data flow:', error);
+      toast({
+        title: "Error",
+        description: "Failed to test data flow",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const fixUserByEmail = async () => {
+    const email = prompt('Enter the email address of the user to fix:');
+    if (!email) return;
+    
+    try {
+      console.log('Fixing user profile for email:', email);
+      
+      // Call the database function to fix the user profile
+      const { data, error } = await supabase
+        .rpc('fix_user_profile_by_email', { user_email: email });
+      
+      if (error) {
+        console.error('Error calling fix function:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fix user profile",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      console.log('Fix result:', data);
+      toast({ 
+        title: "Success", 
+        description: data 
+      });
+      
+    } catch (error) {
+      console.error('Error fixing user profile by email:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fix user profile",
         variant: "destructive",
       });
     }
@@ -243,7 +531,36 @@ const AdminPrompts = () => {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Daily Prompts Admin</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <div className="flex gap-2">
+          <Button 
+            variant="default" 
+            onClick={fixCurrentUserProfile}
+            size="sm"
+          >
+            Fix My Profile
+          </Button>
+          <Button 
+            variant="default" 
+            onClick={testDataFlow}
+            size="sm"
+          >
+            Test Data Flow
+          </Button>
+          <Button 
+            variant="default" 
+            onClick={fixUserByEmail}
+            size="sm"
+          >
+            Fix User by Email
+          </Button>
+          <Button 
+            variant="default" 
+            onClick={createBasicPrompt}
+            size="sm"
+          >
+            Create Basic Prompt
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => {
               setEditingPrompt(null);
@@ -322,6 +639,7 @@ const AdminPrompts = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-4">

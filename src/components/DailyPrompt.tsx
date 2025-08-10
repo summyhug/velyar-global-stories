@@ -17,16 +17,23 @@ export const DailyPrompt = () => {
       try {
         // Get today's active daily prompt first, then fall back to most recent active
         const today = new Date().toISOString().split('T')[0];
-        let { data: todayPrompt } = await supabase
+        console.log('DailyPrompt: Looking for prompt for date:', today);
+        
+        let { data: todayPrompt, error: todayError } = await supabase
           .from('daily_prompts')
           .select('id, prompt_text')
           .eq('date', today)
           .eq('is_active', true)
           .maybeSingle();
+          
+        if (todayError) {
+          console.error('DailyPrompt: Error fetching today\'s prompt:', todayError);
+        }
 
         // If no prompt for today, get the most recent active prompt
         if (!todayPrompt) {
-          const { data: recentPrompt } = await supabase
+          console.log('DailyPrompt: No prompt for today, fetching most recent active prompt');
+          const { data: recentPrompt, error: recentError } = await supabase
             .from('daily_prompts')
             .select('id, prompt_text')
             .eq('is_active', true)
@@ -34,20 +41,29 @@ export const DailyPrompt = () => {
             .limit(1)
             .maybeSingle();
           
+          if (recentError) {
+            console.error('DailyPrompt: Error fetching recent prompt:', recentError);
+          }
+          
           todayPrompt = recentPrompt;
+          console.log('DailyPrompt: Found recent prompt:', recentPrompt);
         }
 
         if (todayPrompt) {
+          console.log('DailyPrompt: Found today\'s prompt:', todayPrompt.id, todayPrompt.prompt_text);
           setPrompt(todayPrompt.prompt_text);
           setCurrentPromptId(todayPrompt.id);
           
           // Get videos for today's prompt
           const { data: videos } = await supabase
             .from('videos')
-            .select('id, location')
+            .select('id, location, daily_prompt_id')
             .eq('daily_prompt_id', todayPrompt.id)
             .eq('is_public', true);
 
+          console.log('DailyPrompt: Found videos for prompt', todayPrompt.id, ':', videos?.length || 0);
+          console.log('DailyPrompt: Video IDs:', videos?.map(v => v.id) || []);
+          
           const voiceCount = videos?.length || 0;
           const countrySet = new Set(
             videos
@@ -60,6 +76,7 @@ export const DailyPrompt = () => {
           setStats({ voices: voiceCount, countries: countrySet.size });
         } else {
           // Fallback prompt if no active prompt found
+          console.log('DailyPrompt: No active prompt found, using fallback');
           setPrompt("what did you eat last night?");
         }
       } catch (error) {
@@ -102,7 +119,7 @@ export const DailyPrompt = () => {
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>
-          <Link to={currentPromptId ? `/videos/daily-prompt/${currentPromptId}` : "/videos/daily-prompt"} className="flex-1">
+          <Link to={currentPromptId ? `/video-list/daily-prompt/${currentPromptId}` : "/video-list/daily-prompt"} className="flex-1" onClick={() => console.log('DailyPrompt: View button clicked, navigating to:', currentPromptId ? `/video-list/daily-prompt/${currentPromptId}` : "/video-list/daily-prompt")}>
             <Button 
               variant="outline"
               className="w-full"

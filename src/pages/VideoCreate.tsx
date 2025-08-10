@@ -13,6 +13,8 @@ import { compressVideo, getVideoInfo } from "@/utils/videoCompression";
 import { supabase } from "@/integrations/supabase/client";
 import { useMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/use-toast";
+import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/hooks/useAuth";
 import { Capacitor } from "@capacitor/core";
 import { validateVideoContent, getContentViolationMessage } from "@/utils/contentModeration";
 import { useVideoCreate } from "@/contexts/VideoCreateContext";
@@ -31,7 +33,7 @@ const VideoCreate = () => {
   });
   const [videoDuration, setVideoDuration] = useState(0);
   const [textOverlays, setTextOverlays] = useState([]);
-  const [currentPrompt, setCurrentPrompt] = useState<{ text: string; theme_id: string; theme_name: string; type: 'daily' | 'mission'; title?: string } | null>(null);
+  const [currentPrompt, setCurrentPrompt] = useState<{ text: string; theme_id: string; theme_name: string; type: 'daily' | 'mission'; title?: string; id?: string } | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
   
   const MAX_RECORDING_TIME = 30; // 30 seconds
@@ -40,6 +42,8 @@ const VideoCreate = () => {
   const { isNative, recordVideo, getCurrentLocation } = useMobile();
   const { toast } = useToast();
   const { setIsEditing } = useVideoCreate();
+  const { user } = useAuth();
+  const { location: userLocation } = useProfile(user?.id);
   
   console.log('VideoCreate: isNative =', isNative, 'platform:', Capacitor.getPlatform());
   const navigate = useNavigate();
@@ -78,6 +82,7 @@ const VideoCreate = () => {
         const { data: promptData } = await supabase
           .from('daily_prompts')
           .select(`
+            id,
             prompt_text,
             theme_id,
             themes:theme_id (
@@ -93,7 +98,8 @@ const VideoCreate = () => {
             text: promptData.prompt_text,
             theme_id: promptData.theme_id,
             theme_name: promptData.themes?.name || 'No theme',
-            type: 'daily'
+            type: 'daily',
+            id: promptData.id
           });
         }
       }
@@ -101,6 +107,18 @@ const VideoCreate = () => {
     
     fetchContent();
   }, [missionId]);
+
+  // Set user's profile location when component mounts or user location changes
+  useEffect(() => {
+    console.log('VideoCreate: userLocation:', userLocation);
+    console.log('VideoCreate: current location state:', location);
+    console.log('VideoCreate: user:', user?.id);
+    
+    if (userLocation && !location) {
+      console.log('VideoCreate: Setting user profile location:', userLocation);
+      setLocation(userLocation);
+    }
+  }, [userLocation, location, user]);
 
   // Check if we need to reset to capture screen after app restart
   useEffect(() => {
@@ -190,17 +208,6 @@ const VideoCreate = () => {
         localStorage.setItem('videoCreate_hasVideo', 'true');
         setVideoDuration(30);
         setStep('edit');
-        
-        // Try to get current location
-        try {
-          console.log('VideoCreate: Getting current location...');
-          const coords = await getCurrentLocation();
-          const locationString = `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
-          console.log('VideoCreate: Location obtained:', locationString);
-          setLocation(locationString);
-        } catch (error) {
-          console.log('VideoCreate: Location access denied or unavailable:', error);
-        }
       } else {
         console.log('VideoCreate: Web platform detected, using file upload');
         document.getElementById('video-file-input')?.click();
@@ -400,12 +407,8 @@ const VideoCreate = () => {
       // Get current prompt ID if responding to daily prompt
       let promptId = null;
       if (currentPrompt && currentPrompt.type === 'daily') {
-        const { data } = await supabase
-          .from('daily_prompts')
-          .select('id')
-          .eq('is_active', true)
-          .single();
-        promptId = data?.id;
+        promptId = currentPrompt.id;
+        console.log('Using stored daily prompt ID for video:', promptId);
       }
 
       // Create video record with storage URL

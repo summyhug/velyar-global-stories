@@ -8,6 +8,8 @@ interface Profile {
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  city: string | null;
+  country: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -51,14 +53,17 @@ export function useProfile(userId: string | undefined) {
         if (profileError) throw profileError;
         setProfile(profileData);
 
-        // Get user metadata for location info
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (!userError && user && user.id === userId) {
-          const city = user.user_metadata?.city;
-          const country = user.user_metadata?.country;
-          if (city && country) {
-            setLocation(`${city}, ${country}`);
-          }
+        // Get location from profile data
+        console.log('useProfile: profileData:', profileData);
+        console.log('useProfile: city:', profileData?.city);
+        console.log('useProfile: country:', profileData?.country);
+        
+        if (profileData?.city && profileData?.country) {
+          const locationString = `${profileData.city}, ${profileData.country}`;
+          console.log('useProfile: Setting location to:', locationString);
+          setLocation(locationString);
+        } else {
+          console.log('useProfile: No city or country data available');
         }
 
         // Fetch user videos for stats

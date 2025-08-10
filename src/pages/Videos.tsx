@@ -33,28 +33,23 @@ const Videos = () => {
       if (type === 'mission' && id) {
         query = query.eq('mission_id', id);
       } else if (type === 'daily-prompt' && id) {
-        // First check if this is actually a video ID being passed as daily-prompt
-        const { data: videoCheck } = await supabase
-          .from('videos')
-          .select('id')
-          .eq('id', id)
-          .single();
-        
-        if (videoCheck) {
-          // It's a video ID, fetch all videos for navigation
-          // Don't filter by daily_prompt_id
-        } else {
-          // It's actually a daily prompt ID
-          query = query.eq('daily_prompt_id', id);
-        }
+        // For daily-prompt type, always treat the ID as a daily prompt ID
+        query = query.eq('daily_prompt_id', id);
+        console.log('Videos: Fetching videos for daily prompt ID:', id);
       } else if (type === 'video' && id) {
         // For direct video access, fetch all videos but we'll find the specific one
         // This allows navigation between videos
       }
 
+      console.log('Videos: Executing query for type:', type, 'id:', id);
       const { data: videosData, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('Videos: Query error:', error);
+        throw error;
+      }
+      
+      console.log('Videos: Query result count:', videosData?.length || 0);
 
       // Fetch profile data for each video
       const videosWithProfiles = [];
