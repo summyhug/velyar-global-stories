@@ -4,7 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Explore from "./pages/Explore";
@@ -22,10 +23,11 @@ import Privacy from "./pages/Privacy";
 import { BottomNav } from "./components/BottomNav";
 import { IOSStatusBar } from "./components/IOSStatusBar";
 import { IOSSafeAreaWrapper } from "./components/IOSSafeAreaWrapper";
-import { useLocation } from "react-router-dom";
 import { useHardwareBackButton } from "./hooks/useHardwareBackButton";
 import { clearAuthData } from "./integrations/supabase/client";
 import { VideoCreateProvider, useVideoCreate } from "./contexts/VideoCreateContext";
+import { AuthProvider } from "./contexts/AuthContext";
+import { AuthGate } from "./components/AuthGate";
 
 const queryClient = new QueryClient();
 
@@ -34,17 +36,18 @@ const queryClient = new QueryClient();
 (window as any).clearAuthForDistribution = clearAuthData;
 
 const AppContentInner = () => {
-  const location = useLocation();
   const { isEditing, setIsEditing } = useVideoCreate();
+  const location = useLocation();
   useHardwareBackButton();
-  
+
   // Reset isEditing when not on video create pages
   React.useEffect(() => {
     if (!location.pathname.startsWith('/create')) {
       setIsEditing(false);
     }
   }, [location.pathname, setIsEditing]);
-  
+
+  // Hide bottom nav on auth, terms, privacy, videos, admin pages, and when editing
   const hideBottomNav = ['/auth', '/terms', '/privacy'].includes(location.pathname) || 
                        location.pathname.startsWith('/videos/') || 
                        location.pathname.startsWith('/admin/') ||
@@ -55,23 +58,30 @@ const AppContentInner = () => {
       <IOSStatusBar />
       <IOSSafeAreaWrapper>
         <Routes>
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/" element={<Home />} />
-        <Route path="/explore" element={<Explore />} />
-        <Route path="/missions" element={<Missions />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/contributions" element={<Contributions />} />
-        <Route path="/create" element={<VideoCreate />} />
-        <Route path="/create/mission/:missionId" element={<VideoCreate />} />
-        <Route path="/create/daily-prompt" element={<VideoCreate />} />
-        <Route path="/admin/prompts" element={<AdminPrompts />} />
-        <Route path="/admin/missions" element={<AdminMissions />} />
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/video-list/:type/:id?" element={<VideoList />} />
-        <Route path="/videos/:type/:id?" element={<Videos />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          {/* Public routes */}
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          
+          {/* Protected routes */}
+          <Route element={<AuthGate />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/missions" element={<Missions />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/contributions" element={<Contributions />} />
+            <Route path="/create" element={<VideoCreate />} />
+            <Route path="/create/mission/:missionId" element={<VideoCreate />} />
+            <Route path="/create/daily-prompt" element={<VideoCreate />} />
+            <Route path="/admin/prompts" element={<AdminPrompts />} />
+            <Route path="/admin/missions" element={<AdminMissions />} />
+            <Route path="/video-list/:type/:id?" element={<VideoList />} />
+            <Route path="/videos/:type/:id?" element={<Videos />} />
+          </Route>
+          
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </IOSSafeAreaWrapper>
       {!hideBottomNav && <BottomNav />}
     </div>
@@ -86,16 +96,21 @@ const AppContent = () => {
   );
 };
 
+// Use HashRouter on native platforms, BrowserRouter on web
+const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter;
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <TooltipProvider>
-          <AppContent />
-          <Toaster />
-          <Sonner />
-        </TooltipProvider>
-      </BrowserRouter>
+      <AuthProvider>
+        <Router>
+          <TooltipProvider>
+            <AppContent />
+            <Toaster />
+            <Sonner />
+          </TooltipProvider>
+        </Router>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

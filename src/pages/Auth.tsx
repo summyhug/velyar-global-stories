@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { VelyarLogo } from '@/components/VelyarLogo';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-  import { Eye, EyeOff } from 'lucide-react';
-  import type { User, Session } from '@supabase/supabase-js';
-  import { verifyAge, calculateAge } from "@/utils/contentModeration";
+import { useAuth } from '@/contexts/AuthContext';
+import { Eye, EyeOff } from 'lucide-react';
+import type { User, Session } from '@supabase/supabase-js';
+import { verifyAge, calculateAge } from "@/utils/contentModeration";
 
 const countries = [
   "Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Austria", "Bangladesh", "Belgium", "Brazil", "Canada", "China", "Colombia", "Denmark", "Egypt", "Finland", "France", "Germany", "Ghana", "Greece", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Japan", "Jordan", "Kenya", "South Korea", "Malaysia", "Mexico", "Morocco", "Netherlands", "New Zealand", "Nigeria", "Norway", "Pakistan", "Peru", "Philippines", "Poland", "Portugal", "Russia", "Saudi Arabia", "South Africa", "Spain", "Sweden", "Switzerland", "Taiwan", "Thailand", "Turkey", "Ukraine", "United Kingdom", "United States", "Venezuela", "Vietnam"
@@ -19,11 +20,10 @@ const countries = [
 
 const Auth = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -41,36 +41,21 @@ const Auth = () => {
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Auth state management
+  // Redirect if already authenticated
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-        
-        // Redirect authenticated users to home
-        if (session?.user) {
-          navigate('/');
-        }
-      }
-    );
+    if (user) {
+      const from = (location.state as any)?.from?.pathname || '/';
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location.state]);
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      // Redirect if already authenticated
-      if (session?.user) {
-        navigate('/');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+  // Prevent body scrolling on auth page
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -279,25 +264,17 @@ const Auth = () => {
     }
   };
 
-  // Show loading state while checking auth
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-ocean-light to-velyar-earth">
-        <div className="flex items-center space-x-2">
-          <VelyarLogo size={48} />
-          <span className="text-velyar-earth font-nunito">Loading...</span>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900/20 via-teal-800/10 to-green-900/20 flex items-center justify-center p-4">
+    <div className="min-h-screen-safe bg-gradient-to-br from-blue-900/20 via-teal-800/10 to-green-900/20 flex items-center justify-center p-4 header-safe content-safe-bottom overflow-hidden">
       {/* Ocean-like animated background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        {/* Base ocean gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 via-teal-700/5 to-green-800/10">
-          <div className="absolute inset-0 bg-gradient-to-tl from-blue-800/5 to-transparent animate-pulse"></div>
+      <div className="fixed inset-0 pointer-events-none">
+        {/* Base ocean gradient - covers entire viewport */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-teal-800/10 to-green-900/20">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 via-teal-700/5 to-green-800/10">
+            <div className="absolute inset-0 bg-gradient-to-tl from-blue-800/5 to-transparent animate-pulse"></div>
+          </div>
         </div>
         
         {/* Ocean currents */}
@@ -318,7 +295,7 @@ const Auth = () => {
         </div>
       </div>
 
-      <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10">
+      <Card className="w-full max-w-md mx-auto bg-background/95 backdrop-blur-md shadow-warm border-velyar-earth/20 relative z-10 max-h-[80vh] overflow-hidden">
         <CardHeader className="text-center pb-3 px-6">
           <div className="flex items-center justify-center mb-4">
             <VelyarLogo size={120} className="text-velyar-earth" />
@@ -330,7 +307,7 @@ const Auth = () => {
             {isLogin ? "more connects us than separates us" : "share and learn about humanity"}
           </CardDescription>
         </CardHeader>
-        <CardContent className="px-6 pb-6">
+        <CardContent className="px-6 pb-6 overflow-y-auto max-h-[60vh]">
           <form onSubmit={handleSubmit} className="space-y-3">
             {!isLogin && (
               <>

@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { Capacitor } from "@capacitor/core";
 import { validateVideoContent, getContentViolationMessage } from "@/utils/contentModeration";
 import { useVideoCreate } from "@/contexts/VideoCreateContext";

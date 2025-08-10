@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useEffect } from "react";
 
@@ -13,13 +13,7 @@ const Profile = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const { profile, userStats, contributions, location, loading: profileLoading } = useProfile(user?.id);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
-
-  if (authLoading || profileLoading) {
+  if (profileLoading) {
     return (
       <div className="min-h-screen-safe bg-background font-quicksand flex items-center justify-center">
         <div className="text-center">
@@ -27,10 +21,6 @@ const Profile = () => {
         </div>
       </div>
     );
-  }
-
-  if (!user) {
-    return null;
   }
 
   const displayName = profile?.display_name || profile?.username || 'storyteller';
