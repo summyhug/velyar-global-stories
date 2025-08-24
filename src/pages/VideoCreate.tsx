@@ -628,9 +628,9 @@ const VideoCreate = () => {
             <Button 
               onClick={handleSubmit}
               disabled={!videoFile || !caption.trim() || !location.trim() || isCompressing}
-              className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium disabled:opacity-50"
+              className="w-full bg-velyar-earth hover:bg-velyar-warm text-white font-nunito font-medium disabled:opacity-50"
             >
-              {isCompressing ? "compressing..." : "share your story"}
+              {isCompressing ? "compressing..." : "share"}
             </Button>
           </div>
         )}

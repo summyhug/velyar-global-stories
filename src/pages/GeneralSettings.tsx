@@ -1,25 +1,27 @@
 import React from "react";
-import { ArrowLeft, Globe, Palette, Languages } from "lucide-react";
+import { ArrowLeft, Globe, Palette, Languages, Trash2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { PageLayout } from "@/components/PageLayout";
 
 const GeneralSettings = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { user, deleteAccount } = useAuth();
 
   // Header component
   const header = (
     <div className="pt-safe-header px-4">
       <div className="max-w-md mx-auto py-3 flex items-center gap-3">
-        <Button variant="ghost" size="sm" className="p-2" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="sm" className="p-2 text-velyar-earth hover:bg-velyar-soft" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-xl font-display text-foreground">General Settings</h1>
+        <h1 className="text-xl font-display text-velyar-earth">General Settings</h1>
       </div>
     </div>
   );
@@ -187,6 +189,39 @@ const GeneralSettings = () => {
               <p className="text-xs text-muted-foreground mt-3">
                 More languages coming soon! 🌍
               </p>
+            </CardContent>
+          </Card>
+
+          {/* Delete Account Section */}
+          <Card className="card-enhanced">
+            <CardHeader>
+              <CardTitle className="text-lg font-display flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-velyar-danger" />
+                Delete Account
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Once you delete your account, there is no going back. Please be certain.
+              </p>
+              <Button
+                variant="destructive"
+                className="w-full"
+                onClick={deleteAccount}
+                disabled={!user}
+              >
+                {user ? (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Account
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Sign In to Delete Account
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         </div>

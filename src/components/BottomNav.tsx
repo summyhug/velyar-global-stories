@@ -12,7 +12,7 @@ export const BottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border/10 pb-safe">
+    <nav className="bottom-nav fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border/10 pb-safe">
       <div className="max-w-md mx-auto px-4 py-3">
         <div className="flex items-center justify-around">
           <Link

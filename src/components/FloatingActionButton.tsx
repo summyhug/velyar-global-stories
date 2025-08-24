@@ -7,7 +7,7 @@ export const FloatingActionButton = () => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 pb-safe pr-safe">
+    <div className="fab fixed bottom-20 right-4 z-50 pb-safe pr-safe">
       <Link to="/create">
         <Button
           size="lg"

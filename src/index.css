@@ -400,3 +400,12 @@ html, body {
     background-position: 200% 0;
   }
 }
+
+/* Keyboard handling - hide bottom nav and FAB when keyboard is open */
+body.keyboard-open .bottom-nav {
+  display: none !important;
+}
+
+body.keyboard-open .fab {
+  display: none !important;
+}

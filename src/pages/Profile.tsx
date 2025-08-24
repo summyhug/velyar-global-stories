@@ -125,30 +125,25 @@ const Profile = () => {
 
         {/* Settings */}
         <section className="mt-8 space-y-6">
-          {/* Theme Settings */}
           <Card className="border-0 shadow-gentle">
             <CardContent className="p-6">
               <h3 className="text-sm font-medium text-foreground mb-4 font-nunito">settings</h3>
               <div className="space-y-3">
                 <Link to="/general-settings" className="w-full">
-                  <Button variant="ghost" className="w-full justify-start text-sm gap-2">
+                  <Button variant="ghost" className="w-full justify-start text-sm gap-2 text-foreground hover:bg-velyar-soft">
                     <Settings className="w-4 h-4" />
                     general
                   </Button>
                 </Link>
                 <Link to="/privacy" className="w-full">
-                  <Button variant="ghost" className="w-full justify-start text-sm gap-2">
+                  <Button variant="ghost" className="w-full justify-start text-sm gap-2 text-foreground hover:bg-velyar-soft">
                     <Shield className="w-4 h-4" />
                     privacy & safety
                   </Button>
                 </Link>
-                <Button variant="ghost" className="w-full justify-start text-sm gap-2">
-                  <Globe className="w-4 h-4" />
-                  general
-                </Button>
                 <Button 
                   variant="ghost" 
-                  className="w-full justify-start text-sm text-destructive hover:bg-destructive/10"
+                  className="w-full justify-start text-sm gap-2 text-destructive hover:bg-destructive/10"
                   onClick={handleSignOut}
                 >
                   sign out

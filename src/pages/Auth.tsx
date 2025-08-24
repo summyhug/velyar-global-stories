@@ -49,11 +49,18 @@ const Auth = () => {
     }
   }, [user, navigate, location.state]);
 
-  // Prevent body scrolling on auth page
+  // Prevent body scrolling on auth page and clean up any keyboard-related classes
   useEffect(() => {
+    // Reset any keyboard-related classes that might persist
+    document.body.classList.remove('keyboard-open');
+    
+    // Set body overflow to hidden for auth page
     document.body.style.overflow = 'hidden';
+    
     return () => {
+      // Clean up body styles when component unmounts
       document.body.style.overflow = 'auto';
+      document.body.classList.remove('keyboard-open');
     };
   }, []);
 
@@ -267,7 +274,10 @@ const Auth = () => {
 
 
   return (
-    <div className="min-h-screen-safe bg-gradient-to-br from-blue-900/20 via-teal-800/10 to-green-900/20 flex items-center justify-center p-4 header-safe content-safe-bottom overflow-hidden">
+    <div 
+      key={`auth-${isLogin ? 'login' : 'signup'}-${user ? 'authenticated' : 'unauthenticated'}`}
+      className="fixed inset-0 bg-gradient-to-br from-blue-900/20 via-teal-800/10 to-green-900/20 flex items-center justify-center p-4 pt-safe-header pb-safe overflow-hidden"
+    >
       {/* Ocean-like animated background */}
       <div className="fixed inset-0 pointer-events-none">
         {/* Base ocean gradient - covers entire viewport */}

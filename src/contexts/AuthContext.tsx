@@ -7,6 +7,7 @@ type AuthCtx = {
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthCtx>({ 
@@ -14,6 +15,7 @@ const AuthContext = createContext<AuthCtx>({
   session: null,
   loading: true,
   signOut: async () => {},
+  deleteAccount: async () => {},
 });
 
 export const useAuth = () => {
@@ -66,8 +68,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const deleteAccount = async () => {
+    if (!user) {
+      console.error('No user to delete');
+      return;
+    }
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      'Are you sure you want to delete your account? This action cannot be undone. Your videos will remain but will be disconnected from your account.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      // Delete the user account
+      const { error } = await supabase.auth.admin.deleteUser(user.id);
+      
+      if (error) {
+        console.error('Error deleting account:', error);
+        alert('Failed to delete account. Please try again.');
+        return;
+      }
+
+      // Sign out after successful deletion
+      await signOut();
+      alert('Account deleted successfully.');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      alert('Failed to delete account. Please try again.');
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signOut, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );
