@@ -1,17 +1,20 @@
 
-import { useState, useEffect } from "react";
-import { Clock, ArrowRight, Eye, MapPin } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Clock, ArrowRight, Eye, MapPin, Users2, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 export const DailyPrompt = () => {
   const [stats, setStats] = useState({ voices: 0, countries: 0 });
   const [loading, setLoading] = useState(true);
   const [prompt, setPrompt] = useState("");
   const [currentPromptId, setCurrentPromptId] = useState<string | null>(null);
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchPromptData = async () => {
@@ -122,8 +125,8 @@ export const DailyPrompt = () => {
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Eye className="w-4 h-4" />
-                <span className="font-ui">{loading ? "loading..." : stats.voices.toLocaleString()}</span>
-                <span>participants</span>
+                <span className="font-ui">{loading ? t("common.loading") : stats.voices.toLocaleString()}</span>
+                <span>{t("common.participants")}</span>
               </div>
               <div className="flex items-center gap-1 text-muted-foreground">
                 <MapPin className="w-4 h-4" />
@@ -139,7 +142,7 @@ export const DailyPrompt = () => {
                 size="sm" 
                 className="btn-primary-enhanced w-full group-hover:scale-105 transition-transform duration-200"
               >
-                <span className="font-ui">Respond</span>
+                <span className="font-ui">{t("common.respond")}</span>
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
               </Button>
             </Link>
@@ -150,7 +153,7 @@ export const DailyPrompt = () => {
                 className="btn-secondary-enhanced w-full group-hover:scale-105 transition-transform duration-200"
               >
                 <Eye className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
-                <span className="font-ui">View</span>
+                <span className="font-ui">{t("common.view")}</span>
               </Button>
             </Link>
           </div>

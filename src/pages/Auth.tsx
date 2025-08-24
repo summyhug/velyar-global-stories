@@ -10,6 +10,7 @@ import { VelyarLogo } from '@/components/VelyarLogo';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
 import type { User, Session } from '@supabase/supabase-js';
 import { verifyAge, calculateAge } from "@/utils/contentModeration";
@@ -23,6 +24,7 @@ const Auth = () => {
   const location = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [isLogin, setIsLogin] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -68,13 +70,13 @@ const Auth = () => {
     const errors: Record<string, string> = {};
     
     if (!isLogin) {
-      if (!formData.name.trim()) errors.name = "Full name is required";
-      if (!formData.username.trim()) errors.username = "Username is required";
-      if (formData.username.length < 3) errors.username = "Username must be at least 3 characters";
-      if (!formData.city.trim()) errors.city = "City is required";
-      if (!formData.country) errors.country = "Country is required";
+      if (!formData.name.trim()) errors.name = t("auth.nameRequired");
+      if (!formData.username.trim()) errors.username = t("auth.usernameRequired");
+      if (formData.username.length < 3) errors.username = t("auth.usernameMinLength");
+      if (!formData.city.trim()) errors.city = t("auth.cityRequired");
+      if (!formData.country) errors.country = t("auth.countryRequired");
       if (!formData.dob) {
-        errors.dob = "Date of birth is required";
+        errors.dob = t("auth.dobRequired");
       } else {
         const ageVerification = verifyAge(formData.dob);
         if (!ageVerification.isValid) {
@@ -87,17 +89,17 @@ const Auth = () => {
     }
     
     if (!formData.email.trim()) {
-      errors.email = "Email is required";
+      errors.email = t("auth.emailRequired");
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "Email is invalid";
+      errors.email = t("auth.emailInvalid");
     }
     
     if (!formData.password) {
-      errors.password = "Password is required";
+      errors.password = t("auth.passwordRequired");
     } else if (formData.password.length < 8) {
-      errors.password = "Password must be at least 8 characters";
+      errors.password = t("auth.passwordMinLength");
     } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      errors.password = "Password must contain uppercase, lowercase, and number";
+      errors.password = t("auth.passwordUpperLowerNumber");
     }
     
     setFormErrors(errors);
@@ -177,7 +179,7 @@ const Auth = () => {
 
         if (error) {
           toast({
-            title: "Sign in failed",
+            title: t("errors.signInFailed"),
             description: error.message,
             variant: "destructive",
           });
@@ -186,8 +188,8 @@ const Auth = () => {
 
         if (data.user) {
           toast({
-            title: "Welcome back!",
-            description: "You have successfully signed in.",
+            title: t("errors.welcomeBack"),
+            description: t("errors.signInSuccess"),
           });
           // Navigation handled by onAuthStateChange
         }
@@ -196,8 +198,8 @@ const Auth = () => {
         const isUsernameAvailable = await checkUsernameAvailability(formData.username);
         if (!isUsernameAvailable) {
           toast({
-            title: "Username taken",
-            description: "This username is already taken. Please choose another.",
+            title: t("errors.usernameTaken"),
+            description: t("errors.usernameTaken"),
             variant: "destructive",
           });
           return;
@@ -221,7 +223,7 @@ const Auth = () => {
 
         if (error) {
           toast({
-            title: "Sign up failed",
+            title: t("errors.signUpFailed"),
             description: error.message,
             variant: "destructive",
           });
@@ -244,14 +246,14 @@ const Auth = () => {
 
           if (data.user.email_confirmed_at) {
             toast({
-              title: "Account created!",
-              description: "Welcome to Velyar! You can now start exploring.",
+              title: t("errors.accountCreated"),
+              description: t("errors.welcomeToVelyar"),
             });
             // Navigation handled by onAuthStateChange
           } else {
             toast({
-              title: "Check your email",
-              description: "We've sent you a confirmation link. Please check your email to verify your account.",
+              title: t("errors.checkEmail"),
+              description: t("errors.emailConfirmationSent"),
             });
             // Switch back to login mode after showing the toast
             setTimeout(() => {
@@ -262,8 +264,8 @@ const Auth = () => {
       }
     } catch (error: any) {
       toast({
-        title: "An error occurred",
-        description: error.message || "Please try again later.",
+        title: t("errors.anErrorOccurred"),
+        description: error.message || t("errors.tryAgainLater"),
         variant: "destructive",
       });
     } finally {
@@ -311,10 +313,10 @@ const Auth = () => {
             <VelyarLogo size={120} className="text-velyar-earth" />
           </div>
           <CardTitle className="text-lg font-medium text-velyar-earth font-nunito mb-1">
-            {isLogin ? "welcome back" : "leave the bubble, join the world"}
+            {isLogin ? t("auth.welcomeBack") : t("auth.leaveBubble")}
           </CardTitle>
           <CardDescription className="text-muted-foreground font-quicksand text-sm">
-            {isLogin ? "more connects us than separates us" : "share and learn about humanity"}
+            {isLogin ? t("auth.moreConnectsUs") : t("auth.shareAndLearn")}
           </CardDescription>
         </CardHeader>
         <CardContent className="px-6 pb-6 overflow-y-auto max-h-[60vh]">
@@ -322,7 +324,7 @@ const Auth = () => {
             {!isLogin && (
               <>
                  <div className="space-y-1">
-                   <Label htmlFor="name" className="text-velyar-earth font-nunito text-sm">full name</Label>
+                   <Label htmlFor="name" className="text-velyar-earth font-nunito text-sm">{t("auth.fullName")}</Label>
                    <Input
                      id="name"
                      name="name"
@@ -336,7 +338,7 @@ const Auth = () => {
                    {formErrors.name && touchedFields.name && <p className="text-red-500 text-xs">{formErrors.name}</p>}
                  </div>
                  <div className="space-y-1">
-                   <Label htmlFor="username" className="text-velyar-earth font-nunito text-sm">username</Label>
+                   <Label htmlFor="username" className="text-velyar-earth font-nunito text-sm">{t("auth.username")}</Label>
                    <Input
                      id="username"
                      name="username"
@@ -346,7 +348,7 @@ const Auth = () => {
                      onBlur={() => handleBlur('username')}
                      required={!isLogin}
                      className="border-velyar-earth/20 focus:border-velyar-earth"
-                     placeholder="Minimum 3 characters"
+                     placeholder={t("auth.usernameMinLength")}
                    />
                    {formErrors.username && touchedFields.username && <p className="text-red-500 text-xs">{formErrors.username}</p>}
                  </div>
@@ -354,7 +356,7 @@ const Auth = () => {
             )}
             
              <div className="space-y-1">
-               <Label htmlFor="email" className="text-velyar-earth font-nunito text-sm">email</Label>
+               <Label htmlFor="email" className="text-velyar-earth font-nunito text-sm">{t("auth.email")}</Label>
                <Input
                  id="email"
                  name="email"
@@ -369,7 +371,7 @@ const Auth = () => {
              </div>
              
              <div className="space-y-1">
-                <Label htmlFor="password" className="text-velyar-earth font-nunito text-sm">password</Label>
+                <Label htmlFor="password" className="text-velyar-earth font-nunito text-sm">{t("auth.password")}</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -380,7 +382,7 @@ const Auth = () => {
                     onBlur={() => handleBlur('password')}
                     required
                     className="border-velyar-earth/20 focus:border-velyar-earth pr-10"
-                    placeholder={!isLogin ? "8+ chars, uppercase, lowercase, number" : ""}
+                    placeholder={!isLogin ? t("auth.passwordRequirements") : ""}
                   />
                   <Button
                     type="button"
@@ -403,7 +405,7 @@ const Auth = () => {
               <>
                  <div className="grid grid-cols-2 gap-2">
                    <div className="space-y-1">
-                     <Label htmlFor="city" className="text-velyar-earth font-nunito text-sm">city</Label>
+                     <Label htmlFor="city" className="text-velyar-earth font-nunito text-sm">{t("auth.city")}</Label>
                      <Input
                        id="city"
                        name="city"
@@ -417,7 +419,7 @@ const Auth = () => {
                      {formErrors.city && touchedFields.city && <p className="text-red-500 text-xs">{formErrors.city}</p>}
                    </div>
                    <div className="space-y-1">
-                     <Label htmlFor="country" className="text-velyar-earth font-nunito text-sm">country</Label>
+                     <Label htmlFor="country" className="text-velyar-earth font-nunito text-sm">{t("auth.country")}</Label>
                      <Select value={formData.country} onValueChange={handleCountryChange}>
                        <SelectTrigger className="border-velyar-earth/20 focus:border-velyar-earth">
                          <SelectValue placeholder="Select country" />
@@ -435,7 +437,7 @@ const Auth = () => {
                  </div>
                  
                  <div className="space-y-1">
-                   <Label htmlFor="dob" className="text-velyar-earth font-nunito text-sm">date of birth</Label>
+                   <Label htmlFor="dob" className="text-velyar-earth font-nunito text-sm">{t("auth.dateOfBirth")}</Label>
                    <Input
                      id="dob"
                      name="dob"
@@ -449,7 +451,7 @@ const Auth = () => {
                    {formErrors.dob && touchedFields.dob && <p className="text-red-500 text-xs">{formErrors.dob}</p>}
                    {formData.dob && !formErrors.dob && verifyAge(formData.dob).accountType === 'restricted' && (
                      <p className="text-orange-600 text-xs mt-1">
-                       ⚠️ Users under 16 have limited features for data protection compliance.
+                       {t("ageRestriction.under16Warning")}
                      </p>
                    )}
                  </div>
@@ -466,7 +468,7 @@ const Auth = () => {
                     className="border-velyar-earth/40"
                   />
                   <Label htmlFor="terms" className="text-xs text-muted-foreground leading-tight">
-                    I agree to the <Link to="/terms" className="text-velyar-earth hover:text-velyar-warm underline">Terms of Service</Link>
+                    {t("auth.termsAgreement")}
                   </Label>
                 </div>
                 <div className="flex items-start space-x-2">
@@ -477,7 +479,7 @@ const Auth = () => {
                     className="border-velyar-earth/40"
                   />
                   <Label htmlFor="privacy" className="text-xs text-muted-foreground leading-tight">
-                    I acknowledge the <Link to="/privacy" className="text-velyar-earth hover:text-velyar-warm underline">Privacy Policy</Link> and consent to data processing
+                    {t("auth.privacyAgreement")}
                   </Label>
                 </div>
               </div>
@@ -488,7 +490,7 @@ const Auth = () => {
                disabled={!isFormValid || submitting}
                className="w-full bg-velyar-earth hover:bg-velyar-earth/90 text-white font-nunito font-medium disabled:opacity-50 disabled:cursor-not-allowed"
              >
-               {submitting ? "Processing..." : isLogin ? "sign in" : "create account"}
+               {submitting ? t("auth.processing") : isLogin ? t("auth.signIn") : t("auth.createAccount")}
              </Button>
           </form>
 
@@ -499,7 +501,7 @@ const Auth = () => {
                 onClick={() => setIsLogin(true)}
                 className="text-velyar-earth/70 hover:text-velyar-earth hover:bg-velyar-earth/10 transition-colors font-quicksand text-sm p-2 rounded"
               >
-                Already have an account? Sign in
+                {t("auth.alreadyHaveAccount")}
               </button>
             </div>
           )}
@@ -511,7 +513,7 @@ const Auth = () => {
                 onClick={() => setIsLogin(false)}
                 className="text-velyar-earth/70 hover:text-velyar-earth hover:bg-velyar-earth/10 transition-colors font-quicksand text-sm p-2 rounded"
               >
-                need an account? sign up
+                {t("auth.needAccount")}
               </button>
             </div>
           )}
@@ -520,11 +522,11 @@ const Auth = () => {
            {isLogin && (
              <div className="mt-3 pt-3 border-t border-velyar-earth/10 text-center">
                <div className="flex justify-center gap-4 text-xs text-muted-foreground">
-                 <Link to="/terms" className="hover:text-velyar-earth transition-colors">Terms</Link>
-                 <Link to="/privacy" className="hover:text-velyar-earth transition-colors">Privacy</Link>
+                 <Link to="/terms" className="hover:text-velyar-earth transition-colors">{t("auth.terms")}</Link>
+                 <Link to="/privacy" className="hover:text-velyar-earth transition-colors">{t("auth.privacy")}</Link>
                </div>
                <p className="text-xs text-muted-foreground mt-2">
-                 By using Velyar, you agree to our terms and acknowledge our privacy practices.
+                 {t("auth.byUsingVelyar")}
                </p>
              </div>
            )}

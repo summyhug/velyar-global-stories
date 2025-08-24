@@ -1,8 +1,10 @@
-import { Link, useLocation } from "react-router-dom";
 import { Home, Compass, Film, User } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 export const BottomNav = () => {
   const location = useLocation();
+  const { t } = useTranslation();
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -24,7 +26,7 @@ export const BottomNav = () => {
             }`}
           >
             <Home className="w-5 h-5" />
-            <span className="text-xs font-ui">Home</span>
+            <span className="text-xs font-ui">{t('navigation.home')}</span>
           </Link>
 
           <Link
@@ -36,7 +38,7 @@ export const BottomNav = () => {
             }`}
           >
             <Compass className="w-5 h-5" />
-            <span className="text-xs font-ui">Explore</span>
+            <span className="text-xs font-ui">{t('navigation.explore')}</span>
           </Link>
 
           <Link
@@ -48,7 +50,7 @@ export const BottomNav = () => {
             }`}
           >
             <Film className="w-5 h-5" />
-            <span className="text-xs font-ui">Missions</span>
+            <span className="text-xs font-ui">{t('navigation.missions')}</span>
           </Link>
 
           <Link
@@ -60,7 +62,7 @@ export const BottomNav = () => {
             }`}
           >
             <User className="w-5 h-5" />
-            <span className="text-xs font-ui">Profile</span>
+            <span className="text-xs font-ui">{t('navigation.profile')}</span>
           </Link>
         </div>
       </div>

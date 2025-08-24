@@ -7,12 +7,16 @@ import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "react-i18next";
 import { PageLayout } from "@/components/PageLayout";
 
 const GeneralSettings = () => {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { user, deleteAccount } = useAuth();
+  const { currentLanguage, setLanguage, availableLanguages } = useLanguage();
+  const { t } = useTranslation();
 
   // Header component
   const header = (
@@ -21,7 +25,7 @@ const GeneralSettings = () => {
         <Button variant="ghost" size="sm" className="p-2 text-velyar-earth hover:bg-velyar-soft" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="text-xl font-display text-velyar-earth">General Settings</h1>
+        <h1 className="text-xl font-display text-velyar-earth">{t('settings.generalSettings')}</h1>
       </div>
     </div>
   );
@@ -29,50 +33,30 @@ const GeneralSettings = () => {
   const themeOptions = [
     {
       value: 'light',
-      label: 'Light Mode',
+      label: t('settings.lightMode'),
       icon: '☀️',
-      description: 'Clean, bright interface'
+      description: t('settings.cleanBright')
     },
     {
       value: 'dark',
-      label: 'Dark Mode',
+      label: t('settings.darkMode'),
       icon: '🌙',
-      description: 'Easy on the eyes'
+      description: t('settings.easyOnEyes')
     },
     {
       value: 'system',
-      label: 'System Default',
+      label: t('settings.systemDefault'),
       icon: '🖥️',
-      description: 'Follows your device'
+      description: t('settings.followsDevice')
     }
   ];
 
-  const languageOptions = [
-    {
-      value: 'en',
-      label: 'English',
-      flag: '🇺🇸',
-      description: 'English (US)'
-    },
-    {
-      value: 'es',
-      label: 'Español',
-      flag: '🇪🇸',
-      description: 'Spanish'
-    },
-    {
-      value: 'fr',
-      label: 'Français',
-      flag: '🇫🇷',
-      description: 'French'
-    },
-    {
-      value: 'de',
-      label: 'Deutsch',
-      flag: '🇩🇪',
-      description: 'German'
-    }
-  ];
+  const languageOptions = availableLanguages.map(lang => ({
+    value: lang.code,
+    label: lang.name,
+    flag: lang.flag,
+    description: lang.name
+  }));
 
   return (
     <PageLayout header={header}>
@@ -83,7 +67,7 @@ const GeneralSettings = () => {
             <CardHeader>
               <CardTitle className="text-lg font-display flex items-center gap-2">
                 <Palette className="w-5 h-5 text-velyar-warm" />
-                Appearance
+                {t('settings.appearance')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -106,7 +90,7 @@ const GeneralSettings = () => {
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-lg">{option.icon}</span>
+                          <span className="text-2xl">{option.icon}</span>
                           <div>
                             <div className={`font-medium ${isSelected ? 'text-velyar-earth' : 'text-foreground'}`}>
                               {option.label}
@@ -138,31 +122,30 @@ const GeneralSettings = () => {
             <CardHeader>
               <CardTitle className="text-lg font-display flex items-center gap-2">
                 <Languages className="w-5 h-5 text-velyar-earth" />
-                Language
+                {t('settings.language')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <RadioGroup value="en" className="space-y-3">
+              <RadioGroup value={currentLanguage} onValueChange={setLanguage} className="space-y-3">
                 {languageOptions.map((option) => {
-                  const isSelected = option.value === 'en'; // Default to English for now
+                  const isSelected = currentLanguage === option.value;
                   return (
                     <div key={option.value}>
                       <RadioGroupItem
                         value={option.value}
                         id={`lang-${option.value}`}
                         className="peer sr-only"
-                        disabled={option.value !== 'en'} // Only English enabled for now
                       />
                       <Label
                         htmlFor={`lang-${option.value}`}
                         className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
                           isSelected 
-                            ? 'border-velyar-warm bg-velyar-soft/30 shadow-md' 
-                            : 'border-border/50 hover:border-velyar-warm/30 hover:bg-velyar-soft/20'
-                        } ${option.value !== 'en' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            ? 'border-velyar-earth bg-velyar-soft/30 shadow-md' 
+                            : 'border-border/50 hover:border-velyar-earth/30 hover:bg-velyar-soft/20'
+                        }`}
                       >
                         <div className="flex items-center gap-3">
-                          <span className="text-lg">{option.flag}</span>
+                          <span className="text-2xl">{option.flag}</span>
                           <div>
                             <div className={`font-medium ${isSelected ? 'text-velyar-earth' : 'text-foreground'}`}>
                               {option.label}
@@ -172,12 +155,12 @@ const GeneralSettings = () => {
                         </div>
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
                           isSelected 
-                            ? 'border-velyar-warm bg-velyar-warm' 
+                            ? 'border-velyar-earth bg-velyar-earth' 
                             : 'border-border'
                         }`}>
                           <div className={`w-2 h-2 rounded-full transition-colors duration-200 ${
                             isSelected 
-                              ? 'bg-velyar-earth' 
+                              ? 'bg-white' 
                               : 'bg-transparent'
                           }`} />
                         </div>
@@ -187,7 +170,7 @@ const GeneralSettings = () => {
                 })}
               </RadioGroup>
               <p className="text-xs text-muted-foreground mt-3">
-                More languages coming soon! 🌍
+                {t('settings.moreLanguagesComing')}
               </p>
             </CardContent>
           </Card>
@@ -196,13 +179,13 @@ const GeneralSettings = () => {
           <Card className="card-enhanced">
             <CardHeader>
               <CardTitle className="text-lg font-display flex items-center gap-2">
-                <Trash2 className="w-5 h-5 text-velyar-danger" />
-                Delete Account
+                <Trash2 className="w-5 h-5 text-red-500" />
+                {t('settings.deleteAccount')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Once you delete your account, there is no going back. Please be certain.
+                {t('settings.deleteAccountWarning')}
               </p>
               <Button
                 variant="destructive"
@@ -213,12 +196,12 @@ const GeneralSettings = () => {
                 {user ? (
                   <>
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Delete Account
+                    {t('settings.deleteAccount')}
                   </>
                 ) : (
                   <>
                     <AlertTriangle className="w-4 h-4 mr-2" />
-                    Sign In to Delete Account
+                    {t('settings.signInToDelete')}
                   </>
                 )}
               </Button>

@@ -15,11 +15,13 @@ import { useMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 import { Capacitor } from "@capacitor/core";
 import { validateVideoContent, getContentViolationMessage } from "@/utils/contentModeration";
 import { useVideoCreate } from "@/contexts/VideoCreateContext";
 
 const VideoCreate = () => {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'record' | 'edit'>(() => {
     return localStorage.getItem('videoCreate_step') as 'record' | 'edit' || 'record';
   });
@@ -511,7 +513,7 @@ const VideoCreate = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-medium text-velyar-earth font-nunito">share your story</h1>
+          <h1 className="text-xl font-medium text-velyar-earth font-nunito">{t("videoCreate.shareYourStory")}</h1>
         </div>
       </header>
 
@@ -542,7 +544,7 @@ const VideoCreate = () => {
                   {isNative ? 'tap to open your camera and record a video' : 'use the file upload to share a video'}
                 </p>
                 <p className="text-sm text-muted-foreground mb-6">
-                  ⏱️ Maximum duration: {MAX_RECORDING_TIME} seconds | 📁 Videos will be compressed if over {MAX_FILE_SIZE_MB}MB
+                  ⏱️ {t("videoCreate.maximumDuration", { seconds: MAX_RECORDING_TIME })} | 📁 {t("videoCreate.videosCompressed", { size: MAX_FILE_SIZE_MB })}
                 </p>
                 <div className="space-y-4">
                   <Button
@@ -550,7 +552,7 @@ const VideoCreate = () => {
                     className="w-full bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-nunito font-medium"
                   >
                     <Video className="w-5 h-5 mr-2" />
-                    record video
+                    {t("videoCreate.recordVideo")}
                   </Button>
                     <div className="relative">
                       <input
@@ -564,7 +566,7 @@ const VideoCreate = () => {
                       />
                       <Button variant="outline" className={`w-full ${isCompressing ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         <Upload className="w-5 h-5 mr-2" />
-                        {isCompressing ? 'processing...' : 'or upload video'}
+                        {isCompressing ? t("videoCreate.processing") : t("videoCreate.orUploadVideo")}
                       </Button>
                     </div>
                 </div>
@@ -598,20 +600,20 @@ const VideoCreate = () => {
             <Card className="border-velyar-earth/10">
               <CardContent className="p-4 space-y-4">
                 <div>
-                  <Label htmlFor="caption" className="text-velyar-earth font-nunito">caption</Label>
+                  <Label htmlFor="caption" className="text-velyar-earth font-nunito">{t("videoCreate.caption")}</Label>
                   <Textarea
                     id="caption"
-                    placeholder="tell us about your story..."
+                    placeholder={t("videoCreate.tellUsAboutStory")}
                     value={caption}
                     onChange={(e) => setCaption(e.target.value)}
                     className="mt-2 border-velyar-earth/20 focus:border-velyar-earth"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="location" className="text-velyar-earth font-nunito">location</Label>
+                  <Label htmlFor="location" className="text-velyar-earth font-nunito">{t("videoCreate.location")}</Label>
                   <Input
                     id="location"
-                    placeholder="city, country"
+                    placeholder={t("videoCreate.cityCountry")}
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     className="mt-2 border-velyar-earth/20 focus:border-velyar-earth"
@@ -630,7 +632,7 @@ const VideoCreate = () => {
               disabled={!videoFile || !caption.trim() || !location.trim() || isCompressing}
               className="w-full bg-velyar-earth hover:bg-velyar-warm text-white font-nunito font-medium disabled:opacity-50"
             >
-              {isCompressing ? "compressing..." : "share"}
+              {isCompressing ? t("videoCreate.compressing") : t("videoCreate.share")}
             </Button>
           </div>
         )}

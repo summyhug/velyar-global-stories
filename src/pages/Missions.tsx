@@ -1,11 +1,15 @@
-import { ArrowLeft, MapPin, Users, Globe } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MapPin, Users2, Clock, Sparkles, ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
+import { PageLayout } from "@/components/PageLayout";
 import { MissionCard } from "@/components/MissionCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useGeographicAnalysis } from "@/hooks/useGeographicAnalysis";
 
 interface Mission {
@@ -32,7 +36,9 @@ interface GlobalPrompt {
 }
 
 const Missions = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStats>({ voicesShared: 0, countries: 0, languages: 0 });
   const [globalPrompt, setGlobalPrompt] = useState<GlobalPrompt | null>(null);
@@ -140,119 +146,109 @@ const Missions = () => {
     fetchData();
   }, [geoAnalysis]);
 
+  // Header component
+  const header = (
+    <div className="pt-safe-header px-4">
+      <div className="max-w-md mx-auto py-3 flex items-center gap-3">
+        <Button variant="ghost" size="sm" className="p-2 text-velyar-earth hover:bg-velyar-soft" onClick={() => navigate(-1)}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <h1 className="text-xl font-medium text-velyar-earth font-nunito">{t('missions.missions')}</h1>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen-safe bg-background font-quicksand content-safe-bottom">
-      {/* Header */}
-      <header className="sticky-header header-safe">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="p-2 text-velyar-earth hover:bg-velyar-soft"
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-xl font-medium text-velyar-earth font-nunito">mission hub</h1>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-md mx-auto px-4 pb-24">
-        {/* Dynamic Global Prompt Banner */}
-        {globalPrompt && (
-          <Card className="mt-6 bg-velyar-glow/20 border-velyar-earth/20">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Globe className="w-4 h-4 text-velyar-earth" />
-                <span className="text-sm font-medium text-velyar-earth font-nunito">global balance needed</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {globalPrompt.message_text.toLowerCase()}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Active Missions */}
-        <section className="mt-8">
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="w-5 h-5 text-velyar-earth" />
-            <h2 className="text-lg font-medium text-foreground font-nunito">active missions</h2>
-            <span className="text-sm text-muted-foreground ml-auto">
-              {loading ? '...' : `${missions.length} live`}
-            </span>
-          </div>
-          
-          {error && (
-            <Card className="bg-destructive/10 border-destructive/20 mb-4">
+    <PageLayout header={header}>
+      <div className="px-4">
+        <div className="max-w-md mx-auto space-y-6">
+          {/* Weekly Stats */}
+          <section>
+            <Card className="card-enhanced">
               <CardContent className="p-4">
-                <p className="text-sm text-destructive">Failed to load missions: {error}</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-velyar-earth" />
+                  <span className="text-sm font-medium text-velyar-earth font-nunito">{t('missions.globalBalanceNeeded')}</span>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-lg font-medium text-velyar-earth font-nunito">{weeklyStats.voicesShared}</div>
+                    <div className="text-xs text-muted-foreground">{t('missions.voicesShared')}</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-medium text-velyar-earth font-nunito">{weeklyStats.countries}</div>
+                    <div className="text-xs text-muted-foreground">{t('missions.countries')}</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-medium text-velyar-earth font-nunito">{weeklyStats.languages}</div>
+                    <div className="text-xs text-muted-foreground">{t('missions.languages')}</div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          )}
-          
-          <div className="space-y-4">
-            {loading ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <Card key={index} className="overflow-hidden">
-                  <div className="flex">
-                    <Skeleton className="w-24 h-20" />
-                    <div className="flex-1 p-4 space-y-2">
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-3 w-1/2" />
-                    </div>
-                  </div>
-                </Card>
-              ))
-            ) : (
-              missions.map((mission) => (
-                <MissionCard
-                  key={mission.id}
-                  id={mission.id}
-                  title={mission.title}
-                  description={mission.description}
-                  participants={mission.participants}
-                  location={mission.location}
-                  imageUrl={mission.imageUrl}
-                  targetRegions={mission.targetRegions || undefined}
-                />
-              ))
-            )}
-          </div>
-        </section>
+          </section>
 
-        {/* Mission Stats */}
-        <section className="mt-8">
-          <Card className="bg-card border-0 shadow-gentle">
-            <CardContent className="p-6">
-              <h3 className="text-sm font-medium text-foreground mb-4 font-nunito">this week's impact</h3>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-lg font-medium text-velyar-earth font-nunito">
-                    {loading ? '...' : weeklyStats.voicesShared.toLocaleString()}
-                  </div>
-                  <div className="text-xs text-muted-foreground">voices shared</div>
-                </div>
-                <div>
-                  <div className="text-lg font-medium text-velyar-earth font-nunito">
-                    {loading ? '...' : weeklyStats.countries}
-                  </div>
-                  <div className="text-xs text-muted-foreground">countries</div>
-                </div>
-                <div>
-                  <div className="text-lg font-medium text-velyar-earth font-nunito">
-                    {loading ? '...' : weeklyStats.languages}
-                  </div>
-                  <div className="text-xs text-muted-foreground">languages</div>
-                </div>
+          {/* Active Missions */}
+          <section className="mt-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Users2 className="w-5 h-5 text-velyar-earth" />
+              <h2 className="text-lg font-medium text-foreground font-nunito">{t('missions.activeMissions')}</h2>
+              <span className="text-sm text-muted-foreground ml-auto">
+                {missions.length} {t('missions.missions')}
+              </span>
+            </div>
+            
+            {error && (
+              <Card className="card-enhanced p-4 text-center">
+                <p className="text-muted-foreground">{error}</p>
+              </Card>
+            )}
+
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((index) => (
+                  <Card key={index} className="card-enhanced overflow-hidden">
+                    <div className="flex">
+                      <Skeleton className="w-24 h-20" />
+                      <div className="flex-1 p-4 space-y-3">
+                        <Skeleton className="h-5 w-3/4" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    </div>
+                  </Card>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </section>
-      </main>
-    </div>
+            ) : missions.length === 0 ? (
+              <Card className="card-enhanced p-8 text-center">
+                <div className="space-y-3">
+                  <Users2 className="w-12 h-12 text-muted-foreground mx-auto opacity-50" />
+                  <h3 className="text-lg font-display text-foreground">{t('missions.noMissions')}</h3>
+                  <p className="text-muted-foreground font-body">
+                    {t('missions.checkBackSoon')}
+                  </p>
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {missions.map((mission) => (
+                  <MissionCard 
+                    key={mission.id} 
+                    id={mission.id}
+                    title={mission.title}
+                    description={mission.description}
+                    participants={mission.participants}
+                    location={mission.location}
+                    imageUrl={mission.imageUrl}
+                    targetRegions={mission.targetRegions}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    </PageLayout>
   );
 };
 

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "react-i18next";
 
 interface MissionCardProps {
   id: string;
@@ -16,6 +17,8 @@ interface MissionCardProps {
 }
 
 export const MissionCard = ({ id, title, description, participants, location, imageUrl, targetRegions }: MissionCardProps) => {
+  const { t } = useTranslation();
+  
   const displayLocation = targetRegions && targetRegions.length > 0 
     ? `${targetRegions.slice(0, 2).join(', ')}${targetRegions.length > 2 ? '...' : ''}`
     : location;
@@ -42,7 +45,7 @@ export const MissionCard = ({ id, title, description, participants, location, im
                 {title}
               </h3>
               <Badge variant="outline" className="text-xs bg-velyar-warm/10 text-velyar-earth border-velyar-warm/20">
-                Active
+                {t('common.active')}
               </Badge>
             </div>
 
@@ -56,7 +59,7 @@ export const MissionCard = ({ id, title, description, participants, location, im
               <div className="flex items-center gap-1">
                 <Users2 className="w-3 h-3" />
                 <span className="font-ui">{participants.toLocaleString()}</span>
-                <span>participants</span>
+                <span>{t('common.participants')}</span>
               </div>
               {displayLocation && (
                 <div className="flex items-center gap-1">
@@ -74,7 +77,7 @@ export const MissionCard = ({ id, title, description, participants, location, im
                   size="sm" 
                   className="btn-secondary-enhanced w-full group-hover:bg-velyar-earth group-hover:text-white group-hover:border-velyar-earth transition-all duration-200"
                 >
-                  <span className="text-xs font-ui">Join Mission</span>
+                  <span className="text-xs font-ui">{t('common.joinMission')}</span>
                   <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
                 </Button>
               </Link>

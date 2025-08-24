@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from "react-route
 import { AuthProvider } from "./contexts/AuthContext";
 import { VideoCreateProvider } from "./contexts/VideoCreateContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import { Toaster } from "./components/ui/toaster";
 import { BottomNav } from "./components/BottomNav";
 import { FloatingActionButton } from "./components/FloatingActionButton";
@@ -13,6 +14,7 @@ import { AuthGate } from "./components/AuthGate";
 import { useKeyboardToggle } from "./hooks/useKeyboardToggle";
 import { ProtectedLayout } from "./components/ProtectedLayout";
 import { ScrollToTop } from "./components/ScrollToTop";
+import "./i18n";
 
 // Pages
 import Home from "./pages/Home";
@@ -45,44 +47,46 @@ function App() {
 
   return (
     <ThemeProvider>
-      <Router>
-        <AuthProvider>
-          <VideoCreateProvider>
-            <ScrollToTop />
-            <div className="min-h-screen bg-background">
-              <IOSSafeAreaWrapper>
-                <IOSStatusBar />
-                
-                <Routes>
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/privacy" element={<Privacy />} />
-                  <Route path="/terms" element={<Terms />} />
+      <LanguageProvider>
+        <Router>
+          <AuthProvider>
+            <VideoCreateProvider>
+              <ScrollToTop />
+              <div className="min-h-screen bg-background">
+                <IOSSafeAreaWrapper>
+                  <IOSStatusBar />
                   
-                  {/* Protected Routes */}
-                  <Route element={<AuthGate />}>
-                    <Route element={<ProtectedLayout />}>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/explore" element={<Explore />} />
-                      <Route path="/missions" element={<Missions />} />
-                      <Route path="/create/*" element={<VideoCreate />} />
-                      <Route path="/video-list/:type/:id" element={<VideoList />} />
-                      <Route path="/videos/:type/:id" element={<Videos />} />
-                      <Route path="/profile" element={<Profile />} />
-                      <Route path="/admin/missions" element={<AdminMissions />} />
-                      <Route path="/admin/prompts" element={<AdminPrompts />} />
-                      <Route path="/general-settings" element={<GeneralSettings />} />
+                  <Routes>
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/privacy" element={<Privacy />} />
+                    <Route path="/terms" element={<Terms />} />
+                    
+                    {/* Protected Routes */}
+                    <Route element={<AuthGate />}>
+                      <Route element={<ProtectedLayout />}>
+                        <Route path="/" element={<Home />} />
+                        <Route path="/explore" element={<Explore />} />
+                        <Route path="/missions" element={<Missions />} />
+                        <Route path="/create/*" element={<VideoCreate />} />
+                        <Route path="/video-list/:type/:id" element={<VideoList />} />
+                        <Route path="/videos/:type/:id" element={<Videos />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/admin/missions" element={<AdminMissions />} />
+                        <Route path="/admin/prompts" element={<AdminPrompts />} />
+                        <Route path="/general-settings" element={<GeneralSettings />} />
+                      </Route>
                     </Route>
-                  </Route>
-                  
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                    
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
 
-                <Toaster />
-              </IOSSafeAreaWrapper>
-            </div>
-          </VideoCreateProvider>
-        </AuthProvider>
-      </Router>
+                  <Toaster />
+                </IOSSafeAreaWrapper>
+              </div>
+            </VideoCreateProvider>
+          </AuthProvider>
+        </Router>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }
