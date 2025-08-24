@@ -37,10 +37,12 @@ const VideoCreate = () => {
   const [textOverlays, setTextOverlays] = useState([]);
   const [currentPrompt, setCurrentPrompt] = useState<{ text: string; theme_id: string; theme_name: string; type: 'daily' | 'mission'; title?: string; id?: string } | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   const MAX_RECORDING_TIME = 30; // 30 seconds
   const MAX_FILE_SIZE_MB = 50; // 50MB after compression
-  const { missionId } = useParams();
+  const { missionId } = useParams<{ missionId?: string }>();
   const { isNative, recordVideo, getCurrentLocation } = useMobile();
   const { toast } = useToast();
   const { setIsEditing } = useVideoCreate();
@@ -48,11 +50,13 @@ const VideoCreate = () => {
   const { location: userLocation } = useProfile(user?.id);
   
   console.log('VideoCreate: isNative =', isNative, 'platform:', Capacitor.getPlatform());
+  console.log('VideoCreate: missionId from params =', missionId);
   const navigate = useNavigate();
 
   // Fetch current prompt or mission on component mount
   useEffect(() => {
     const fetchContent = async () => {
+      console.log('VideoCreate: fetchContent called with missionId =', missionId);
       if (missionId) {
         // Fetch mission data with theme
         const { data: missionData } = await supabase
@@ -70,6 +74,7 @@ const VideoCreate = () => {
           .single();
 
         if (missionData) {
+          console.log('VideoCreate: Mission data fetched:', missionData);
           setCurrentPrompt({
             text: missionData.description,
             theme_id: missionData.theme_id || '',
@@ -77,6 +82,8 @@ const VideoCreate = () => {
             type: 'mission',
             title: missionData.title
           });
+        } else {
+          console.log('VideoCreate: No mission data found for ID:', missionId);
         }
       } else {
         // Fetch daily prompt
@@ -257,15 +264,11 @@ const VideoCreate = () => {
       setStep('edit');
       console.log('VideoCreate: File upload complete, moved to edit step');
       
-      // Compress in background if needed
+      // Compress in background if needed (don't block UI)
       if (fileSizeMB > MAX_FILE_SIZE_MB) {
         setIsCompressing(true);
-        toast({
-          title: "Compressing video",
-          description: "Large video detected, compressing in background...",
-        });
         
-        // Compress in background
+        // Compress in background without blocking
         compressVideo(file, {
           maxSizeMB: MAX_FILE_SIZE_MB,
           maxWidthOrHeight: 1280,
@@ -279,15 +282,12 @@ const VideoCreate = () => {
           toast({
             title: "Video compressed",
             description: `Size reduced from ${fileSizeMB.toFixed(1)}MB to ${(compressedFile.size / (1024 * 1024)).toFixed(1)}MB`,
+            duration: 2000,
           });
         }).catch((compressionError) => {
           console.error('Compression failed:', compressionError);
           setIsCompressing(false);
-          toast({
-            title: "Compression failed",
-            description: "Video will be uploaded as-is",
-            variant: "destructive",
-          });
+          // Continue with original file
         });
       }
     } catch (error) {
@@ -321,8 +321,34 @@ const VideoCreate = () => {
       return;
     }
 
+    // Start background processing
+    setIsUploading(true);
+    setUploadProgress(0);
+    
+    // Show initial toast
+    toast({
+      title: "Starting upload...",
+      description: "Your video is being processed and uploaded in the background.",
+      duration: 3000,
+    });
+
+    // Process in background
+    processVideoInBackground().catch((error) => {
+      console.error('Background processing failed:', error);
+      setIsUploading(false);
+      setUploadProgress(0);
+      toast({
+        title: "Upload failed",
+        description: "Please try again later",
+        variant: "destructive",
+        duration: 5000,
+      });
+    });
+  };
+
+  const processVideoInBackground = async () => {
     try {
-      console.log('Starting video submission process...');
+      console.log('Starting background video processing...');
       
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -334,6 +360,8 @@ const VideoCreate = () => {
 
       console.log('User authenticated:', user.id);
 
+      setUploadProgress(10);
+      
       // Generate thumbnail first
       let thumbnailUrl = null;
       try {
@@ -348,28 +376,16 @@ const VideoCreate = () => {
         console.log('Thumbnail generated successfully, uploading to storage...');
         thumbnailUrl = await uploadThumbnailToStorage(thumbnail, `${user.id}_${Date.now()}`);
         console.log('Thumbnail generated and uploaded:', thumbnailUrl);
-        
-        // Show success message
-        toast({
-          title: "Thumbnail generated",
-          description: "Video thumbnail created successfully",
-          duration: 2000,
-        });
+        setUploadProgress(30);
       } catch (error) {
         console.error('Thumbnail generation failed:', error);
         console.error('Error message:', error?.message || 'No message');
         console.error('Error string:', JSON.stringify(error, null, 2));
-        
-        // Show error toast
-        toast({
-          title: "Thumbnail generation failed", 
-          description: error?.message || "Video will be uploaded without thumbnail",
-          variant: "destructive",
-          duration: 3000,
-        });
         // Continue without thumbnail
       }
 
+      setUploadProgress(50);
+      
       // Upload video to Supabase storage
       const fileName = `${user.id}/${Date.now()}.${videoFile.name.split('.').pop() || 'mp4'}`;
       console.log('Uploading file:', fileName, 'Size:', videoFile.size);
@@ -388,16 +404,11 @@ const VideoCreate = () => {
         console.error('File size:', videoFile.size, 'bytes');
         console.error('File type:', videoFile.type);
         
-        toast({
-          title: "Video upload failed",
-          description: uploadError?.message || "Unknown upload error",
-          variant: "destructive",
-          duration: 5000,
-        });
-        return;
+        throw new Error(uploadError?.message || "Unknown upload error");
       }
 
       console.log('Upload successful:', uploadData);
+      setUploadProgress(80);
 
       // Get public URL for the uploaded video
       const { data: { publicUrl } } = supabase.storage
@@ -414,6 +425,22 @@ const VideoCreate = () => {
       }
 
       // Create video record with storage URL
+      console.log('VideoCreate: About to insert video with data:', {
+        user_id: user.id,
+        video_url: publicUrl,
+        thumbnail_url: thumbnailUrl,
+        title: caption || (currentPrompt?.type === 'mission' ? 'Mission Response' : 'Daily Prompt Response'),
+        description: caption,
+        location: location || null,
+        daily_prompt_id: promptId,
+        mission_id: missionId || null,
+        is_public: true,
+        is_hidden: false,
+        moderation_status: 'approved'
+      });
+      console.log('VideoCreate: Current prompt state:', currentPrompt);
+      console.log('VideoCreate: missionId value:', missionId);
+      
       const { data: videoData, error: videoError } = await supabase
         .from('videos')
         .insert({
@@ -426,6 +453,7 @@ const VideoCreate = () => {
           daily_prompt_id: promptId,
           mission_id: missionId || null,
           is_public: true,
+          is_hidden: false,
           moderation_status: 'approved' // Content passed basic filtering
         })
         .select()
@@ -438,6 +466,14 @@ const VideoCreate = () => {
       }
 
       console.log('Video record created:', videoData);
+      console.log('VideoCreate: Video visibility settings:', {
+        id: videoData.id,
+        is_public: videoData.is_public,
+        is_hidden: videoData.is_hidden,
+        moderation_status: videoData.moderation_status,
+        mission_id: videoData.mission_id,
+        daily_prompt_id: videoData.daily_prompt_id
+      });
 
       // If there's a current prompt or mission with a theme, assign the theme to the video
       if (currentPrompt && currentPrompt.theme_id && videoData) {
@@ -461,23 +497,55 @@ const VideoCreate = () => {
         }
       }
 
-      console.log('Video submission complete, showing success message...');
+      setUploadProgress(100);
+      console.log('Video submission complete!');
+      
+      // Test query to verify the video is visible
+      if (videoData && videoData.id) {
+        console.log('VideoCreate: Testing visibility of created video...');
+        const { data: testVideo, error: testError } = await supabase
+          .from('videos')
+          .select('*')
+          .eq('id', videoData.id)
+          .single();
+        
+        if (testError) {
+          console.error('VideoCreate: Error testing video visibility:', testError);
+        } else {
+          console.log('VideoCreate: Video visibility test result:', {
+            id: testVideo.id,
+            is_public: testVideo.is_public,
+            is_hidden: testVideo.is_hidden,
+            moderation_status: testVideo.moderation_status,
+            mission_id: testVideo.mission_id
+          });
+        }
+      }
       
       // Show success toast
       toast({
-        title: "Video uploaded successfully!",
+        title: "Video uploaded successfully! 🎉",
         description: "Your video has been saved and will appear in the feed.",
-        duration: 3000,
+        duration: 4000,
       });
       
-      // Clear state and navigate home after a brief delay
-      setTimeout(() => {
-        clearVideoState();
-        navigate('/');
-      }, 1500);
+      // Reset upload state
+      setIsUploading(false);
+      setUploadProgress(0);
+      
+      // Clear state and navigate home
+      clearVideoState();
+      navigate('/');
     } catch (error) {
-      console.error('Error submitting video:', error);
-      alert(`An error occurred: ${error.message || 'Unknown error'}`);
+      console.error('Error in background video processing:', error);
+      setIsUploading(false);
+      setUploadProgress(0);
+      toast({
+        title: "Upload failed",
+        description: error.message || "An error occurred during upload",
+        variant: "destructive",
+        duration: 5000,
+      });
       // Don't reset to capture screen on error - stay on edit screen
     }
   };
@@ -627,12 +695,20 @@ const VideoCreate = () => {
               onTextOverlaysChange={setTextOverlays}
             />
 
+            {isUploading && (
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
+                <div 
+                  className="bg-velyar-earth h-2 rounded-full transition-all duration-300" 
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            )}
             <Button 
               onClick={handleSubmit}
-              disabled={!videoFile || !caption.trim() || !location.trim() || isCompressing}
+              disabled={!videoFile || !caption.trim() || !location.trim() || isUploading}
               className="w-full bg-velyar-earth hover:bg-velyar-warm text-white font-nunito font-medium disabled:opacity-50"
             >
-              {isCompressing ? t("videoCreate.compressing") : t("videoCreate.share")}
+              {isUploading ? `${t("videoCreate.uploading")} ${uploadProgress}%` : t("videoCreate.share")}
             </Button>
           </div>
         )}

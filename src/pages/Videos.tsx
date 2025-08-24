@@ -5,11 +5,14 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { PageLayout } from "@/components/PageLayout";
+import { useTranslation } from "react-i18next";
 
 const Videos = () => {
   const { type, id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { t } = useTranslation();
   const [showVideoViewer, setShowVideoViewer] = useState(!!id);
 
   const [videos, setVideos] = useState([]);
@@ -37,6 +40,7 @@ const Videos = () => {
         .from('videos')
         .select('*')
         .eq('is_public', true)
+        .eq('is_hidden', false)
         .order('created_at', { ascending: false });
 
       console.log('Videos: Executing query for type:', type, 'id:', id);
@@ -191,34 +195,38 @@ const Videos = () => {
 
   // Handle case when we have an ID but no videos (empty daily prompt)
   if (id && !loading && videos.length === 0) {
-    return (
-      <div className="min-h-screen-safe bg-background font-quicksand content-safe-bottom">
-        {/* Header */}
-        <header className="sticky-header header-safe">
-          <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleBack}
-              className="p-2 text-velyar-earth hover:bg-velyar-soft"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-            <h1 className="text-xl font-medium text-velyar-earth font-nunito">
-              {pageTitle || (type === 'daily-prompt' ? 'daily prompt responses' : 
-               type === 'mission' ? 'mission voices' : 'videos')}
-            </h1>
-          </div>
-        </header>
-
-        {/* Empty state */}
-        <main className="max-w-md mx-auto px-4 pb-24">
-          <div className="mt-8 text-center text-muted-foreground">
-            <p>No videos found for this {type === 'mission' ? 'mission' : 'prompt'} yet.</p>
-            <p className="text-sm mt-2">Be the first to share!</p>
-          </div>
-        </main>
+    // Header component
+    const header = (
+      <div className="pt-safe-header px-4">
+        <div className="max-w-md mx-auto py-3 flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBack}
+            className="p-2 text-velyar-earth hover:bg-velyar-soft"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-xl font-medium text-velyar-earth font-nunito">
+            {pageTitle || (type === 'daily-prompt' ? 'daily prompt responses' : 
+             type === 'mission' ? 'mission voices' : 'videos')}
+          </h1>
+        </div>
       </div>
+    );
+
+    return (
+      <PageLayout header={header}>
+        <div className="px-4">
+          <div className="max-w-md mx-auto space-y-6">
+            {/* Empty state */}
+            <div className="mt-8 text-center text-muted-foreground">
+              <p>No videos found for this {type === 'mission' ? 'mission' : 'prompt'} yet.</p>
+              <p className="text-sm mt-2">Be the first to share!</p>
+            </div>
+          </div>
+        </div>
+      </PageLayout>
     );
   }
 
@@ -250,14 +258,36 @@ const Videos = () => {
     // If video not found, show error
     if (startIndex === -1) {
       console.log('Videos: Video not found. Available video IDs:', videos.map(v => v.id));
-      return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center text-muted-foreground">
-            <p>Video not found</p>
-            <p className="text-sm mt-2">Looking for: {videoId || id}</p>
-            <p className="text-sm">Available: {videos.length} videos</p>
+      
+      // Header component for error state
+      const errorHeader = (
+        <div className="pt-safe-header px-4">
+          <div className="max-w-md mx-auto py-3 flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleBack}
+              className="p-2 text-velyar-earth hover:bg-velyar-soft"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-xl font-medium text-velyar-earth font-nunito">Video Not Found</h1>
           </div>
         </div>
+      );
+      
+      return (
+        <PageLayout header={errorHeader}>
+          <div className="px-4">
+            <div className="max-w-md mx-auto space-y-6">
+              <div className="text-center text-muted-foreground">
+                <p>Video not found</p>
+                <p className="text-sm mt-2">Looking for: {videoId || id}</p>
+                <p className="text-sm">Available: {videos.length} videos</p>
+              </div>
+            </div>
+          </div>
+        </PageLayout>
       );
     }
     

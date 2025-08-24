@@ -78,6 +78,7 @@ const Missions = () => {
           .from('videos')
           .select('id, location, language, user_id')
           .eq('is_public', true)
+          .eq('is_hidden', false)
           .gte('created_at', weekAgo.toISOString());
 
         if (statsError) throw statsError;

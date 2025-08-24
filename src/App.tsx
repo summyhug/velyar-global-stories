@@ -67,7 +67,9 @@ function App() {
                         <Route path="/" element={<Home />} />
                         <Route path="/explore" element={<Explore />} />
                         <Route path="/missions" element={<Missions />} />
-                        <Route path="/create/*" element={<VideoCreate />} />
+                        <Route path="/create/mission/:missionId" element={<VideoCreate />} />
+                        <Route path="/create/daily-prompt" element={<VideoCreate />} />
+                        <Route path="/create" element={<VideoCreate />} />
                         <Route path="/video-list/:type/:id" element={<VideoList />} />
                         <Route path="/videos/:type/:id" element={<Videos />} />
                         <Route path="/profile" element={<Profile />} />

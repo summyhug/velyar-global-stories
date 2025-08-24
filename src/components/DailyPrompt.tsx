@@ -63,7 +63,8 @@ export const DailyPrompt = () => {
             .from('videos')
             .select('id, location, daily_prompt_id')
             .eq('daily_prompt_id', todayPrompt.id)
-            .eq('is_public', true);
+            .eq('is_public', true)
+            .eq('is_hidden', false);
 
           console.log('DailyPrompt: Found videos for prompt', todayPrompt.id, ':', videos?.length || 0);
           console.log('DailyPrompt: Video IDs:', videos?.map(v => v.id) || []);

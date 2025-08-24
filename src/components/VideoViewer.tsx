@@ -178,9 +178,9 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
 
   return (
     <div ref={containerRef} className="fixed inset-0 bg-black z-50 flex flex-col">
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4 header-safe">
-        <div className="flex items-center justify-between">
+      {/* Top Header Bar - Safe Area Aware */}
+      <div className="absolute top-0 left-0 right-0 z-10 pt-safe-header bg-black/60 backdrop-blur-sm">
+        <div className="flex items-center justify-between p-4">
           <Button
             variant="ghost"
             size="sm"
@@ -190,10 +190,10 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="text-white text-center flex-1">
-            <div className="text-xl font-bold">
+            <div className="text-lg font-medium truncate">
               {pageTitle || currentVideo.location || 'Unknown Location'}
             </div>
-            <div className="text-sm text-white/80">
+            <div className="text-sm text-white/80 truncate">
               {currentVideo.profiles?.display_name || currentVideo.profiles?.username || 'Unknown User'}
             </div>
           </div>
@@ -264,7 +264,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
         </div>
       </div>
 
-      {/* Video Container */}
+      {/* Video Container - Full Bleed */}
       <div className="flex-1 relative bg-black">
         <VideoPlayer
           videoUrl={currentVideo.video_url}
@@ -272,7 +272,6 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
           autoPlay={true}
           className="w-full h-full object-contain"
         />
-
 
         {/* Navigation arrows */}
         <div className="absolute inset-y-0 left-0 flex items-center pl-4">
@@ -300,93 +299,100 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
         </div>
       </div>
 
-      {/* Bottom Controls */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 pb-safe-only">
-        {/* Video Title and Description */}
+      {/* Bottom Overlay Container - Safe Area Aware */}
+      <div className="absolute bottom-0 left-0 right-0 pb-safe bg-gradient-to-t from-black/70 via-black/40 to-transparent">
+        {/* Caption Section */}
         {(currentVideo.title || currentVideo.description) && (
-          <div className="text-white mb-4">
-            {currentVideo.title && (
-              <p className="text-lg font-medium mb-1">{currentVideo.title}</p>
-            )}
-            {currentVideo.description && (
-              <p className="text-sm text-white/80">{currentVideo.description}</p>
-            )}
+          <div className="p-4 pb-2">
+            <div className="text-white">
+              {currentVideo.title && (
+                <p className="text-lg font-medium mb-1 leading-tight">{currentVideo.title}</p>
+              )}
+              {currentVideo.description && (
+                <p className="text-sm text-white/90 leading-relaxed">{currentVideo.description}</p>
+              )}
+            </div>
           </div>
         )}
         
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <OctopusButton 
-                size="lg" 
-                isLiked={isLiked}
-                onLike={toggleLike}
-              />
-              <span className="text-white text-sm">{likesCount}</span>
+        {/* Action Row */}
+        <div className="px-4 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <OctopusButton 
+                  size="lg" 
+                  isLiked={isLiked}
+                  onLike={toggleLike}
+                />
+                <span className="text-white text-sm font-medium">{likesCount}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowComments(!showComments)}
+                className="text-white hover:bg-white/20"
+              >
+                <MessageCircle className="w-5 h-5" />
+                <span className="ml-1 text-sm font-medium">{comments.length}</span>
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowComments(!showComments)}
-              className="text-white hover:bg-white/20"
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span className="ml-1 text-sm">{comments.length}</span>
-            </Button>
-          </div>
-          <div className="text-white text-sm">
-            {currentIndex + 1} / {videos.length}
+            <div className="text-white text-sm font-medium bg-black/30 px-2 py-1 rounded-full">
+              {currentIndex + 1} / {videos.length}
+            </div>
           </div>
         </div>
 
         {/* Comment Section */}
         {showComments && (
-          <Card className="mb-4 max-h-80 flex flex-col">
-            <CardContent className="p-4 flex-1 flex flex-col">
-              {/* Comments List */}
-              <div className="flex-1 overflow-y-auto mb-4 max-h-40">
-                {loading ? (
-                  <div className="text-muted-foreground text-sm">Loading comments...</div>
-                ) : comments.length > 0 ? (
-                  <div className="space-y-3">
-                    {comments.map((comment) => (
-                      <div key={comment.id} className="text-sm">
-                        <div className="font-medium text-foreground">
-                          {comment.profiles?.display_name || comment.profiles?.username || 'Anonymous'}
+          <div className="px-4 pb-4">
+            <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-lg">
+              <CardContent className="p-4 flex flex-col max-h-80">
+                {/* Comments List */}
+                <div className="flex-1 overflow-y-auto mb-4 max-h-40">
+                  {loading ? (
+                    <div className="text-muted-foreground text-sm">Loading comments...</div>
+                  ) : comments.length > 0 ? (
+                    <div className="space-y-3">
+                      {comments.map((comment) => (
+                        <div key={comment.id} className="text-sm">
+                          <div className="font-medium text-foreground">
+                            {comment.profiles?.display_name || comment.profiles?.username || 'Anonymous'}
+                          </div>
+                          <div className="text-muted-foreground">{comment.content}</div>
                         </div>
-                        <div className="text-muted-foreground">{comment.content}</div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-muted-foreground text-sm">No comments yet. Be the first!</div>
-                )}
-              </div>
-              
-              {/* Comment Input */}
-              <div className="flex items-end gap-2 border-t pt-3">
-                <div className="flex-1">
-                  <Textarea
-                    placeholder="Add a thoughtful comment (max 100 characters)..."
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value.slice(0, maxCommentLength))}
-                    className="min-h-20 resize-none border-velyar-earth/20 focus:border-velyar-earth"
-                    maxLength={maxCommentLength}
-                  />
-                  <div className="text-xs text-muted-foreground mt-1 text-right">
-                    {comment.length}/{maxCommentLength} characters
-                  </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground text-sm">No comments yet. Be the first!</div>
+                  )}
                 </div>
-                <Button
-                  onClick={handleCommentSubmit}
-                  disabled={!comment.trim()}
-                  className="bg-velyar-warm hover:bg-velyar-glow text-velyar-earth"
-                >
-                  Send
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                
+                {/* Comment Input */}
+                <div className="flex items-end gap-2 border-t pt-3">
+                  <div className="flex-1">
+                    <Textarea
+                      placeholder="Add a thoughtful comment (max 100 characters)..."
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value.slice(0, maxCommentLength))}
+                      className="min-h-20 resize-none border-velyar-earth/20 focus:border-velyar-earth"
+                      maxLength={maxCommentLength}
+                    />
+                    <div className="text-xs text-muted-foreground mt-1 text-right">
+                      {comment.length}/{maxCommentLength} characters
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleCommentSubmit}
+                    disabled={!comment.trim()}
+                    className="bg-velyar-warm hover:bg-velyar-glow text-velyar-earth"
+                  >
+                    Send
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

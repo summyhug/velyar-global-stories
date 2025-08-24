@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageLayout } from "@/components/PageLayout";
+import { useTranslation } from "react-i18next";
 
 interface Video {
   id: string;
@@ -25,6 +27,7 @@ interface Video {
 const VideoList = () => {
   const { type, id } = useParams();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -141,10 +144,12 @@ const VideoList = () => {
         .from('videos')
         .select('*')
         .eq('is_public', true)
+        .eq('is_hidden', false)
         .order('created_at', { ascending: false });
 
       // Filter based on type and id
       if (type === 'mission' && id) {
+        console.log('VideoList: Filtering for mission ID:', id);
         query = query.eq('mission_id', id);
         
         // Fetch mission title
@@ -161,10 +166,11 @@ const VideoList = () => {
           console.log('VideoList: No mission data found for ID:', id);
         }
       } else if (type === 'daily-prompt' && id) {
+        console.log('VideoList: Filtering for daily prompt ID:', id);
         query = query.eq('daily_prompt_id', id);
-        console.log('VideoList: Fetching videos for daily prompt ID:', id);
       }
 
+      console.log('VideoList: Executing query for type:', type, 'id:', id);
       const { data: videosData, error: fetchError } = await query;
 
       if (fetchError) {
@@ -190,6 +196,14 @@ const VideoList = () => {
 
       console.log('VideoList: Found videos:', videosWithProfiles.length);
       console.log('VideoList: Video IDs:', videosWithProfiles.map(v => v.id));
+      console.log('VideoList: Video details:', videosWithProfiles.map(v => ({
+        id: v.id,
+        is_public: v.is_public,
+        is_hidden: v.is_hidden,
+        moderation_status: v.moderation_status,
+        mission_id: v.mission_id,
+        daily_prompt_id: v.daily_prompt_id
+      })));
       setVideos(videosWithProfiles);
     } catch (err) {
       console.error('Error fetching videos:', err);
@@ -251,108 +265,112 @@ const VideoList = () => {
     return fallbackTitle;
   };
 
-  return (
-    <div className="min-h-screen-safe bg-background font-quicksand content-safe-bottom">
-      {/* Header */}
-      <header className="sticky-header header-safe">
-        <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleBack}
-            className="p-2 text-velyar-earth hover:bg-velyar-soft"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-xl font-medium text-velyar-earth font-nunito">{getTitle()}</h1>
-        </div>
-      </header>
-
-      {/* Video Grid */}
-      <main className="max-w-md mx-auto px-4 pb-24">
-        {loading && (
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="border-velyar-earth/10">
-                <CardContent className="p-0">
-                  <Skeleton className="aspect-[3/4] rounded-t-lg" />
-                  <div className="p-3 space-y-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                    <Skeleton className="h-3 w-full" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {error && (
-          <div className="mt-8 text-center text-muted-foreground">
-            <p>{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && videos.length === 0 && (
-          <div className="mt-8 text-center text-muted-foreground">
-            <p>No videos found for this {type === 'mission' ? 'mission' : 'category'} yet.</p>
-          </div>
-        )}
-
-        {!loading && !error && videos.length > 0 && (
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            {videos.map((video) => (
-              <Card 
-                key={video.id} 
-                className="cursor-pointer hover:shadow-gentle transition-shadow border-velyar-earth/10"
-                  onClick={() => handleVideoClick(video.id)}
-              >
-                <CardContent className="p-0">
-                  <div className="relative aspect-[3/4] rounded-t-lg overflow-hidden">
-                    {video.thumbnail_url ? (
-                      <img 
-                        src={video.thumbnail_url} 
-                        alt={video.title || "Video thumbnail"}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-velyar-earth/20 to-velyar-warm/20 flex items-center justify-center">
-                        <div className="text-velyar-earth/60 text-xs text-center px-2">
-                          Video Preview
-                        </div>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                      <Play className="w-8 h-8 text-white" />
-                    </div>
-                  </div>
-                  <div className="p-3">
-                    <div className="font-medium text-velyar-earth font-nunito text-sm mb-1">
-                      {video.location || 'Unknown location'}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {video.profiles?.display_name || video.profiles?.username || 'Anonymous'}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {!loading && !error && videos.length > 0 && (
-          <div className="mt-8 text-center">
-            <Button 
-              variant="outline" 
-              className="border-velyar-earth/20 text-velyar-earth hover:bg-velyar-soft"
-              onClick={fetchVideos}
-            >
-              load more voices
-            </Button>
-          </div>
-        )}
-      </main>
+  // Header component
+  const header = (
+    <div className="pt-safe-header px-4">
+      <div className="max-w-md mx-auto py-3 flex items-center gap-3">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleBack}
+          className="p-2 text-velyar-earth hover:bg-velyar-soft"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <h1 className="text-xl font-medium text-velyar-earth font-nunito">{getTitle()}</h1>
+      </div>
     </div>
+  );
+
+  return (
+    <PageLayout header={header}>
+      <div className="px-4">
+        <div className="max-w-md mx-auto space-y-6">
+          {/* Video Grid */}
+          {loading && (
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              {[...Array(6)].map((_, i) => (
+                <Card key={i} className="border-velyar-earth/10">
+                  <CardContent className="p-0">
+                    <Skeleton className="aspect-[3/4] rounded-t-lg" />
+                    <div className="p-3 space-y-2">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                      <Skeleton className="h-3 w-full" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-8 text-center text-muted-foreground">
+              <p>{error}</p>
+            </div>
+          )}
+
+          {!loading && !error && videos.length === 0 && (
+            <div className="mt-8 text-center text-muted-foreground">
+              <p>No videos found for this {type === 'mission' ? 'mission' : 'category'} yet.</p>
+            </div>
+          )}
+
+          {!loading && !error && videos.length > 0 && (
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              {videos.map((video) => (
+                <Card 
+                  key={video.id} 
+                  className="cursor-pointer hover:shadow-gentle transition-shadow border-velyar-earth/10"
+                    onClick={() => handleVideoClick(video.id)}
+                >
+                  <CardContent className="p-0">
+                    <div className="relative aspect-[3/4] rounded-t-lg overflow-hidden">
+                      {video.thumbnail_url ? (
+                        <img 
+                          src={video.thumbnail_url} 
+                          alt={video.title || "Video thumbnail"}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-velyar-earth/20 to-velyar-warm/20 flex items-center justify-center">
+                          <div className="text-velyar-earth/60 text-xs text-center px-2">
+                            Video Preview
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                        <Play className="w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <div className="font-medium text-velyar-earth font-nunito text-sm mb-1">
+                        {video.location || 'Unknown location'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {video.profiles?.display_name || video.profiles?.username || 'Anonymous'}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {!loading && !error && videos.length > 0 && (
+            <div className="mt-8 text-center">
+              <Button 
+                variant="outline" 
+                className="border-velyar-earth/20 text-velyar-earth hover:bg-velyar-soft"
+                onClick={fetchVideos}
+              >
+                load more voices
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </PageLayout>
   );
 };
 
