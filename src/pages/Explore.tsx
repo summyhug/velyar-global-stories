@@ -100,13 +100,13 @@ const Explore = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="p-2"
+            className="p-2 text-velyar-earth hover:bg-velyar-soft"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-medium text-foreground font-nunito">explore</h1>
-          <Button variant="ghost" size="sm" className="p-2 ml-auto">
+          <h1 className="text-xl font-medium text-velyar-earth font-nunito">explore</h1>
+          <Button variant="ghost" size="sm" className="p-2 ml-auto text-velyar-earth hover:bg-velyar-soft">
             <Filter className="w-5 h-5" />
           </Button>
         </div>

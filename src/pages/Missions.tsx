@@ -148,12 +148,12 @@ const Missions = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="p-2"
+            className="p-2 text-velyar-earth hover:bg-velyar-soft"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-medium text-foreground font-nunito">mission hub</h1>
+          <h1 className="text-xl font-medium text-velyar-earth font-nunito">mission hub</h1>
         </div>
       </header>
 

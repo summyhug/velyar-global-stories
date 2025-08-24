@@ -38,11 +38,11 @@ const Profile = () => {
       {/* Header */}
       <header className="sticky-header header-safe">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" className="p-2" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="sm" className="p-2 text-velyar-earth hover:bg-velyar-soft" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-medium text-foreground font-nunito">your profile</h1>
-          <Button variant="ghost" size="sm" className="p-2 ml-auto">
+          <h1 className="text-xl font-medium text-velyar-earth font-nunito">your profile</h1>
+          <Button variant="ghost" size="sm" className="p-2 ml-auto text-velyar-earth hover:bg-velyar-soft">
             <Share2 className="w-5 h-5" />
           </Button>
         </div>
