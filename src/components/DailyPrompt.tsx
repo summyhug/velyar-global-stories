@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from "react";
-import { ArrowRight, Clock, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Clock, ArrowRight, Eye, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -88,47 +89,71 @@ export const DailyPrompt = () => {
 
     fetchPromptData();
   }, []);
+
   return (
-    <Card className="mt-6 bg-gradient-soft border-0 shadow-gentle">
+    <Card 
+      className="card-interactive group overflow-hidden border-velyar-warm/30 bg-gradient-to-br from-velyar-soft/50 to-background"
+    >
       <CardContent className="p-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Clock className="w-4 h-4 text-velyar-earth" />
-          <span className="text-sm text-muted-foreground">today's global prompt</span>
-        </div>
-        
-        <h2 className="text-xl font-medium text-foreground mb-4 leading-relaxed font-nunito">
-          "{prompt}"
-        </h2>
-        
-        <p className="text-sm text-muted-foreground mb-6">
-          {loading 
-            ? "loading participation..." 
-            : stats.voices > 0 
-              ? `join ${stats.voices.toLocaleString()} voices from ${stats.countries} countries sharing their stories`
-              : "be the first to share your story"
-          }
-        </p>
-        
-        <div className="flex gap-3">
-          <Link to="/create/daily-prompt" className="flex-1">
-            <Button 
-              className="w-full bg-velyar-earth hover:bg-velyar-warm transition-colors"
-              size="lg"
-            >
-              share
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </Link>
-          <Link to={currentPromptId ? `/video-list/daily-prompt/${currentPromptId}` : "/video-list/daily-prompt"} className="flex-1" onClick={() => console.log('DailyPrompt: View button clicked, navigating to:', currentPromptId ? `/video-list/daily-prompt/${currentPromptId}` : "/video-list/daily-prompt")}>
-            <Button 
-              variant="outline"
-              className="w-full"
-              size="lg"
-            >
-              view
-              <Eye className="w-4 h-4 ml-2" />
-            </Button>
-          </Link>
+        <div className="space-y-4">
+          {/* Header with enhanced typography */}
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-velyar-earth/10 rounded-full">
+                <Clock className="w-4 h-4 text-velyar-earth group-hover:animate-pulse" />
+              </div>
+              <div>
+                <h3 className="text-sm font-ui text-muted-foreground uppercase tracking-wide">Daily Global Prompt</h3>
+                <p className="text-xs text-muted-foreground">Updated every 24 hours</p>
+              </div>
+            </div>
+            <Badge variant="secondary" className="bg-velyar-warm/20 text-velyar-earth border-velyar-warm/30">
+              Live
+            </Badge>
+          </div>
+
+          {/* Enhanced prompt text */}
+          <div className="space-y-3">
+            <h2 className="text-xl font-display text-foreground leading-tight group-hover:text-velyar-earth transition-colors duration-200">
+              {prompt}
+            </h2>
+            
+            {/* Enhanced stats with better visual hierarchy */}
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Eye className="w-4 h-4" />
+                <span className="font-ui">{loading ? "loading..." : stats.voices.toLocaleString()}</span>
+                <span>participants</span>
+              </div>
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <MapPin className="w-4 h-4" />
+                <span className="font-ui">{loading ? "loading..." : `${stats.countries} countries`}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced action buttons with proper navigation */}
+          <div className="flex gap-3 pt-2">
+            <Link to="/create/daily-prompt" className="flex-1">
+              <Button 
+                size="sm" 
+                className="btn-primary-enhanced w-full group-hover:scale-105 transition-transform duration-200"
+              >
+                <span className="font-ui">Respond</span>
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
+              </Button>
+            </Link>
+            <Link to={currentPromptId ? `/video-list/daily-prompt/${currentPromptId}` : "/video-list/daily-prompt"} className="flex-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="btn-secondary-enhanced w-full group-hover:scale-105 transition-transform duration-200"
+              >
+                <Eye className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                <span className="font-ui">View</span>
+              </Button>
+            </Link>
+          </div>
         </div>
       </CardContent>
     </Card>

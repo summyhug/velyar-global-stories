@@ -1,118 +1,72 @@
 
 import React from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { Capacitor } from "@capacitor/core";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { VideoCreateProvider } from "./contexts/VideoCreateContext";
+import { Toaster } from "./components/ui/toaster";
+import { BottomNav } from "./components/BottomNav";
+import { FloatingActionButton } from "./components/FloatingActionButton";
+import { IOSSafeAreaWrapper } from "./components/IOSSafeAreaWrapper";
+import { IOSStatusBar } from "./components/IOSStatusBar";
+
+// Pages
 import Home from "./pages/Home";
-import Auth from "./pages/Auth";
 import Explore from "./pages/Explore";
 import Missions from "./pages/Missions";
-import Profile from "./pages/Profile";
-import Contributions from "./pages/Contributions";
 import VideoCreate from "./pages/VideoCreate";
-import Videos from "./pages/Videos";
 import VideoList from "./pages/VideoList";
-import NotFound from "./pages/NotFound";
-import AdminPrompts from "./pages/AdminPrompts";
+import Videos from "./pages/Videos";
+import Profile from "./pages/Profile";
+import Auth from "./pages/Auth";
 import AdminMissions from "./pages/AdminMissions";
-import Terms from "./pages/Terms";
+import AdminPrompts from "./pages/AdminPrompts";
+import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
-import { BottomNav } from "./components/BottomNav";
-import { IOSStatusBar } from "./components/IOSStatusBar";
-import { IOSSafeAreaWrapper } from "./components/IOSSafeAreaWrapper";
-import { useHardwareBackButton } from "./hooks/useHardwareBackButton";
-import { clearAuthData } from "./integrations/supabase/client";
-import { VideoCreateProvider, useVideoCreate } from "./contexts/VideoCreateContext";
-import { AuthProvider } from "./contexts/AuthContext";
-import { AuthGate } from "./components/AuthGate";
+import Terms from "./pages/Terms";
 
-const queryClient = new QueryClient();
-
-// Utility function to clear auth data for SDK distribution
-// Call this function before distributing your SDK
-(window as any).clearAuthForDistribution = clearAuthData;
-
-const AppContentInner = () => {
-  const { isEditing, setIsEditing } = useVideoCreate();
-  const location = useLocation();
-  useHardwareBackButton();
-
-  // Reset isEditing when not on video create pages
+function App() {
+  // Set safe area values for CSS variables
   React.useEffect(() => {
-    if (!location.pathname.startsWith('/create')) {
-      setIsEditing(false);
-    }
-  }, [location.pathname, setIsEditing]);
-
-  // Hide bottom nav on auth, terms, privacy, videos, admin pages, and when editing
-  const hideBottomNav = ['/auth', '/terms', '/privacy'].includes(location.pathname) || 
-                       location.pathname.startsWith('/videos/') || 
-                       location.pathname.startsWith('/admin/') ||
-                       isEditing;
+    // Set reasonable fallback values for safe areas
+    document.documentElement.style.setProperty('--safe-area-top', '24px');
+    document.documentElement.style.setProperty('--safe-area-bottom', '34px');
+    document.documentElement.style.setProperty('--safe-area-left', '0px');
+    document.documentElement.style.setProperty('--safe-area-right', '0px');
+  }, []);
 
   return (
-    <div className="relative">
-      <IOSStatusBar />
-      <IOSSafeAreaWrapper>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/privacy" element={<Privacy />} />
-          
-          {/* Protected routes */}
-          <Route element={<AuthGate />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/missions" element={<Missions />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/contributions" element={<Contributions />} />
-            <Route path="/create" element={<VideoCreate />} />
-            <Route path="/create/mission/:missionId" element={<VideoCreate />} />
-            <Route path="/create/daily-prompt" element={<VideoCreate />} />
-            <Route path="/admin/prompts" element={<AdminPrompts />} />
-            <Route path="/admin/missions" element={<AdminMissions />} />
-            <Route path="/video-list/:type/:id?" element={<VideoList />} />
-            <Route path="/videos/:type/:id?" element={<Videos />} />
-          </Route>
-          
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </IOSSafeAreaWrapper>
-      {!hideBottomNav && <BottomNav />}
-    </div>
-  );
-};
-
-const AppContent = () => {
-  return (
-    <VideoCreateProvider>
-      <AppContentInner />
-    </VideoCreateProvider>
-  );
-};
-
-// Use HashRouter on native platforms, BrowserRouter on web
-const Router = Capacitor.isNativePlatform() ? HashRouter : BrowserRouter;
-
-const App = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
+    <Router>
       <AuthProvider>
-        <Router>
-          <TooltipProvider>
-            <AppContent />
-            <Toaster />
-            <Sonner />
-          </TooltipProvider>
-        </Router>
+        <VideoCreateProvider>
+          <div className="min-h-screen bg-background">
+            <IOSSafeAreaWrapper>
+              <IOSStatusBar />
+              
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/explore" element={<Explore />} />
+                <Route path="/missions" element={<Missions />} />
+                <Route path="/create/*" element={<VideoCreate />} />
+                <Route path="/video-list/*" element={<VideoList />} />
+                <Route path="/videos" element={<Videos />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/admin/missions" element={<AdminMissions />} />
+                <Route path="/admin/prompts" element={<AdminPrompts />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+
+              <BottomNav />
+              <FloatingActionButton />
+              <Toaster />
+            </IOSSafeAreaWrapper>
+          </div>
+        </VideoCreateProvider>
       </AuthProvider>
-    </QueryClientProvider>
+    </Router>
   );
-};
+}
 
 export default App;

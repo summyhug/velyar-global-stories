@@ -4,7 +4,6 @@
 @tailwind utilities;
 
 /* Velyar Brand Design System */
-
 @layer base {
   :root {
     /* Velyar Brand Colors */
@@ -65,6 +64,12 @@
     --sidebar-accent-foreground: 194 42% 28%;
     --sidebar-border: 43 20% 85%;
     --sidebar-ring: 194 42% 28%;
+
+    /* Safe area variables */
+    --safe-area-top: 0px;
+    --safe-area-bottom: 0px;
+    --safe-area-left: 0px;
+    --safe-area-right: 0px;
   }
 
   .dark {
@@ -115,94 +120,273 @@
   }
 }
 
+/* Apply safe area padding to root elements */
+html, body {
+  padding-bottom: var(--safe-area-bottom, 0px);
+  padding-left: var(--safe-area-left, 0px);
+  padding-right: var(--safe-area-right, 0px);
+  background-color: hsl(var(--background));
+  min-height: 100%;
+}
+
+#root {
+  background-color: hsl(var(--background));
+  min-height: 100%;
+}
+
+/* Enhanced Typography System */
 @layer base {
-  html, body {
-    padding: 0;
-    margin: 0;
-    height: 100dvh;
-    min-height: 100dvh;
-    background-color: hsl(var(--background));
-    box-sizing: border-box;
-  }
-
+  /* Improved font loading and fallbacks */
   body {
-    @apply bg-background text-foreground;
+    font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  * {
-    @apply border-border;
+  /* Enhanced heading hierarchy */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.05em;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+
+  /* Improved paragraph readability */
+  p {
+    line-height: 1.6;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Better link styling */
+  a {
+    color: hsl(var(--primary));
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  a:hover {
+    color: hsl(var(--primary) / 0.8);
   }
 }
 
+/* Safe Area Utility Classes */
+.pt-safe {
+  padding-top: var(--safe-area-top, 0px);
+}
+
+.pb-safe {
+  padding-bottom: var(--safe-area-bottom, 0px);
+}
+
+.pl-safe {
+  padding-left: var(--safe-area-left, 0px);
+}
+
+.pr-safe {
+  padding-right: var(--safe-area-right, 0px);
+}
+
+.p-safe {
+  padding: var(--safe-area-top, 0px) var(--safe-area-right, 0px) var(--safe-area-bottom, 0px) var(--safe-area-left, 0px);
+}
+
+.pt-safe-header {
+  padding-top: max(var(--safe-area-top, 0px), 12px);
+}
+
+/* Layout Components */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: hsl(var(--background) / 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid hsl(var(--border) / 0.1);
+  padding-top: max(var(--safe-area-top, 0px), 12px);
+  transition: all 0.3s ease;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background: hsl(var(--background) / 0.95);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid hsl(var(--border) / 0.1);
+  padding-bottom: var(--safe-area-bottom, 0px);
+  transition: all 0.3s ease;
+}
+
+.content-safe-bottom {
+  padding-bottom: calc(80px + var(--safe-area-bottom, 0px));
+}
+
+.min-h-screen-safe {
+  min-height: calc(100vh - var(--safe-area-top, 0px) - var(--safe-area-bottom, 0px));
+}
+
+/* Enhanced Card Styles */
+@layer components {
+  .card-enhanced {
+    @apply bg-card border border-border/50 shadow-sm;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-enhanced:hover {
+    @apply shadow-md border-border/70;
+    transform: translateY(-1px);
+  }
+
+  .card-interactive {
+    @apply cursor-pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .card-interactive:hover {
+    @apply shadow-lg;
+    transform: translateY(-2px) scale(1.01);
+  }
+
+  .card-interactive:active {
+    transform: translateY(0) scale(0.99);
+  }
+}
+
+/* Enhanced Button Styles */
+@layer components {
+  .btn-primary-enhanced {
+    @apply bg-primary text-primary-foreground shadow-sm;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-primary-enhanced:hover {
+    @apply shadow-md;
+    transform: translateY(-1px);
+  }
+
+  .btn-primary-enhanced:active {
+    transform: translateY(0);
+  }
+
+  .btn-secondary-enhanced {
+    @apply bg-secondary text-secondary-foreground border border-border shadow-sm;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-secondary-enhanced:hover {
+    @apply shadow-md bg-secondary/80;
+    transform: translateY(-1px);
+  }
+}
+
+/* Enhanced Text Styles */
 @layer utilities {
-  .center {
-    @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
+  .text-gradient {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 
-  /* Safe area utilities for mobile devices */
-  .safe-area-inset {
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 
-  .pt-safe-top {
-    padding-top: max(env(safe-area-inset-top), 12px);
+  .text-shadow-md {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
   }
 
-  .pb-safe-bottom {
-    padding-bottom: calc(env(safe-area-inset-bottom) + 80px);
+  .font-display {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.025em;
   }
 
-  /* For video viewers without bottom navigation */
-  .pb-safe-only {
-    padding-bottom: max(env(safe-area-inset-bottom), 12px);
+  .font-body {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 400;
+    line-height: 1.6;
   }
 
-  .nav-safe-bottom {
-    bottom: env(safe-area-inset-bottom);
-    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  .font-ui {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-weight: 500;
+  }
+}
+
+/* Enhanced Loading States */
+@layer components {
+  .loading-skeleton {
+    @apply bg-muted/50 animate-pulse rounded;
   }
 
-  /* Headers that stick to top safe area */
-  .header-safe {
-    padding-top: max(env(safe-area-inset-top), 12px);
+  .loading-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+/* Enhanced Focus States */
+@layer base {
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 
-  /* Full height containers accounting for safe areas */
-  .min-h-screen-safe {
-    min-height: 100vh;
-    min-height: 100dvh; /* Dynamic viewport height for mobile */
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 0.375rem;
+  }
+}
+
+/* Enhanced Scrollbar */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 6px;
   }
 
-  /* Content areas that account for bottom nav + safe area */
-  .content-safe-bottom {
-    padding-bottom: calc(env(safe-area-inset-bottom) + 80px); /* 80px nav height */
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted) / 0.1);
   }
 
-  /* For sticky headers */
-  .sticky-header {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: hsl(var(--background) / 0.8);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid hsl(var(--border));
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted) / 0.3);
+    border-radius: 3px;
   }
 
-  /* For bottom navigation */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 50;
-    background: hsl(var(--background) / 0.8);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid hsl(var(--border));
-    padding-bottom: env(safe-area-inset-bottom);
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted) / 0.5);
   }
+}
 
-
+/* Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }

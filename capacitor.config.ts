@@ -36,6 +36,9 @@ const config: CapacitorConfig = {
       resize: 'body',
       style: 'dark',
       resizeOnFullScreen: true
+    },
+    SafeArea: {
+      backgroundColor: '#fffbf0'
     }
   },
   ios: {

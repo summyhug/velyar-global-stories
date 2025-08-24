@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { ShimmerSkeleton } from "@/components/ui/skeleton";
 
 interface Theme {
   id: string;
@@ -132,9 +133,9 @@ const Explore = () => {
               {Array.from({ length: 6 }).map((_, i) => (
                 <Card key={i} className="border-0 shadow-gentle">
                   <CardContent className="p-4 text-center">
-                    <div className="w-8 h-8 bg-muted rounded mx-auto mb-2 animate-pulse" />
-                    <div className="h-4 bg-muted rounded mb-1 animate-pulse" />
-                    <div className="h-3 bg-muted rounded animate-pulse" />
+                    <ShimmerSkeleton className="w-8 h-8 rounded mx-auto mb-2" />
+                    <ShimmerSkeleton className="h-4 w-3/4 mx-auto mb-1" />
+                    <ShimmerSkeleton className="h-3 w-1/2 mx-auto" />
                   </CardContent>
                 </Card>
               ))}
@@ -164,13 +165,13 @@ const Explore = () => {
               {Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i} className="border-0 shadow-gentle">
                   <CardContent className="p-4">
-                    <div className="h-4 bg-muted rounded mb-2 animate-pulse" />
+                    <ShimmerSkeleton className="h-4 w-full mb-2" />
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="h-3 bg-muted rounded w-20 animate-pulse" />
-                        <div className="h-3 bg-muted rounded w-24 animate-pulse" />
+                        <ShimmerSkeleton className="h-3 w-20" />
+                        <ShimmerSkeleton className="h-3 w-24" />
                       </div>
-                      <div className="h-3 bg-muted rounded w-16 animate-pulse" />
+                      <ShimmerSkeleton className="h-3 w-16" />
                     </div>
                   </CardContent>
                 </Card>
