@@ -6,7 +6,7 @@
 /* Velyar Brand Design System */
 @layer base {
   :root {
-    /* Velyar Brand Colors */
+    /* Velyar Brand Colors - Light Mode */
     --background: 43 33% 94%; /* #F5F1E1 - Warm Beige */
     --foreground: 194 42% 28%; /* #285A66 - Dark Teal */
 
@@ -73,48 +73,58 @@
   }
 
   .dark {
-    /* Dark mode with Velyar brand colors */
-    --background: 194 42% 12%;
-    --foreground: 43 33% 94%;
+    /* Velyar Brand Colors - Dark Mode (Original Blueish Theme) */
+    --background: 194 42% 12%; /* Deep Teal Background */
+    --foreground: 0 0% 98%; /* Almost white text for readability */
 
-    --card: 194 42% 15%;
-    --card-foreground: 43 33% 94%;
+    --card: 194 42% 15%; /* Slightly Lighter Teal */
+    --card-foreground: 0 0% 98%;
 
     --popover: 194 42% 15%;
-    --popover-foreground: 43 33% 94%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 37 37% 60%;
+    /* Keep Velyar brand colors for accents */
+    --primary: 37 37% 60%; /* Warm Brown */
     --primary-foreground: 194 42% 12%;
 
     --secondary: 194 30% 25%;
-    --secondary-foreground: 43 33% 90%;
+    --secondary-foreground: 0 0% 90%;
 
     --muted: 194 30% 20%;
-    --muted-foreground: 43 20% 70%;
+    --muted-foreground: 0 0% 65%;
 
     --accent: 37 37% 55%;
     --accent-foreground: 194 42% 12%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 43 33% 94%;
+    --destructive-foreground: 0 0% 98%;
 
     --border: 194 30% 25%;
     --input: 194 30% 25%;
     --ring: 37 37% 60%;
 
-    --velyar-warm: 37 37% 55%;
-    --velyar-earth: 194 42% 40%;
-    --velyar-soft: 194 42% 15%;
-    --velyar-glow: 37 37% 50%;
-    --velyar-coral: 13 100% 60%;
-    --velyar-olive: 78 44% 35%;
+    /* Velyar-specific design tokens - Dark Mode */
+    --velyar-warm: 37 37% 55%; /* Warm Brown */
+    --velyar-earth: 194 42% 40%; /* Teal */
+    --velyar-soft: 194 42% 15%; /* Card Background */
+    --velyar-glow: 37 37% 50%; /* Muted Warm */
+    --velyar-coral: 13 100% 60%; /* Coral */
+    --velyar-olive: 78 44% 35%; /* Olive */
     
+    /* Gradients - Dark Mode */
+    --gradient-warm: linear-gradient(135deg, hsl(var(--velyar-earth)), hsl(var(--velyar-warm)));
+    --gradient-soft: linear-gradient(180deg, hsl(var(--background)), hsl(var(--velyar-soft)));
+    
+    /* Shadows - Dark Mode */
+    --shadow-gentle: 0 4px 16px -8px rgba(0, 0, 0, 0.3);
+    --shadow-warm: 0 8px 32px -12px rgba(0, 0, 0, 0.4);
+
     --sidebar-background: 194 42% 15%;
-    --sidebar-foreground: 43 33% 94%;
+    --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 37 37% 60%;
     --sidebar-primary-foreground: 194 42% 12%;
     --sidebar-accent: 194 30% 25%;
-    --sidebar-accent-foreground: 43 33% 90%;
+    --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 194 30% 25%;
     --sidebar-ring: 37 37% 60%;
   }

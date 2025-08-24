@@ -3,6 +3,7 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { VideoCreateProvider } from "./contexts/VideoCreateContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { Toaster } from "./components/ui/toaster";
 import { BottomNav } from "./components/BottomNav";
 import { FloatingActionButton } from "./components/FloatingActionButton";
@@ -23,6 +24,7 @@ import AdminPrompts from "./pages/AdminPrompts";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import GeneralSettings from "./pages/GeneralSettings";
 
 function App() {
   // Set safe area values for CSS variables
@@ -35,37 +37,40 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <AuthProvider>
-        <VideoCreateProvider>
-          <div className="min-h-screen bg-background">
-            <IOSSafeAreaWrapper>
-              <IOSStatusBar />
-              
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/explore" element={<Explore />} />
-                <Route path="/missions" element={<Missions />} />
-                <Route path="/create/*" element={<VideoCreate />} />
-                <Route path="/video-list/*" element={<VideoList />} />
-                <Route path="/videos" element={<Videos />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/admin/missions" element={<AdminMissions />} />
-                <Route path="/admin/prompts" element={<AdminPrompts />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+    <ThemeProvider>
+      <Router>
+        <AuthProvider>
+          <VideoCreateProvider>
+            <div className="min-h-screen bg-background">
+              <IOSSafeAreaWrapper>
+                <IOSStatusBar />
+                
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/explore" element={<Explore />} />
+                  <Route path="/missions" element={<Missions />} />
+                  <Route path="/create/*" element={<VideoCreate />} />
+                  <Route path="/video-list/:type/:id" element={<VideoList />} />
+                  <Route path="/videos/:type/:id" element={<Videos />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/admin/missions" element={<AdminMissions />} />
+                  <Route path="/admin/prompts" element={<AdminPrompts />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/general-settings" element={<GeneralSettings />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
 
-              <BottomNav />
-              <FloatingActionButton />
-              <Toaster />
-            </IOSSafeAreaWrapper>
-          </div>
-        </VideoCreateProvider>
-      </AuthProvider>
-    </Router>
+                <BottomNav />
+                <FloatingActionButton />
+                <Toaster />
+              </IOSSafeAreaWrapper>
+            </div>
+          </VideoCreateProvider>
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 }
 

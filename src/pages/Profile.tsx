@@ -124,15 +124,18 @@ const Profile = () => {
         </section>
 
         {/* Settings */}
-        <section className="mt-8">
+        <section className="mt-8 space-y-6">
+          {/* Theme Settings */}
           <Card className="border-0 shadow-gentle">
             <CardContent className="p-6">
               <h3 className="text-sm font-medium text-foreground mb-4 font-nunito">settings</h3>
               <div className="space-y-3">
-                <Button variant="ghost" className="w-full justify-start text-sm gap-2">
-                  <Settings className="w-4 h-4" />
-                  notification preferences
-                </Button>
+                <Link to="/general-settings" className="w-full">
+                  <Button variant="ghost" className="w-full justify-start text-sm gap-2">
+                    <Settings className="w-4 h-4" />
+                    general
+                  </Button>
+                </Link>
                 <Link to="/privacy" className="w-full">
                   <Button variant="ghost" className="w-full justify-start text-sm gap-2">
                     <Shield className="w-4 h-4" />

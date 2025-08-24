@@ -156,6 +156,9 @@ const VideoList = () => {
         
         if (missionData) {
           setMissionTitle(missionData.title);
+          console.log('VideoList: Set mission title:', missionData.title);
+        } else {
+          console.log('VideoList: No mission data found for ID:', id);
         }
       } else if (type === 'daily-prompt' && id) {
         query = query.eq('daily_prompt_id', id);
@@ -197,14 +200,11 @@ const VideoList = () => {
   };
 
   const handleVideoClick = (videoId: string) => {
-    // For mission videos, we need to pass both mission ID and video ID
-    if (type === 'mission') {
-      navigate(`/videos/${type}/${id}?video=${videoId}`);
-    } else if (type === 'daily-prompt') {
-      navigate(`/videos/${type}/${id}?video=${videoId}`); // Pass prompt ID and video ID as query param
-    } else {
-      navigate(`/videos/${type}/${videoId}`);
-    }
+    // Navigate to the video viewer page with the specific video
+    const targetUrl = `/videos/${type}/${id}?video=${videoId}`;
+    console.log('VideoList: Navigating to:', targetUrl, 'for video ID:', videoId);
+    console.log('VideoList: Current type:', type, 'id:', id);
+    navigate(targetUrl);
   };
 
   const handleBack = () => {
@@ -218,9 +218,13 @@ const VideoList = () => {
   };
 
   const getTitle = () => {
+    console.log('VideoList: getTitle called - missionTitle:', missionTitle, 'type:', type);
+    
     if (missionTitle) {
       if (type === 'mission') {
-        return `${missionTitle} mission`;
+        const title = `${missionTitle} mission`;
+        console.log('VideoList: Returning mission title:', title);
+        return title;
       } else if (type === 'theme') {
         return `${missionTitle} voices`;
       } else if (type === 'archived-prompt') {
@@ -228,18 +232,23 @@ const VideoList = () => {
       }
     }
     
-    switch (type) {
-      case 'daily-prompt':
-        return 'daily prompt responses';
-      case 'mission':
-        return 'mission voices';
-      case 'theme':
-        return 'theme voices';
-      case 'archived-prompt':
-        return 'archived prompt';
-      default:
-        return 'global voices';
-    }
+    const fallbackTitle = (() => {
+      switch (type) {
+        case 'daily-prompt':
+          return 'daily prompt responses';
+        case 'mission':
+          return 'mission voices';
+        case 'theme':
+          return 'theme voices';
+        case 'archived-prompt':
+          return 'archived prompt';
+        default:
+          return 'global voices';
+      }
+    })();
+    
+    console.log('VideoList: Returning fallback title:', fallbackTitle);
+    return fallbackTitle;
   };
 
   return (

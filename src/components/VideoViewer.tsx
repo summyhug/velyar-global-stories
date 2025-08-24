@@ -30,9 +30,10 @@ interface VideoViewerProps {
   }>;
   initialIndex?: number;
   onBack: () => void;
+  pageTitle?: string;
 }
 
-export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerProps) => {
+export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: VideoViewerProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState("");
@@ -190,7 +191,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack }: VideoViewerPro
           </Button>
           <div className="text-white text-center flex-1">
             <div className="text-xl font-bold">
-              {currentVideo.location || 'Unknown Location'}
+              {pageTitle || currentVideo.location || 'Unknown Location'}
             </div>
             <div className="text-sm text-white/80">
               {currentVideo.profiles?.display_name || currentVideo.profiles?.username || 'Unknown User'}
