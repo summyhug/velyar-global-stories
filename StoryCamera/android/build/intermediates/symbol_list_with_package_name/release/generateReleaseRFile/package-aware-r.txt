@@ -1,0 +1,4 @@
+app.lovable.velyar.storycamera
+id sc_preview_view
+layout sc_activity_story_camera
+xml file_paths
