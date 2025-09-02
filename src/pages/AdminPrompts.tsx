@@ -322,7 +322,7 @@ const AdminPrompts = () => {
           .update({
             city: city || null,
             country: country || null,
-            date_of_birth: dateOfBirth ? new Date(dateOfBirth) : null
+            date_of_birth: dateOfBirth || null
           })
           .eq('user_id', user.id);
         

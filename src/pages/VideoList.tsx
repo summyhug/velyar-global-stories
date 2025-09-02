@@ -61,6 +61,7 @@ const VideoList = () => {
         
         const videosWithProfiles = [];
         for (const video of videoList) {
+          // Only select safe public fields for profile data
           const { data: profileData } = await supabase
             .from('profiles')
             .select('username, display_name')
@@ -121,6 +122,7 @@ const VideoList = () => {
             const videosWithProfiles = [];
             if (videosData) {
               for (const video of videosData) {
+                // Only select safe public fields for profile data
                 const { data: profileData } = await supabase
                   .from('profiles')
                   .select('username, display_name')
@@ -181,6 +183,7 @@ const VideoList = () => {
       const videosWithProfiles = [];
       if (videosData) {
         for (const video of videosData) {
+          // Only select safe public fields for profile data
           const { data: profileData } = await supabase
             .from('profiles')
             .select('username, display_name')
