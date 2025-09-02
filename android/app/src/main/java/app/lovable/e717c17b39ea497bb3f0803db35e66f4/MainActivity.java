@@ -20,6 +20,7 @@ import com.getcapacitor.BridgeActivity;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
@@ -32,6 +33,9 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Simple test to see if we can see Android logs
+        System.out.println("MainActivity: App started successfully!");
         
         // Configure edge-to-edge layout
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
