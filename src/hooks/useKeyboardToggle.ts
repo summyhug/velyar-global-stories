@@ -3,17 +3,24 @@ import { Keyboard } from "@capacitor/keyboard";
 
 export function useKeyboardToggle() {
   useEffect(() => {
-    const showHandler = Keyboard.addListener("keyboardWillShow", () => {
-      document.body.classList.add("keyboard-open");
-    });
+    let showHandler: any;
+    let hideHandler: any;
 
-    const hideHandler = Keyboard.addListener("keyboardWillHide", () => {
-      document.body.classList.remove("keyboard-open");
-    });
+    const setupListeners = async () => {
+      showHandler = await Keyboard.addListener("keyboardWillShow", () => {
+        document.body.classList.add("keyboard-open");
+      });
+
+      hideHandler = await Keyboard.addListener("keyboardWillHide", () => {
+        document.body.classList.remove("keyboard-open");
+      });
+    };
+
+    setupListeners();
 
     return () => {
-      showHandler.remove();
-      hideHandler.remove();
+      if (showHandler) showHandler.remove();
+      if (hideHandler) hideHandler.remove();
     };
   }, []);
 }
