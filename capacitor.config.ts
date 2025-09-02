@@ -39,6 +39,11 @@ const config: CapacitorConfig = {
     },
     SafeArea: {
       backgroundColor: '#fffbf0'
+    },
+    StoryCamera: {
+      permissions: {
+        camera: "Camera access is required to record videos."
+      }
     }
   },
   ios: {
