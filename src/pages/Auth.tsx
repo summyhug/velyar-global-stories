@@ -142,7 +142,6 @@ const Auth = () => {
     if (!username) return false;
     
     try {
-      // Only select username field for checking availability
       const { data, error } = await supabase
         .from('profiles')
         .select('username')

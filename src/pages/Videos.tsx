@@ -128,7 +128,6 @@ const Videos = () => {
       // Fetch profile data for each video
       const videosWithProfiles = [];
       for (const video of filteredVideos) {
-        // Only select safe public fields for profile data
         const { data: profileData } = await supabase
           .from('profiles')
           .select('username, display_name')

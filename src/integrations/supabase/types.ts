@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
+  // Allows to automatically instanciate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -339,8 +339,6 @@ export type Database = {
           age_verified: boolean | null
           avatar_url: string | null
           bio: string | null
-          city: string | null
-          country: string | null
           created_at: string
           date_of_birth: string | null
           display_name: string | null
@@ -354,8 +352,6 @@ export type Database = {
           age_verified?: boolean | null
           avatar_url?: string | null
           bio?: string | null
-          city?: string | null
-          country?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
@@ -369,8 +365,6 @@ export type Database = {
           age_verified?: boolean | null
           avatar_url?: string | null
           bio?: string | null
-          city?: string | null
-          country?: string | null
           created_at?: string
           date_of_birth?: string | null
           display_name?: string | null
@@ -671,39 +665,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      fix_user_profile_by_email: {
-        Args: { user_email: string }
-        Returns: string
-      }
-      get_full_profile: {
-        Args: { profile_user_id: string }
-        Returns: {
-          account_status: string
-          age_verified: boolean
-          avatar_url: string
-          bio: string
-          city: string
-          country: string
-          created_at: string
-          date_of_birth: string
-          display_name: string
-          id: string
-          updated_at: string
-          user_id: string
-          username: string
-        }[]
-      }
-      get_public_profile: {
-        Args: { profile_user_id: string }
-        Returns: {
-          avatar_url: string
-          created_at: string
-          display_name: string
-          id: string
-          user_id: string
-          username: string
-        }[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

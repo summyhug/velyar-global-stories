@@ -43,8 +43,7 @@ export function useProfile(userId: string | undefined) {
 
     async function fetchProfile() {
       try {
-        // Fetch user profile - this hook is used for the current user's own profile
-        // so it can access all fields since the RLS policy allows users to see their own data
+        // Fetch user profile
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')

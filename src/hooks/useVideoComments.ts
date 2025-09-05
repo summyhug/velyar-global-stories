@@ -50,13 +50,12 @@ export const useVideoComments = (videoId: string) => {
       let enrichedComments: Comment[] = [];
       if (commentsData) {
         const profilePromises = commentsData.map(async (comment) => {
-          // Only select safe public fields for profile data
           const { data: profile } = await supabase
             .from('profiles')
             .select('username, display_name')
             .eq('user_id', comment.user_id)
             .single();
-
+          
           return {
             ...comment,
             profiles: profile
