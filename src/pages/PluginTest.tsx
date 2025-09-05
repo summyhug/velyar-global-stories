@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Camera } from 'lucide-react';
-import StoryCamera from 'story-camera';
+import StoryCamera from '../plugins/StoryCamera';
 
 export const PluginTest: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);

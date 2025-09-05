@@ -32,3 +32,4 @@ try {
 }
 
 export default StoryCamera;
+export type { RecordVideoOptions, RecordVideoResult };

@@ -20,30 +20,41 @@ export const useSafeArea = () => {
     const initializeSafeArea = async () => {
       if (Capacitor.isNativePlatform()) {
         try {
-          // Try to get safe area from CSS variables first
-          const top = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-top')) || 24;
-          const bottom = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-bottom')) || 34;
-          const left = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-left')) || 0;
-          const right = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--safe-area-inset-right')) || 0;
+          // Dynamically import the SafeArea plugin
+          const { SafeArea } = await import('@capacitor-community/safe-area');
           
-          setInsets({ top, bottom, left, right });
+          // Get the current insets
+          const result = await SafeArea.getSafeAreaInsets();
+          setInsets(result.insets);
+          
+          // Listen for changes (e.g., rotation, keyboard)
+          SafeArea.addListener('safeAreaChanged', (event) => {
+            setInsets(event.insets);
+          });
         } catch (error) {
-          console.warn('SafeArea values not available, using fallback');
+          console.warn('SafeArea plugin not available, using fallback values');
           // Fallback values for common devices
           setInsets({
-            top: 24,
-            bottom: 34,
+            top: 24, // Common status bar height
+            bottom: 34, // Common navigation bar height
             left: 0,
             right: 0
           });
         }
       } else {
-        // Web fallback - no safe area needed
+        // Web fallback - use CSS env() variables
+        const getCSSVariable = (name: string): number => {
+          const value = getComputedStyle(document.documentElement)
+            .getPropertyValue(name)
+            .trim();
+          return value ? parseInt(value) : 0;
+        };
+
         setInsets({
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0
+          top: getCSSVariable('--ion-safe-area-top') || 0,
+          bottom: getCSSVariable('--ion-safe-area-bottom') || 0,
+          left: getCSSVariable('--ion-safe-area-left') || 0,
+          right: getCSSVariable('--ion-safe-area-right') || 0
         });
       }
     };

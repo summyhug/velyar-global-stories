@@ -3,14 +3,13 @@
  * This allows testing the integration in the browser environment
  */
 
-// Local type definitions to avoid circular imports
-interface RecordVideoOptions {
+export interface RecordVideoOptions {
   duration?: number;
   camera?: 'front' | 'rear';
   allowOverlays?: boolean;
 }
 
-interface RecordVideoResult {
+export interface RecordVideoResult {
   filePath: string;
   thumbnailPath: string;
   duration: number;

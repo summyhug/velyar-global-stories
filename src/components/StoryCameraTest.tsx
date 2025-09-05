@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-// Import StoryCamera without types to avoid conflicts
-import StoryCamera from 'story-camera';
-
-// Use any type to avoid conflicts with the package
-type StoryCameraOptions = any;
-type StoryCameraResult = any;
+import StoryCamera, { RecordVideoOptions, RecordVideoResult } from '../plugins/StoryCamera';
 
 /**
  * Isolated test component for StoryCamera plugin
@@ -12,11 +7,11 @@ type StoryCameraResult = any;
  */
 export const StoryCameraTest: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
-  const [recordedVideo, setRecordedVideo] = useState<StoryCameraResult | null>(null);
+  const [recordedVideo, setRecordedVideo] = useState<RecordVideoResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRecordVideo = async (options?: StoryCameraOptions) => {
+  const handleRecordVideo = async (options?: RecordVideoOptions) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -125,21 +120,21 @@ export const StoryCameraTest: React.FC = () => {
             </div>
             
             <div>
-              <strong>Duration:</strong> {recordedVideo.duration?.toFixed(2) || '0'}s
+              <strong>Duration:</strong> {recordedVideo.duration.toFixed(2)}s
             </div>
             
             <div>
-              <strong>Size:</strong> {recordedVideo.size ? (recordedVideo.size / 1024 / 1024).toFixed(2) : '0'}MB
+              <strong>Size:</strong> {(recordedVideo.size / 1024 / 1024).toFixed(2)}MB
             </div>
             
             <div>
-              <strong>Camera:</strong> {recordedVideo.camera || 'unknown'}
+              <strong>Camera:</strong> {recordedVideo.camera}
             </div>
             
             <div>
               <strong>Overlays:</strong>
               <div className="text-gray-600">
-                {recordedVideo.overlays?.length > 0 
+                {recordedVideo.overlays.length > 0 
                   ? recordedVideo.overlays.join(', ')
                   : 'None'
                 }
