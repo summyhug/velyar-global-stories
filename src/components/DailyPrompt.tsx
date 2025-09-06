@@ -7,133 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
-
-        // Native StoryCamera plugin interface
-        const StoryCamera = {
-          recordVideo: async (options: any) => {
-            // Check if we're on a native platform
-            if (typeof window !== 'undefined' && (window as any).Capacitor) {
-              const { Plugins } = (window as any).Capacitor;
-              console.log('🔍 Available plugins:', Object.keys(Plugins || {}));
-              
-              // Try to call the plugin directly using Capacitor's native bridge
-              try {
-                console.log('🔧 Attempting to call StoryCamera plugin directly... [CACHE-BUST]');
-                
-                // Try different ways to access the plugin
-                console.log('🔧 Checking for Capacitor bridge...');
-                const capacitor = (window as any).Capacitor;
-                console.log('🔧 Capacitor object:', capacitor);
-                console.log('🔧 Capacitor methods:', Object.keys(capacitor));
-                
-                // Try to register the plugin manually
-                if (capacitor?.registerPlugin) {
-                  console.log('🔧 Found registerPlugin method, trying to register StoryCamera...');
-                  try {
-                    const StoryCameraPlugin = capacitor.registerPlugin('story-camera');
-                    console.log('🔧 StoryCamera plugin registered:', StoryCameraPlugin);
-                    
-                    if (StoryCameraPlugin?.recordVideo) {
-                      console.log('🔧 Calling StoryCamera.recordVideo...');
-                      console.log('🔧 StoryCameraPlugin object:', StoryCameraPlugin);
-                      console.log('🔧 recordVideo method:', StoryCameraPlugin.recordVideo);
-                      try {
-                        const result = await StoryCameraPlugin.recordVideo(options);
-                        console.log('🔧 StoryCamera result:', result);
-                        if (result) {
-                          console.log('✅ StoryCamera plugin called successfully via registration');
-                          return result;
-                        }
-                      } catch (callError) {
-                        console.log('❌ Error calling StoryCamera.recordVideo:', callError);
-                        console.log('❌ Error details:', callError.message, callError.stack);
-                      }
-                    } else {
-                      console.log('❌ StoryCameraPlugin.recordVideo method not found');
-                      console.log('🔧 StoryCameraPlugin methods:', Object.keys(StoryCameraPlugin || {}));
-                    }
-                  } catch (regError) {
-                    console.log('❌ Error registering StoryCamera plugin:', regError);
-                    console.log('❌ Registration error details:', regError.message, regError.stack);
-                  }
-                }
-                
-                // Try to find the bridge through different methods
-                let bridge = null;
-                
-                // Method 1: Check if getBridge exists
-                if (capacitor?.getBridge) {
-                  console.log('🔧 Found getBridge method');
-                  bridge = capacitor.getBridge();
-                }
-                
-                // Method 2: Check if bridge is a direct property
-                if (!bridge && capacitor?.bridge) {
-                  console.log('🔧 Found bridge property');
-                  bridge = capacitor.bridge;
-                }
-                
-                // Method 3: Check if there's a native bridge
-                if (!bridge && (window as any).CapacitorNative) {
-                  console.log('🔧 Found CapacitorNative');
-                  bridge = (window as any).CapacitorNative;
-                }
-                
-                if (bridge) {
-                  console.log('🔧 Bridge object:', bridge);
-                  console.log('🔧 Bridge methods:', Object.keys(bridge));
-                  
-                  if (bridge?.callPlugin) {
-                    console.log('🔧 Found callPlugin method, calling StoryCamera...');
-                    const result = await bridge.callPlugin('story-camera', 'recordVideo', options);
-                    console.log('🔧 Bridge call result:', result);
-                    if (result) {
-                      console.log('✅ StoryCamera plugin called successfully via bridge');
-                      return result;
-                    }
-                  }
-                  
-                  // Try other possible methods
-                  if (bridge?.call) {
-                    console.log('🔧 Found call method, trying StoryCamera...');
-                    const result = await bridge.call('story-camera', 'recordVideo', options);
-                    console.log('🔧 Call result:', result);
-                    if (result) {
-                      console.log('✅ StoryCamera plugin called successfully via call');
-                      return result;
-                    }
-                  }
-                }
-                
-                // Fallback to direct plugin access
-                console.log('🔧 Trying direct plugin access...');
-                console.log('🔧 Available plugins:', Object.keys(capacitor.Plugins || {}));
-                const result = await (window as any).Capacitor.Plugins['story-camera']?.recordVideo(options);
-                if (result) {
-                  console.log('✅ StoryCamera plugin called successfully');
-                  return result;
-                }
-              } catch (error) {
-                console.log('❌ Error calling StoryCamera plugin:', error);
-              }
-              
-              console.log('❌ StoryCamera plugin not found or failed');
-            } else {
-              console.log('❌ Capacitor not available');
-            }
-            
-            // Web fallback - only if native plugin is not available
-            console.log('🔄 Using web fallback for StoryCamera');
-            return {
-              filePath: '/mock-video.mp4',
-              thumbnailPath: '/mock-thumbnail.jpg',
-              duration: 5.2,
-              size: 2.5 * 1024 * 1024, // 2.5MB
-              camera: options.camera || 'rear',
-              overlays: ['text', 'emoji']
-            };
-          }
-        };
+import StoryCamera from "../../StoryCamera";
+import { useNavigate } from "react-router-dom";
 
 export const DailyPrompt = () => {
   const [stats, setStats] = useState({ voices: 0, countries: 0 });
@@ -141,9 +16,9 @@ export const DailyPrompt = () => {
   const [prompt, setPrompt] = useState("");
   const [currentPromptId, setCurrentPromptId] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingResult, setRecordingResult] = useState<any>(null);
 
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPromptData = async () => {
@@ -223,50 +98,64 @@ export const DailyPrompt = () => {
     fetchPromptData();
   }, []);
 
-  // Auto-reset recording state if stuck
+  // Reset recording state after a timeout (fallback for when user leaves camera)
   useEffect(() => {
     if (isRecording) {
-      const resetTimer = setTimeout(() => {
-        console.log('🔄 Auto-resetting stuck recording state');
+      const timeout = setTimeout(() => {
+        console.log('DailyPrompt: Timeout reached, resetting recording state');
         setIsRecording(false);
-        setRecordingResult(null);
-      }, 60000); // Reset after 60 seconds
-      
-      return () => clearTimeout(resetTimer);
+      }, 10000); // Reset after 10 seconds
+
+      return () => clearTimeout(timeout);
     }
   }, [isRecording]);
 
-  // StoryCamera test function
-  const handleStoryCameraTest = async () => {
+  // Direct StoryCamera recording function
+  const handleRespondWithStoryCamera = async () => {
     try {
+      console.log('🎬 ===== DAILYPROMPT: STARTING STORYCAMERA =====');
+      console.log('DailyPrompt: About to call StoryCamera.recordVideo...');
+      console.log('DailyPrompt: StoryCamera object:', StoryCamera);
+      console.log('DailyPrompt: StoryCamera.recordVideo method:', StoryCamera.recordVideo);
+      console.log('DailyPrompt: StoryCamera.recordVideo type:', typeof StoryCamera.recordVideo);
+      console.log('DailyPrompt: StoryCamera keys:', Object.keys(StoryCamera));
+      console.log('DailyPrompt: StoryCamera constructor:', StoryCamera.constructor.name);
+      
+      // Check if the method exists
+      if (typeof StoryCamera.recordVideo !== 'function') {
+        throw new Error('StoryCamera.recordVideo is not a function. Available methods: ' + Object.keys(StoryCamera).join(', '));
+      }
+      
       setIsRecording(true);
-      setRecordingResult(null);
       
-      console.log('🎥 Testing StoryCamera plugin...');
-      
-      // Add a timeout to prevent the button from getting stuck
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('StoryCamera timeout after 30 seconds')), 30000);
+      const storyResult = await StoryCamera.recordVideo({
+        duration: 30,
+        camera: 'rear',
+        allowOverlays: true
       });
       
-      const result = await Promise.race([
-        StoryCamera.recordVideo({
-          duration: 15, // 15 seconds for testing
-          camera: 'front', // Front camera for selfie-style
-          allowOverlays: true
-        }),
-        timeoutPromise
-      ]);
+      console.log('✅ ===== DAILYPROMPT: STORYCAMERA SUCCESS =====');
+      console.log('DailyPrompt: StoryCamera recording result:', storyResult);
       
-      console.log('✅ StoryCamera recording successful:', result);
-      setRecordingResult(result);
-      
-      // Show success message
-      alert(`Recording successful!\n\nDuration: ${result.duration}s\nSize: ${(result.size / 1024 / 1024).toFixed(2)}MB\nCamera: ${result.camera}\nOverlays: ${result.overlays.length}`);
+      // StoryCamera plugin should handle the entire flow
+      // No navigation needed - the plugin manages everything
+      console.log('DailyPrompt: StoryCamera completed successfully, staying in current view');
       
     } catch (error) {
-      console.error('❌ StoryCamera recording failed:', error);
-      alert(`Recording failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ ===== DAILYPROMPT: STORYCAMERA FAILED =====');
+      console.error('DailyPrompt: StoryCamera failed:', error);
+      console.error('DailyPrompt: Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+      
+      console.error('StoryCamera FAILED! Error: ' + error.message);
+      
+      // Only navigate to VideoCreate as a fallback if StoryCamera completely fails
+      console.log('DailyPrompt: StoryCamera failed, falling back to VideoCreate page');
+      navigate('/create/daily-prompt');
+      
     } finally {
       setIsRecording(false);
     }
@@ -313,47 +202,21 @@ export const DailyPrompt = () => {
               </div>
             </div>
             
-            {/* StoryCamera Test Results */}
-            {recordingResult && (
-              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div className="text-sm text-green-800">
-                  <strong>✅ StoryCamera Test Successful!</strong>
-                  <div className="mt-1 text-xs">
-                    Duration: {recordingResult.duration.toFixed(1)}s | 
-                    Size: {(recordingResult.size / 1024 / 1024).toFixed(2)}MB | 
-                    Camera: {recordingResult.camera}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Enhanced action buttons with proper navigation */}
+          {/* Enhanced action buttons with direct StoryCamera integration */}
           <div className="flex gap-3 pt-2">
-            {/* TEMPORARY: StoryCamera Test Button */}
             <Button 
-              onClick={handleStoryCameraTest}
+              onClick={handleRespondWithStoryCamera}
               disabled={isRecording}
               size="sm" 
               className="btn-primary-enhanced w-full group-hover:scale-105 transition-transform duration-200"
             >
               <Camera className="w-4 h-4 mr-2" />
               <span className="font-ui">
-                {isRecording ? "Recording..." : "🎥 Test StoryCamera"}
+                {t("common.respond")}
               </span>
             </Button>
-            
-            {/* ORIGINAL BUTTON (commented out for testing):
-            <Link to="/create/daily-prompt" className="flex-1">
-              <Button 
-                size="sm" 
-                className="btn-primary-enhanced w-full group-hover:scale-105 transition-transform duration-200"
-              >
-                <span className="font-ui">{t("common.respond")}</span>
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
-              </Button>
-            </Link>
-            */}
             
             <Link to={currentPromptId ? `/video-list/daily-prompt/${currentPromptId}` : "/video-list/daily-prompt"} className="flex-1">
               <Button 

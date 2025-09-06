@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { VideoTextOverlay } from "@/components/VideoTextOverlay";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { generateVideoThumbnail, uploadThumbnailToStorage } from "@/utils/videoThumbnail";
 import { compressVideo, getVideoInfo } from "@/utils/videoCompression";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { Capacitor } from "@capacitor/core";
 import { validateVideoContent, getContentViolationMessage } from "@/utils/contentModeration";
 import { useVideoCreate } from "@/contexts/VideoCreateContext";
+import StoryCamera from "../../StoryCamera";
 
 const VideoCreate = () => {
   const { t } = useTranslation();
@@ -48,10 +49,35 @@ const VideoCreate = () => {
   const { setIsEditing } = useVideoCreate();
   const { user } = useAuth();
   const { location: userLocation } = useProfile(user?.id);
+  const routerLocation = useLocation();
   
   console.log('VideoCreate: isNative =', isNative, 'platform:', Capacitor.getPlatform());
   console.log('VideoCreate: missionId from params =', missionId);
+  console.log('VideoCreate: location state =', routerLocation.state);
   const navigate = useNavigate();
+
+  // Handle pre-recorded video from DailyPrompt
+  useEffect(() => {
+    if (routerLocation.state?.recordedVideo) {
+      console.log('VideoCreate: Received pre-recorded video from DailyPrompt:', routerLocation.state.recordedVideo);
+      const recordedVideoData = routerLocation.state.recordedVideo;
+      
+      // Convert the StoryCamera result to the expected format
+      if (recordedVideoData.filePath) {
+        // For now, create a mock file since we have the file path
+        const mockFile = new File([''], `story_${Date.now()}.mp4`, { type: 'video/mp4' });
+        const url = URL.createObjectURL(mockFile);
+        
+        setRecordedVideo(url);
+        setVideoFile(mockFile);
+        setVideoDuration(recordedVideoData.duration || 30);
+        setStep('edit');
+        localStorage.setItem('videoCreate_hasVideo', 'true');
+        
+        console.log('VideoCreate: Set pre-recorded video and moved to edit step');
+      }
+    }
+  }, [routerLocation.state]);
 
   // Fetch current prompt or mission on component mount
   useEffect(() => {
@@ -120,7 +146,7 @@ const VideoCreate = () => {
   // Set user's profile location when component mounts or user location changes
   useEffect(() => {
     console.log('VideoCreate: userLocation:', userLocation);
-    console.log('VideoCreate: current location state:', location);
+    console.log('VideoCreate: current location state:', routerLocation);
     console.log('VideoCreate: user:', user?.id);
     
     if (userLocation && !location) {
@@ -187,13 +213,79 @@ const VideoCreate = () => {
 
   const startNativeRecording = async () => {
     try {
+      console.log('🎬 ===== STARTING NATIVE RECORDING =====');
       console.log('VideoCreate: Starting native recording');
       console.log('VideoCreate: Platform:', Capacitor.getPlatform());
       console.log('VideoCreate: isNative:', isNative);
+      console.log('VideoCreate: Capacitor.isNativePlatform():', Capacitor.isNativePlatform());
+      console.log('VideoCreate: window.location.href:', window.location.href);
+      console.log('VideoCreate: navigator.userAgent:', navigator.userAgent);
       
-      // Force camera recording on mobile platforms
-      if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
-        console.log('VideoCreate: Attempting native video recording...');
+      // Force camera recording on mobile platforms OR for testing (add ?testNative=true to URL)
+      const urlParams = new URLSearchParams(window.location.search);
+      const testNative = urlParams.get('testNative') === 'true';
+      const isMobilePlatform = Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios';
+      
+      console.log('VideoCreate: testNative flag:', testNative);
+      console.log('VideoCreate: isMobilePlatform:', isMobilePlatform);
+      console.log('VideoCreate: Will use StoryCamera?', isMobilePlatform || testNative);
+      
+      if (isMobilePlatform || testNative) {
+        console.log('VideoCreate: Attempting StoryCamera plugin recording...');
+        
+        try {
+          // Try StoryCamera plugin first
+          console.log('🎥 ===== CALLING STORYCAMERA PLUGIN =====');
+          console.log('VideoCreate: About to call StoryCamera.recordVideo...');
+          console.log('VideoCreate: StoryCamera object:', StoryCamera);
+          console.log('VideoCreate: StoryCamera.recordVideo method:', StoryCamera.recordVideo);
+          console.log('VideoCreate: StoryCamera.recordVideo type:', typeof StoryCamera.recordVideo);
+          console.log('VideoCreate: StoryCamera keys:', Object.keys(StoryCamera));
+          
+          const options = {
+            duration: MAX_RECORDING_TIME,
+            camera: 'rear',
+            allowOverlays: true
+          };
+          console.log('VideoCreate: Calling StoryCamera.recordVideo with options:', options);
+          
+          const storyResult = await StoryCamera.recordVideo(options);
+          
+          console.log('✅ ===== STORYCAMERA SUCCESS =====');
+          console.log('VideoCreate: StoryCamera recording result:', storyResult);
+          console.log('VideoCreate: storyResult type:', typeof storyResult);
+          console.log('VideoCreate: storyResult keys:', storyResult ? Object.keys(storyResult) : 'null');
+          
+          // Convert the result to the expected format
+          if (storyResult.filePath) {
+            // For native platforms, we need to convert the file path to a File object
+            const response = await fetch(storyResult.filePath);
+            const blob = await response.blob();
+            const file = new File([blob], `story_${Date.now()}.mp4`, { type: 'video/mp4' });
+            const url = URL.createObjectURL(file);
+            
+            console.log('VideoCreate: Setting video state and moving to edit step');
+            setRecordedVideo(url);
+            setVideoFile(file);
+            localStorage.setItem('videoCreate_hasVideo', 'true');
+            setVideoDuration(storyResult.duration || 30);
+            setStep('edit');
+            return;
+          }
+        } catch (storyError) {
+          console.error('❌ ===== STORYCAMERA FAILED =====');
+          console.error('VideoCreate: StoryCamera failed:', storyError);
+          console.error('VideoCreate: StoryCamera error details:', {
+            message: storyError.message,
+            stack: storyError.stack,
+            name: storyError.name
+          });
+          console.log('VideoCreate: Falling back to useMobile...');
+        }
+        
+        // Fallback to useMobile if StoryCamera fails
+        console.log('📱 ===== FALLBACK TO USEMOBILE =====');
+        console.log('VideoCreate: Attempting useMobile video recording...');
         
         // Add timeout to handle cases where the file chooser doesn't respond
         const recordingPromise = recordVideo();
@@ -203,6 +295,7 @@ const VideoCreate = () => {
         
         const videoResult = await Promise.race([recordingPromise, timeoutPromise]) as { file: File; url: string };
         
+        console.log('📱 ===== USEMOBILE SUCCESS =====');
         console.log('VideoCreate: Video recording result:', {
           hasFile: !!videoResult.file,
           hasUrl: !!videoResult.url,
@@ -218,11 +311,45 @@ const VideoCreate = () => {
         setVideoDuration(30);
         setStep('edit');
       } else {
-        console.log('VideoCreate: Web platform detected, using file upload');
-        document.getElementById('video-file-input')?.click();
+        console.log('VideoCreate: Web platform detected, but forcing StoryCamera for testing');
+        // Force StoryCamera even on web for testing
+        try {
+          const storyResult = await StoryCamera.recordVideo({
+            duration: MAX_RECORDING_TIME,
+            camera: 'rear',
+            allowOverlays: true
+          });
+          
+          console.log('VideoCreate: StoryCamera recording result:', storyResult);
+          
+          // Convert the result to the expected format
+          if (storyResult.filePath) {
+            // For web, we need to create a mock file
+            const mockFile = new File([''], `story_${Date.now()}.mp4`, { type: 'video/mp4' });
+            const url = URL.createObjectURL(mockFile);
+            
+            console.log('VideoCreate: Setting video state and moving to edit step');
+            setRecordedVideo(url);
+            setVideoFile(mockFile);
+            localStorage.setItem('videoCreate_hasVideo', 'true');
+            setVideoDuration(storyResult.duration || 30);
+            setStep('edit');
+            return;
+          }
+        } catch (storyError) {
+          console.error('VideoCreate: StoryCamera failed on web:', storyError);
+          // Fallback to file upload only if StoryCamera completely fails
+          document.getElementById('video-file-input')?.click();
+        }
       }
     } catch (error) {
+      console.error('💥 ===== FINAL ERROR - FALLING BACK TO FILE UPLOAD =====');
       console.error('VideoCreate: Video recording failed:', error);
+      console.error('VideoCreate: Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       console.log('VideoCreate: Falling back to file upload due to error');
       document.getElementById('video-file-input')?.click();
     }

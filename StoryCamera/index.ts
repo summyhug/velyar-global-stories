@@ -1,5 +1,4 @@
-import { registerPlugin } from '@capacitor/core';
-import webFallback from './web-fallback';
+import { registerPlugin, Capacitor } from '@capacitor/core';
 
 export interface RecordVideoOptions {
   duration?: number; // max seconds, default 30
@@ -22,14 +21,18 @@ export interface StoryCameraPlugin {
 }
 
 // Try to register the native plugin, fallback to web implementation
-let StoryCamera: StoryCameraPlugin;
-try {
-  StoryCamera = registerPlugin<StoryCameraPlugin>('StoryCamera');
-  console.log('📱 Native StoryCamera plugin registered');
-} catch (error) {
-  console.log('🌐 Using web fallback for StoryCamera plugin');
-  StoryCamera = webFallback as StoryCameraPlugin;
-}
+console.log('🔧 ===== REGISTERING STORYCAMERA PLUGIN =====');
+console.log('🔧 About to register StoryCamera plugin...');
+console.log('🔧 Capacitor platform:', typeof Capacitor !== 'undefined' ? Capacitor.getPlatform() : 'Capacitor not available');
+console.log('🔧 Capacitor isNativePlatform:', typeof Capacitor !== 'undefined' ? Capacitor.isNativePlatform() : 'Capacitor not available');
+
+const StoryCamera = registerPlugin<StoryCameraPlugin>('StoryCamera');
+
+console.log('📱 ===== STORYCAMERA PLUGIN REGISTERED =====');
+console.log('📱 StoryCamera plugin registered:', StoryCamera);
+console.log('📱 StoryCamera.recordVideo method:', StoryCamera.recordVideo);
+console.log('📱 StoryCamera.recordVideo type:', typeof StoryCamera.recordVideo);
+console.log('📱 StoryCamera keys:', Object.keys(StoryCamera));
+console.log('📱 StoryCamera constructor:', StoryCamera.constructor.name);
 
 export default StoryCamera;
-export type { RecordVideoOptions, RecordVideoResult };

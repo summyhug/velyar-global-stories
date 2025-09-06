@@ -66,7 +66,15 @@ export const useMobile = () => {
         source: CameraSource.Camera
       });
       
-      return video.webPath;
+      // Convert the video URI to a File object
+      const response = await fetch(video.webPath!);
+      const blob = await response.blob();
+      const file = new File([blob], `video_${Date.now()}.mp4`, { type: 'video/mp4' });
+      
+      return {
+        file: file,
+        url: video.webPath!
+      };
     } catch (error) {
       console.error('Video recording error:', error);
       throw error;
