@@ -9,6 +9,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.Drawable;
+import androidx.core.content.ContextCompat;
+import android.view.WindowManager;
+import android.os.Build;
 import android.animation.ValueAnimator;
 import android.animation.ObjectAnimator;
 import android.animation.AnimatorSet;
@@ -39,8 +43,8 @@ public class StoryCameraActivity extends AppCompatActivity {
     private static final String TAG = "StoryCameraActivity";
     private PreviewView previewView;
     private Button recordButton;
-    private Button switchCameraButton;
-    private Button flashButton;
+    private ImageButton switchCameraButton;
+    private ImageButton flashButton;
     private View pulsingRing;
     private ValueAnimator pulseAnimator;
     private boolean isRecording = false;
@@ -59,7 +63,28 @@ public class StoryCameraActivity extends AppCompatActivity {
             if (getSupportActionBar() != null) {
                 getSupportActionBar().hide();
             }
-            
+
+            // Make system bars transparent and full-screen
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                );
+            }
+
+            // Make status bar and navigation bar transparent
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                getWindow().setStatusBarColor(android.graphics.Color.TRANSPARENT);
+                getWindow().setNavigationBarColor(android.graphics.Color.TRANSPARENT);
+            }
+
+            // Keep screen on during camera usage
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
             setContentView(R.layout.sc_activity_story_camera);
             Log.d(TAG, "Layout set successfully");
             
@@ -100,18 +125,16 @@ public class StoryCameraActivity extends AppCompatActivity {
         
         // Create modern circular record button with Octo accent color (MUCH LARGER)
         recordButton = new Button(this);
-        recordButton.setText("●");
-        recordButton.setTextSize(48); // Much larger text
-        recordButton.setTextColor(0xFFFFFFFF);
+        recordButton.setText(""); // No text - clean circle
         recordButton.setWidth(120); // Much larger button
         recordButton.setHeight(120);
         recordButton.setPadding(0, 0, 0, 0);
         
-        // Create circular background with Octo accent border
+        // Create circular background with only outer Octo accent border (transparent inside)
         GradientDrawable circularDrawable = new GradientDrawable();
         circularDrawable.setShape(GradientDrawable.OVAL);
-        circularDrawable.setColor(0xFFFFFFFF); // White background
-        circularDrawable.setStroke(8, 0xFFFF7F5A); // Thicker Octo accent border
+        circularDrawable.setColor(0x00000000); // Transparent background
+        circularDrawable.setStroke(8, 0xFFFF7F5A); // Only outer Octo accent border
         recordButton.setBackground(circularDrawable);
         
         RelativeLayout.LayoutParams recordParams = new RelativeLayout.LayoutParams(120, 120);
@@ -120,41 +143,110 @@ public class StoryCameraActivity extends AppCompatActivity {
         recordParams.bottomMargin = 120; // More space from bottom for safe area
         layout.addView(recordButton, recordParams);
         
-        // Create modern switch camera button (top right)
-        switchCameraButton = new Button(this);
-        switchCameraButton.setText("↻"); // Better camera switch icon
-        switchCameraButton.setTextSize(24);
-        switchCameraButton.setBackgroundColor(0xCC000000); // More opaque black
-        switchCameraButton.setTextColor(0xFFFFFFFF);
-        switchCameraButton.setWidth(60);
-        switchCameraButton.setHeight(60);
-        switchCameraButton.setPadding(0, 0, 0, 0);
+        // Create text tool button (bottom left of record button) with proper icon - large circle
+        ImageButton textButton = new ImageButton(this);
+        textButton.setImageResource(R.drawable.ic_text_fields);
+        textButton.setScaleType(ImageButton.ScaleType.CENTER_INSIDE);
+        textButton.setPadding(25, 25, 25, 25);
         
-        RelativeLayout.LayoutParams switchParams = new RelativeLayout.LayoutParams(60, 60);
-        switchParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        // Create circular background for text button
+        GradientDrawable textDrawable = new GradientDrawable();
+        textDrawable.setShape(GradientDrawable.OVAL);
+        textDrawable.setColor(0xCC000000); // Semi-transparent black
+        textButton.setBackground(textDrawable);
+
+        RelativeLayout.LayoutParams textParams = new RelativeLayout.LayoutParams(100, 100);
+        textParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        textParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        textParams.bottomMargin = 120;
+        textParams.leftMargin = 60; // Move closer to center
+        layout.addView(textButton, textParams);
+
+        // Create palette/filter button (bottom right of record button) with proper icon - large circle
+        ImageButton paletteButton = new ImageButton(this);
+        paletteButton.setImageResource(R.drawable.ic_palette);
+        paletteButton.setScaleType(ImageButton.ScaleType.CENTER_INSIDE);
+        paletteButton.setPadding(25, 25, 25, 25);
+        
+        // Create circular background for palette button
+        GradientDrawable paletteDrawable = new GradientDrawable();
+        paletteDrawable.setShape(GradientDrawable.OVAL);
+        paletteDrawable.setColor(0xCC000000); // Semi-transparent black
+        paletteButton.setBackground(paletteDrawable);
+
+        RelativeLayout.LayoutParams paletteParams = new RelativeLayout.LayoutParams(100, 100);
+        paletteParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        paletteParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        paletteParams.bottomMargin = 120;
+        paletteParams.rightMargin = 60; // Move closer to center
+        layout.addView(paletteButton, paletteParams);
+
+        // Create modern switch camera button (bottom center, next to record button) with proper icon - large circle
+        switchCameraButton = new ImageButton(this);
+        switchCameraButton.setImageResource(R.drawable.ic_camera_switch_new);
+        switchCameraButton.setScaleType(ImageButton.ScaleType.CENTER_INSIDE);
+        switchCameraButton.setPadding(25, 25, 25, 25);
+        
+        // Create circular background for switch camera button
+        GradientDrawable switchDrawable = new GradientDrawable();
+        switchDrawable.setShape(GradientDrawable.OVAL);
+        switchDrawable.setColor(0xCC000000); // Semi-transparent black
+        switchCameraButton.setBackground(switchDrawable);
+
+        RelativeLayout.LayoutParams switchParams = new RelativeLayout.LayoutParams(100, 100);
+        switchParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         switchParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-        switchParams.topMargin = 120; // More space from top for safe area
-        switchParams.rightMargin = 20;
+        switchParams.bottomMargin = 120;
+        switchParams.rightMargin = 180; // Position between record button and palette
         layout.addView(switchCameraButton, switchParams);
         
-        // Create modern flash button (top left)
-        flashButton = new Button(this);
-        flashButton.setText("⚡"); // Lightning bolt
-        flashButton.setTextSize(20);
-        flashButton.setBackgroundColor(0xCC000000); // More opaque black
-        flashButton.setTextColor(0xFFFFFFFF);
-        flashButton.setWidth(60);
-        flashButton.setHeight(60);
-        flashButton.setPadding(0, 0, 0, 0);
+        // Create close button (top left) with proper X icon - smaller circle
+        ImageButton closeButton = new ImageButton(this);
+        closeButton.setImageResource(R.drawable.ic_close);
+        closeButton.setScaleType(ImageButton.ScaleType.CENTER_INSIDE);
+        closeButton.setPadding(20, 20, 20, 20);
         
-        RelativeLayout.LayoutParams flashParams = new RelativeLayout.LayoutParams(60, 60);
+        // Create circular background for close button
+        GradientDrawable closeDrawable = new GradientDrawable();
+        closeDrawable.setShape(GradientDrawable.OVAL);
+        closeDrawable.setColor(0xCC000000); // Semi-transparent black
+        closeButton.setBackground(closeDrawable);
+        
+        RelativeLayout.LayoutParams closeParams = new RelativeLayout.LayoutParams(80, 80); // Smaller size
+        closeParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        closeParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        closeParams.topMargin = 120; // More space from top for safe area
+        closeParams.leftMargin = 60; // Move closer to center
+        layout.addView(closeButton, closeParams);
+
+        // Create modern flash button (top right) with proper icon - large circle
+        flashButton = new ImageButton(this);
+        flashButton.setImageResource(R.drawable.ic_flash_off);
+        flashButton.setScaleType(ImageButton.ScaleType.CENTER_INSIDE);
+        flashButton.setPadding(25, 25, 25, 25);
+        
+        // Create circular background for flash button
+        GradientDrawable flashDrawable = new GradientDrawable();
+        flashDrawable.setShape(GradientDrawable.OVAL);
+        flashDrawable.setColor(0xCC000000); // Semi-transparent black
+        flashButton.setBackground(flashDrawable);
+        
+        RelativeLayout.LayoutParams flashParams = new RelativeLayout.LayoutParams(100, 100);
         flashParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-        flashParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        flashParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         flashParams.topMargin = 120; // More space from top for safe area
-        flashParams.leftMargin = 20;
+        flashParams.rightMargin = 60; // Move closer to center
         layout.addView(flashButton, flashParams);
         
         // Set click listeners
+        closeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "Close button clicked - exiting camera");
+                onBackPressed();
+            }
+        });
+        
         recordButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -236,9 +328,11 @@ public class StoryCameraActivity extends AppCompatActivity {
         // Disable flash for front camera
         if (isFrontCamera && isFlashOn) {
             isFlashOn = false;
-            flashButton.setText("⚡");
-            flashButton.setBackgroundColor(0xCC000000);
-            flashButton.setTextColor(0xFFFFFFFF);
+            flashButton.setImageResource(R.drawable.ic_flash_off);
+            GradientDrawable flashDrawable = new GradientDrawable();
+            flashDrawable.setShape(GradientDrawable.OVAL);
+            flashDrawable.setColor(0xCC000000);
+            flashButton.setBackground(flashDrawable);
         }
         
         // Restart camera with new selector
@@ -262,15 +356,17 @@ public class StoryCameraActivity extends AppCompatActivity {
         }
         
         // Update button appearance
+        GradientDrawable flashDrawable = new GradientDrawable();
+        flashDrawable.setShape(GradientDrawable.OVAL);
+        
         if (isFlashOn) {
-            flashButton.setText("⚡");
-            flashButton.setBackgroundColor(0xCCFFD700); // Gold when on
-            flashButton.setTextColor(0xFF000000); // Black text when on
+            flashButton.setImageResource(R.drawable.ic_flash_on);
+            flashDrawable.setColor(0xCCFFD700); // Gold when on
         } else {
-            flashButton.setText("⚡");
-            flashButton.setBackgroundColor(0xCC000000); // Black when off
-            flashButton.setTextColor(0xFFFFFFFF); // White text when off
+            flashButton.setImageResource(R.drawable.ic_flash_off);
+            flashDrawable.setColor(0xCC000000); // Black when off
         }
+        flashButton.setBackground(flashDrawable);
     }
     
     private void startRecording() {
@@ -306,12 +402,12 @@ public class StoryCameraActivity extends AppCompatActivity {
         // Remove text completely for clean look
         recordButton.setText("");
         
-        // Create rounded square background with Octo accent fill
+        // Create rounded square background with Octo accent fill (no stroke to avoid double circle)
         GradientDrawable recordingDrawable = new GradientDrawable();
         recordingDrawable.setShape(GradientDrawable.RECTANGLE);
         recordingDrawable.setCornerRadius(25); // More rounded square
         recordingDrawable.setColor(0xFFFF7F5A); // Octo accent fill
-        recordingDrawable.setStroke(4, 0xFFFF7F5A); // Matching border
+        // No stroke to avoid inner orange circle
         
         // Animate size change and background morph (circle to rounded square)
         AnimatorSet animatorSet = new AnimatorSet();
@@ -434,6 +530,24 @@ public class StoryCameraActivity extends AppCompatActivity {
         finish();
     }
     
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            // Re-apply full-screen mode when window gains focus
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                );
+            }
+        }
+    }
+
     @Override
     protected void onDestroy() {
         Log.d(TAG, "onDestroy - activity being destroyed");

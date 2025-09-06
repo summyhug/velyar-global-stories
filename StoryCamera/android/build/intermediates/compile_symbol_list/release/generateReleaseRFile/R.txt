@@ -1,3 +1,0 @@
-int id sc_preview_view 0x0
-int layout sc_activity_story_camera 0x0
-int xml file_paths 0x0
