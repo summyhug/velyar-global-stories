@@ -31,6 +31,8 @@ import android.view.ScaleGestureDetector;
 import android.view.MotionEvent;
 import android.graphics.Matrix;
 import android.graphics.RectF;
+import android.widget.TextView;
+import android.os.CountDownTimer;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -93,6 +95,9 @@ public class StoryCameraActivity extends AppCompatActivity {
     private float minZoomRatio = 1.0f;
     private float maxZoomRatio = 10.0f;
     private boolean zoomEnabled = true;
+    private TextView countdownLabel;
+    private CountDownTimer countdownTimer;
+    private int maxDurationSeconds = 30;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -204,24 +209,7 @@ public class StoryCameraActivity extends AppCompatActivity {
         layout.addView(recordButton, recordParams);
         Log.d(TAG, "Record button added to layout - width: " + recordButton.getWidth() + ", height: " + recordButton.getHeight());
         
-        // Create text tool button (bottom left of record button) with proper icon - large circle
-        ImageButton textButton = new ImageButton(this);
-        textButton.setImageResource(R.drawable.ic_text_fields);
-        textButton.setScaleType(ImageButton.ScaleType.CENTER_INSIDE);
-        textButton.setPadding(25, 25, 25, 25);
-        
-        // Create circular background for text button
-        GradientDrawable textDrawable = new GradientDrawable();
-        textDrawable.setShape(GradientDrawable.OVAL);
-        textDrawable.setColor(0xCC000000); // Semi-transparent black
-        textButton.setBackground(textDrawable);
-
-        RelativeLayout.LayoutParams textParams = new RelativeLayout.LayoutParams(100, 100);
-        textParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-        textParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-        textParams.bottomMargin = 120;
-        textParams.leftMargin = 60; // Move closer to center
-        layout.addView(textButton, textParams);
+        // (Removed) Text tool button
 
         // Create palette/filter button (bottom right of record button) with proper icon - large circle
         ImageButton paletteButton = new ImageButton(this);
@@ -298,6 +286,17 @@ public class StoryCameraActivity extends AppCompatActivity {
         flashParams.topMargin = 120; // More space from top for safe area
         flashParams.rightMargin = 60; // Move closer to center
         layout.addView(flashButton, flashParams);
+
+        // Countdown label (top center)
+        countdownLabel = new TextView(this);
+        countdownLabel.setTextColor(0xFFFFFFFF);
+        countdownLabel.setTextSize(16f);
+        countdownLabel.setText("");
+        RelativeLayout.LayoutParams cdParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        cdParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        cdParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        cdParams.topMargin = 140; // center between close and flash buttons
+        layout.addView(countdownLabel, cdParams);
         
         // Set click listeners
         closeButton.setOnClickListener(new View.OnClickListener() {
@@ -546,6 +545,8 @@ public class StoryCameraActivity extends AppCompatActivity {
                 if (finalizeEvent.hasError()) {
                     Log.e(TAG, "Video recording error: " + finalizeEvent.getError());
                     isRecording = false;
+                    // Stop timer
+                    try { if (countdownTimer != null) { countdownTimer.cancel(); countdownTimer = null; } } catch (Exception ignore) {}
                     animateToIdleState();
                     Toast.makeText(StoryCameraActivity.this, "Recording failed: " + finalizeEvent.getError(), Toast.LENGTH_LONG).show();
                     // Return error result
@@ -555,6 +556,8 @@ public class StoryCameraActivity extends AppCompatActivity {
                     Log.d(TAG, "Finalize event hasError: false - entering success branch");
                     Log.d(TAG, "About to set isRecording to false");
                     isRecording = false;
+                    // Stop timer
+                    try { if (countdownTimer != null) { countdownTimer.cancel(); countdownTimer = null; } } catch (Exception ignore) {}
                     Log.d(TAG, "About to call animateToIdleState");
                     animateToIdleState();
                     Log.d(TAG, "Video saved successfully: " + videoFile.getAbsolutePath());
@@ -603,6 +606,29 @@ public class StoryCameraActivity extends AppCompatActivity {
         // Animate button morph from circle to rounded square
         animateToRecordingState();
         
+        // Start 30s countdown and auto-stop
+        try {
+            if (countdownTimer != null) {
+                countdownTimer.cancel();
+                countdownTimer = null;
+            }
+            countdownTimer = new CountDownTimer(maxDurationSeconds * 1000L, 500L) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    long totalSec = Math.max(0L, millisUntilFinished / 1000L);
+                    String text = String.format(java.util.Locale.getDefault(), "%02d:%02d", totalSec / 60, totalSec % 60);
+                    countdownLabel.setText(text);
+                }
+
+                @Override
+                public void onFinish() {
+                    countdownLabel.setText("00:00");
+                    stopRecording();
+                }
+            };
+            countdownTimer.start();
+        } catch (Exception ignore) {}
+
         Toast.makeText(this, "Recording started", Toast.LENGTH_SHORT).show();
     }
     
@@ -618,6 +644,8 @@ public class StoryCameraActivity extends AppCompatActivity {
             isRecording = false;
             animateToIdleState();
         }
+        try { if (countdownTimer != null) { countdownTimer.cancel(); countdownTimer = null; } } catch (Exception ignore) {}
+        if (countdownLabel != null) countdownLabel.setText("");
         
         Toast.makeText(this, "Recording stopped", Toast.LENGTH_SHORT).show();
     }
