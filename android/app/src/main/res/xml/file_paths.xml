@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
-    <external-path name="my_videos" path="Movies/" />
-    <external-path name="my_downloads" path="Download/" />
-    <cache-path name="my_cache_images" path="." />
-    <external-files-path name="my_external_files" path="." />
-    <external-cache-path name="my_external_cache" path="." />
+    <!-- Allow exposing videos saved under app's external files dir (Movies) -->
+    <external-files-path name="external_movies" path="Movies/" />
+    <!-- Also allow cache if we switch to cache-based temp files later -->
+    <cache-path name="cache" path="." />
+    <files-path name="files" path="." />
 </paths>

@@ -8,6 +8,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.Toast;
+import androidx.core.content.FileProvider;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.Drawable;
 import androidx.core.content.ContextCompat;
@@ -25,15 +27,37 @@ import android.os.Build;
 import android.content.Context;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+import android.view.ScaleGestureDetector;
+import android.view.MotionEvent;
+import android.graphics.Matrix;
+import android.graphics.RectF;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Preview;
+import androidx.camera.video.Recorder;
+import androidx.camera.video.VideoCapture;
+import androidx.camera.video.VideoRecordEvent;
+import androidx.camera.video.Recording;
+import androidx.camera.video.PendingRecording;
+import androidx.camera.video.FileOutputOptions;
+import androidx.camera.video.QualitySelector;
+import androidx.camera.video.Quality;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraInfo;
 import androidx.core.content.ContextCompat;
+import androidx.core.app.ActivityCompat;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+import java.util.Date;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -51,7 +75,24 @@ public class StoryCameraActivity extends AppCompatActivity {
     private boolean isFlashOn = false;
     private boolean isFrontCamera = false;
     private ProcessCameraProvider cameraProvider;
+    private Camera camera;
     private ImageCapture imageCapture;
+    private VideoCapture<Recorder> videoCapture;
+    private Recording recording;
+    private File videoFile;
+    private static final int REQUEST_CODE_PERMISSIONS = 10;
+    private static final String[] REQUIRED_PERMISSIONS = {
+        Manifest.permission.CAMERA,
+        Manifest.permission.RECORD_AUDIO,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
+    
+    // Zoom-related fields
+    private ScaleGestureDetector scaleGestureDetector;
+    private float currentZoomRatio = 1.0f;
+    private float minZoomRatio = 1.0f;
+    private float maxZoomRatio = 10.0f;
+    private boolean zoomEnabled = true;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -91,7 +132,19 @@ public class StoryCameraActivity extends AppCompatActivity {
             previewView = findViewById(R.id.sc_preview_view);
             Log.d(TAG, "PreviewView found: " + (previewView != null));
             
+            if (previewView == null) {
+                Log.e(TAG, "PreviewView is null - cannot setup camera controls");
+                throw new RuntimeException("PreviewView not found in layout");
+            }
+            
+            Log.d(TAG, "About to call setupCameraControls");
             setupCameraControls();
+            Log.d(TAG, "setupCameraControls completed successfully");
+            
+            // Initialize scale gesture detector for pinch-to-zoom
+            setupZoomGestureDetector();
+            Log.d(TAG, "Zoom gesture detector setup completed");
+            
             Log.d(TAG, "About to start camera");
             startCamera();
             Log.d(TAG, "Camera start initiated");
@@ -107,7 +160,14 @@ public class StoryCameraActivity extends AppCompatActivity {
     }
     
     private void setupCameraControls() {
+        Log.d(TAG, "setupCameraControls called");
         RelativeLayout layout = (RelativeLayout) previewView.getParent();
+        Log.d(TAG, "Got parent layout: " + (layout != null));
+        
+        if (layout == null) {
+            Log.e(TAG, "Parent layout is null - cannot add camera controls");
+            throw new RuntimeException("PreviewView parent layout is null");
+        }
         
         // Create pulsing ring behind the record button
         pulsingRing = new View(this);
@@ -142,6 +202,7 @@ public class StoryCameraActivity extends AppCompatActivity {
         recordParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
         recordParams.bottomMargin = 120; // More space from bottom for safe area
         layout.addView(recordButton, recordParams);
+        Log.d(TAG, "Record button added to layout - width: " + recordButton.getWidth() + ", height: " + recordButton.getHeight());
         
         // Create text tool button (bottom left of record button) with proper icon - large circle
         ImageButton textButton = new ImageButton(this);
@@ -238,6 +299,26 @@ public class StoryCameraActivity extends AppCompatActivity {
         flashParams.rightMargin = 60; // Move closer to center
         layout.addView(flashButton, flashParams);
         
+        // Create Done button (top center) - only visible when not recording
+        Button doneButton = new Button(this);
+        doneButton.setText("Done");
+        doneButton.setTextSize(16);
+        doneButton.setTextColor(0xFFFFFFFF);
+        doneButton.setPadding(30, 15, 30, 15);
+        
+        // Create circular background for done button
+        GradientDrawable doneDrawable = new GradientDrawable();
+        doneDrawable.setShape(GradientDrawable.RECTANGLE);
+        doneDrawable.setColor(0xCC000000); // Semi-transparent black
+        doneDrawable.setCornerRadius(25); // Rounded corners
+        doneButton.setBackground(doneDrawable);
+        
+        RelativeLayout.LayoutParams doneParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        doneParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        doneParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        doneParams.topMargin = 120; // More space from top for safe area
+        layout.addView(doneButton, doneParams);
+        
         // Set click listeners
         closeButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -247,16 +328,73 @@ public class StoryCameraActivity extends AppCompatActivity {
             }
         });
         
+        doneButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "Done button clicked - navigating to video confirm");
+                
+                // Show popup alert for debugging
+                try {
+                    android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(StoryCameraActivity.this);
+                    builder.setTitle("🔍 Done Button Debug")
+                           .setMessage("Done button clicked!\nVideo file: " + (videoFile != null ? videoFile.getAbsolutePath() : "null"))
+                           .setPositiveButton("OK", null)
+                           .show();
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to show debug popup: " + e.getMessage());
+                }
+                
+                // Return result to plugin AND save to shared preferences
+                if (videoFile != null && videoFile.exists()) {
+                    try {
+                        // Save video path to shared preferences for React to pick up
+                        android.content.SharedPreferences prefs = getSharedPreferences("StoryCamera", MODE_PRIVATE);
+                        android.content.SharedPreferences.Editor editor = prefs.edit();
+                        editor.putString("lastVideoPath", videoFile.getAbsolutePath());
+                        editor.putBoolean("shouldNavigateToTest", true);
+                        editor.apply();
+                        
+                        Log.d(TAG, "Video path saved to shared preferences: " + videoFile.getAbsolutePath());
+                        
+                        // CRITICAL: Set result for the plugin to receive
+                        Intent intent = new Intent();
+                        intent.putExtra("videoUri", videoFile.getAbsolutePath());
+                        intent.putExtra("contentUri", FileProvider.getUriForFile(StoryCameraActivity.this, getApplicationContext().getPackageName() + ".fileprovider", videoFile).toString());
+                        setResult(Activity.RESULT_OK, intent);
+                        
+                        Log.d(TAG, "Result set for plugin - videoUri: " + videoFile.getAbsolutePath());
+                        
+                        // Now finish the activity
+                        finish();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to save video path: " + e.getMessage());
+                        setResult(Activity.RESULT_CANCELED);
+                        finish();
+                    }
+                } else {
+                    Log.e(TAG, "No video file available for Done button");
+                    Toast.makeText(StoryCameraActivity.this, "No video recorded yet", Toast.LENGTH_SHORT).show();
+                    setResult(Activity.RESULT_CANCELED);
+                    finish();
+                }
+            }
+        });
+        
         recordButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d(TAG, "Record button clicked - isRecording: " + isRecording);
                 if (!isRecording) {
+                    Log.d(TAG, "Starting recording from button click");
                     startRecording();
                 } else {
+                    Log.d(TAG, "Stopping recording from button click");
                     stopRecording();
                 }
             }
         });
+        Log.d(TAG, "Record button click listener set up successfully");
+        Log.d(TAG, "Record button visibility: " + recordButton.getVisibility() + ", enabled: " + recordButton.isEnabled());
         
         switchCameraButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -271,6 +409,48 @@ public class StoryCameraActivity extends AppCompatActivity {
                 toggleFlash();
             }
         });
+    }
+    
+    private void setupZoomGestureDetector() {
+        if (!zoomEnabled) {
+            Log.d(TAG, "Zoom is disabled, skipping gesture detector setup");
+            return;
+        }
+        
+        scaleGestureDetector = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                if (!zoomEnabled) return false;
+                
+                float scaleFactor = detector.getScaleFactor();
+                float newZoomRatio = currentZoomRatio * scaleFactor;
+                
+                // Clamp zoom ratio between min and max values
+                newZoomRatio = Math.max(minZoomRatio, Math.min(maxZoomRatio, newZoomRatio));
+                
+                if (newZoomRatio != currentZoomRatio) {
+                    currentZoomRatio = newZoomRatio;
+                    applyZoomToCamera();
+                    Log.d(TAG, "Zoom ratio changed to: " + currentZoomRatio);
+                }
+                
+                return true;
+            }
+        });
+        
+        // Enable touch events on the preview view for zoom gestures
+        previewView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return zoomEnabled && scaleGestureDetector.onTouchEvent(event);
+            }
+        });
+    }
+    
+    private void applyZoomToCamera() {
+        if (camera != null) {
+            camera.getCameraControl().setZoomRatio(currentZoomRatio);
+        }
     }
     
     private void startCamera() {
@@ -291,6 +471,12 @@ public class StoryCameraActivity extends AppCompatActivity {
                     // Create ImageCapture for flash control
                     imageCapture = new ImageCapture.Builder().build();
                     
+                    // Create VideoCapture for video recording
+                    Recorder recorder = new Recorder.Builder()
+                        .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+                        .build();
+                    videoCapture = VideoCapture.withOutput(recorder);
+                    
                     if (previewView != null) {
                         preview.setSurfaceProvider(previewView.getSurfaceProvider());
                         Log.d(TAG, "Set surface provider");
@@ -303,8 +489,11 @@ public class StoryCameraActivity extends AppCompatActivity {
                         CameraSelector.DEFAULT_FRONT_CAMERA : CameraSelector.DEFAULT_BACK_CAMERA;
                     Log.d(TAG, "Created camera selector for: " + (isFrontCamera ? "front" : "back"));
                     
-                    cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture);
+                    camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageCapture, videoCapture);
                     Log.d(TAG, "Camera bound to lifecycle successfully");
+                    
+                    // Get zoom range from the camera and update zoom limits
+                    updateZoomRange();
                     
                 } catch (ExecutionException | InterruptedException e) {
                     Log.e(TAG, "Error starting camera", e);
@@ -321,9 +510,29 @@ public class StoryCameraActivity extends AppCompatActivity {
         }
     }
     
+    private void updateZoomRange() {
+        if (camera != null) {
+            try {
+                CameraInfo cameraInfo = camera.getCameraInfo();
+                minZoomRatio = cameraInfo.getZoomState().getValue().getMinZoomRatio();
+                float cameraMaxZoom = cameraInfo.getZoomState().getValue().getMaxZoomRatio();
+                // Use the smaller of camera max zoom or configured max zoom
+                maxZoomRatio = Math.min(cameraMaxZoom, 10.0f); // Default max is 10.0f
+                Log.d(TAG, "Zoom range updated - Min: " + minZoomRatio + ", Max: " + maxZoomRatio);
+            } catch (Exception e) {
+                Log.w(TAG, "Could not get zoom range, using defaults", e);
+                minZoomRatio = 1.0f;
+                maxZoomRatio = 10.0f;
+            }
+        }
+    }
+    
     private void switchCamera() {
         Log.d(TAG, "Switching camera from " + (isFrontCamera ? "front" : "back") + " to " + (!isFrontCamera ? "front" : "back"));
         isFrontCamera = !isFrontCamera;
+        
+        // Reset zoom when switching cameras
+        currentZoomRatio = 1.0f;
         
         // Disable flash for front camera
         if (isFrontCamera && isFlashOn) {
@@ -371,6 +580,64 @@ public class StoryCameraActivity extends AppCompatActivity {
     
     private void startRecording() {
         Log.d(TAG, "Starting recording");
+        Log.d(TAG, "VideoCapture is null: " + (videoCapture == null));
+        Log.d(TAG, "Is recording: " + isRecording);
+        
+        if (videoCapture == null) {
+            Log.e(TAG, "VideoCapture is null - cannot start recording");
+            Toast.makeText(this, "Camera not ready for recording", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Create video file
+        videoFile = createVideoFile();
+        if (videoFile == null) {
+            Log.e(TAG, "Failed to create video file");
+            Toast.makeText(this, "Failed to create video file", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        Log.d(TAG, "Video file created: " + videoFile.getAbsolutePath());
+        
+        // Create output file options
+        FileOutputOptions outputOptions = new FileOutputOptions.Builder(videoFile).build();
+        Log.d(TAG, "FileOutputOptions created");
+        
+        // Start recording
+        Log.d(TAG, "About to prepare recording");
+        PendingRecording pendingRecording = videoCapture.getOutput()
+            .prepareRecording(this, outputOptions);
+        Log.d(TAG, "PendingRecording created: " + (pendingRecording != null));
+            
+        Log.d(TAG, "About to start recording");
+        recording = pendingRecording.start(ContextCompat.getMainExecutor(this), videoRecordEvent -> {
+            Log.d(TAG, "VideoRecordEvent received: " + videoRecordEvent.getClass().getSimpleName());
+            if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
+                VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
+                Log.d(TAG, "Finalize event hasError: " + finalizeEvent.hasError());
+                if (finalizeEvent.hasError()) {
+                    Log.e(TAG, "Video recording error: " + finalizeEvent.getError());
+                    isRecording = false;
+                    animateToIdleState();
+                    Toast.makeText(StoryCameraActivity.this, "Recording failed: " + finalizeEvent.getError(), Toast.LENGTH_LONG).show();
+                    // Return error result
+                    setResult(Activity.RESULT_CANCELED);
+                    finish();
+                } else {
+                    Log.d(TAG, "Finalize event hasError: false - entering success branch");
+                    Log.d(TAG, "About to set isRecording to false");
+                    isRecording = false;
+                    Log.d(TAG, "About to call animateToIdleState");
+                    animateToIdleState();
+                    Log.d(TAG, "Video saved successfully: " + videoFile.getAbsolutePath());
+                    
+                    // Don't exit the camera - just show success message and stay in camera
+                    Toast.makeText(StoryCameraActivity.this, "Video saved! Tap 'Done' to continue", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+        Log.d(TAG, "Recording started successfully");
+        
         isRecording = true;
         
         // Animate button morph from circle to rounded square
@@ -381,18 +648,43 @@ public class StoryCameraActivity extends AppCompatActivity {
     
     private void stopRecording() {
         Log.d(TAG, "Stopping recording");
-        isRecording = false;
         
-        // Animate button morph back to circle with bounce effect
-        animateToIdleState();
+        if (recording != null && isRecording) {
+            recording.stop();
+            recording = null;
+            Log.d(TAG, "Stop recording called on Recording");
+        } else {
+            Log.w(TAG, "Cannot stop recording - recording is null or not recording");
+            isRecording = false;
+            animateToIdleState();
+        }
         
         Toast.makeText(this, "Recording stopped", Toast.LENGTH_SHORT).show();
-        
-        // Return mock result for now
-        Intent data = new Intent();
-        data.putExtra("videoUri", "file:///sdcard/Movies/story-video-" + System.currentTimeMillis() + ".mp4");
-        setResult(Activity.RESULT_OK, data);
-        finish();
+    }
+    
+    private File createVideoFile() {
+        try {
+            // Create a unique filename with timestamp
+            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+            String fileName = "STORY_" + timeStamp + ".mp4";
+            
+            // Get the external storage directory for movies
+            File mediaDir = new File(getExternalFilesDir(null), "Movies");
+            if (!mediaDir.exists()) {
+                if (!mediaDir.mkdirs()) {
+                    Log.e(TAG, "Failed to create Movies directory");
+                    return null;
+                }
+            }
+            
+            File videoFile = new File(mediaDir, fileName);
+            Log.d(TAG, "Created video file: " + videoFile.getAbsolutePath());
+            return videoFile;
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating video file", e);
+            return null;
+        }
     }
     
     private void animateToRecordingState() {
@@ -570,6 +862,17 @@ public class StoryCameraActivity extends AppCompatActivity {
         }
         
         super.onDestroy();
+    }
+    
+    private Class<?> getMainActivityClass() {
+        try {
+            // Use the exact package name from the MainActivity
+            return Class.forName("app.lovable.e717c17b39ea497bb3f0803db35e66f4.MainActivity");
+        } catch (ClassNotFoundException e) {
+            Log.e(TAG, "MainActivity class not found: " + e.getMessage());
+            // Fallback to the current activity
+            return StoryCameraActivity.class;
+        }
     }
 }
 
