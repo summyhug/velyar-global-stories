@@ -22,7 +22,7 @@ import Explore from "./pages/Explore";
 import Missions from "./pages/Missions";
 import VideoCreate from "./pages/VideoCreate";
 import VideoList from "./pages/VideoList";
-import RecordTest from "./pages/RecordTest";
+import VideoPreviewShare from "./pages/RecordTest";
 import Videos from "./pages/Videos";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
@@ -71,7 +71,7 @@ function App() {
                         <Route path="/create/mission/:missionId" element={<VideoCreate />} />
                         <Route path="/create/daily-prompt" element={<VideoCreate />} />
                         <Route path="/create" element={<VideoCreate />} />
-                        <Route path="/record-test" element={<RecordTest />} />
+                        <Route path="/record-test" element={<VideoPreviewShare />} />
                         <Route path="/video-list/:type/:id" element={<VideoList />} />
                         <Route path="/videos/:type/:id" element={<Videos />} />
                         <Route path="/profile" element={<Profile />} />
