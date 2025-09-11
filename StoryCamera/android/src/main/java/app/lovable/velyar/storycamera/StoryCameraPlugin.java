@@ -88,6 +88,32 @@ public class StoryCameraPlugin extends Plugin {
         }
     }
 
+    @PluginMethod
+    public void getVideoData(PluginCall call) {
+        try {
+            android.content.SharedPreferences prefs = getContext().getSharedPreferences("StoryCamera", android.content.Context.MODE_PRIVATE);
+            boolean shouldNavigate = prefs.getBoolean("shouldNavigateToTest", false);
+            String videoPath = prefs.getString("lastVideoPath", null);
+
+            Log.d(TAG, "getVideoData: shouldNavigate=" + shouldNavigate + ", videoPath=" + videoPath);
+
+            // Optionally clear the navigate flag to avoid loops
+            if (shouldNavigate) {
+                android.content.SharedPreferences.Editor editor = prefs.edit();
+                editor.putBoolean("shouldNavigateToTest", false);
+                editor.apply();
+            }
+
+            JSObject result = new JSObject();
+            result.put("hasVideo", shouldNavigate && videoPath != null);
+            if (videoPath != null) result.put("filePath", videoPath);
+            call.resolve(result);
+        } catch (Exception e) {
+            Log.e(TAG, "Error in getVideoData", e);
+            call.reject("Error getting video data: " + e.getMessage());
+        }
+    }
+
     @Override
     protected void handleOnActivityResult(int requestCode, int resultCode, Intent data) {
         Log.d(TAG, "handleOnActivityResult called - requestCode: " + requestCode + ", resultCode: " + resultCode);
@@ -114,9 +140,13 @@ public class StoryCameraPlugin extends Plugin {
 
         if (resultCode == Activity.RESULT_OK && data != null && data.hasExtra("videoUri")) {
             String videoUri = data.getStringExtra("videoUri");
+            String contentUri = data.hasExtra("contentUri") ? data.getStringExtra("contentUri") : null;
             Log.d(TAG, "Recording successful, videoUri: " + videoUri);
             JSObject ret = new JSObject();
             ret.put("filePath", videoUri);
+            if (contentUri != null) {
+                ret.put("contentUri", contentUri);
+            }
             savedCall.resolve(ret);
         } else if (resultCode == Activity.RESULT_CANCELED) {
             Log.d(TAG, "Recording cancelled");

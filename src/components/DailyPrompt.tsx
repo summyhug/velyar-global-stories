@@ -136,10 +136,40 @@ export const DailyPrompt = () => {
       
       console.log('✅ ===== DAILYPROMPT: STORYCAMERA SUCCESS =====');
       console.log('DailyPrompt: StoryCamera recording result:', storyResult);
+      alert('✅ StoryCamera success: ' + JSON.stringify(storyResult));
       
-      // StoryCamera plugin should handle the entire flow
-      // No navigation needed - the plugin manages everything
-      console.log('DailyPrompt: StoryCamera completed successfully, staying in current view');
+      // Try to navigate using plugin result first
+      let fp: string | undefined = (storyResult as any)?.filePath;
+      if (!fp) {
+        // Fallback: ask native for stored path
+        try {
+          const data = await (StoryCamera as any).getVideoData?.();
+          if (data?.filePath) fp = data.filePath;
+        } catch {}
+      }
+
+      if (!fp) {
+        // Retry a couple times with tiny delay in case webview resumes a tick later
+        for (let i = 0; i < 3 && !fp; i++) {
+          await new Promise(r => setTimeout(r, 300));
+          try {
+            const data = await (StoryCamera as any).getVideoData?.();
+            if (data?.filePath) fp = data.filePath;
+          } catch {}
+        }
+      }
+
+      if (fp) {
+        alert('➡️ Navigating to /record-test with filePath: ' + fp);
+        try { sessionStorage.setItem('lastStoryVideoPath', fp); } catch {}
+        const target = '/record-test?filePath=' + encodeURIComponent(fp) + (currentPromptId ? ('&promptId=' + encodeURIComponent(currentPromptId)) : '');
+        setTimeout(() => {
+          navigate(target, { state: { filePath: fp, promptId: currentPromptId } });
+        }, 0);
+      } else {
+        console.warn('DailyPrompt: Could not determine filePath after recording');
+        alert('⚠️ Could not determine filePath after recording.');
+      }
       
     } catch (error) {
       console.error('❌ ===== DAILYPROMPT: STORYCAMERA FAILED =====');

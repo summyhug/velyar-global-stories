@@ -12,6 +12,8 @@ import { PageLayout } from "@/components/PageLayout";
 import { DailyPrompt } from "@/components/DailyPrompt";
 import { MissionCard } from "@/components/MissionCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import StoryCamera from "../../StoryCamera";
+import { useNavigate } from "react-router-dom";
 
 interface Mission {
   id: string;
@@ -25,10 +27,37 @@ interface Mission {
 const Home = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // One-shot check for video data to navigate to test page (on mount)
+    const checkOnce = async () => {
+      try {
+        const data = await (StoryCamera as any).getVideoData?.();
+        if (data?.hasVideo && data.filePath) {
+          try { sessionStorage.setItem('lastStoryVideoPath', data.filePath); } catch {}
+          navigate('/record-test?filePath=' + encodeURIComponent(data.filePath), { replace: true });
+        }
+      } catch {}
+    };
+    checkOnce();
+
+    // Also check on app resume (when Home becomes visible)
+    const onVisibility = async () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          const data = await (StoryCamera as any).getVideoData?.();
+          if (data?.hasVideo && data.filePath) {
+            try { sessionStorage.setItem('lastStoryVideoPath', data.filePath); } catch {}
+            navigate('/record-test?filePath=' + encodeURIComponent(data.filePath), { replace: true });
+          }
+        } catch {}
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
     const fetchMissions = async () => {
       try {
         const { data: missionsData, error } = await supabase
@@ -55,6 +84,8 @@ const Home = () => {
     };
 
     fetchMissions();
+    
+    return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
 
   // Header component

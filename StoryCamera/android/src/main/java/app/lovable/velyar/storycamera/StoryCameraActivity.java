@@ -299,84 +299,12 @@ public class StoryCameraActivity extends AppCompatActivity {
         flashParams.rightMargin = 60; // Move closer to center
         layout.addView(flashButton, flashParams);
         
-        // Create Done button (top center) - only visible when not recording
-        Button doneButton = new Button(this);
-        doneButton.setText("Done");
-        doneButton.setTextSize(16);
-        doneButton.setTextColor(0xFFFFFFFF);
-        doneButton.setPadding(30, 15, 30, 15);
-        
-        // Create circular background for done button
-        GradientDrawable doneDrawable = new GradientDrawable();
-        doneDrawable.setShape(GradientDrawable.RECTANGLE);
-        doneDrawable.setColor(0xCC000000); // Semi-transparent black
-        doneDrawable.setCornerRadius(25); // Rounded corners
-        doneButton.setBackground(doneDrawable);
-        
-        RelativeLayout.LayoutParams doneParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-        doneParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-        doneParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
-        doneParams.topMargin = 120; // More space from top for safe area
-        layout.addView(doneButton, doneParams);
-        
         // Set click listeners
         closeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.d(TAG, "Close button clicked - exiting camera");
                 onBackPressed();
-            }
-        });
-        
-        doneButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(TAG, "Done button clicked - navigating to video confirm");
-                
-                // Show popup alert for debugging
-                try {
-                    android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(StoryCameraActivity.this);
-                    builder.setTitle("🔍 Done Button Debug")
-                           .setMessage("Done button clicked!\nVideo file: " + (videoFile != null ? videoFile.getAbsolutePath() : "null"))
-                           .setPositiveButton("OK", null)
-                           .show();
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to show debug popup: " + e.getMessage());
-                }
-                
-                // Return result to plugin AND save to shared preferences
-                if (videoFile != null && videoFile.exists()) {
-                    try {
-                        // Save video path to shared preferences for React to pick up
-                        android.content.SharedPreferences prefs = getSharedPreferences("StoryCamera", MODE_PRIVATE);
-                        android.content.SharedPreferences.Editor editor = prefs.edit();
-                        editor.putString("lastVideoPath", videoFile.getAbsolutePath());
-                        editor.putBoolean("shouldNavigateToTest", true);
-                        editor.apply();
-                        
-                        Log.d(TAG, "Video path saved to shared preferences: " + videoFile.getAbsolutePath());
-                        
-                        // CRITICAL: Set result for the plugin to receive
-                        Intent intent = new Intent();
-                        intent.putExtra("videoUri", videoFile.getAbsolutePath());
-                        intent.putExtra("contentUri", FileProvider.getUriForFile(StoryCameraActivity.this, getApplicationContext().getPackageName() + ".fileprovider", videoFile).toString());
-                        setResult(Activity.RESULT_OK, intent);
-                        
-                        Log.d(TAG, "Result set for plugin - videoUri: " + videoFile.getAbsolutePath());
-                        
-                        // Now finish the activity
-                        finish();
-                    } catch (Exception e) {
-                        Log.e(TAG, "Failed to save video path: " + e.getMessage());
-                        setResult(Activity.RESULT_CANCELED);
-                        finish();
-                    }
-                } else {
-                    Log.e(TAG, "No video file available for Done button");
-                    Toast.makeText(StoryCameraActivity.this, "No video recorded yet", Toast.LENGTH_SHORT).show();
-                    setResult(Activity.RESULT_CANCELED);
-                    finish();
-                }
             }
         });
         
@@ -630,9 +558,41 @@ public class StoryCameraActivity extends AppCompatActivity {
                     Log.d(TAG, "About to call animateToIdleState");
                     animateToIdleState();
                     Log.d(TAG, "Video saved successfully: " + videoFile.getAbsolutePath());
-                    
-                    // Don't exit the camera - just show success message and stay in camera
-                    Toast.makeText(StoryCameraActivity.this, "Video saved! Tap 'Done' to continue", Toast.LENGTH_LONG).show();
+
+                    // Save to shared preferences for React-side polling fallback
+                    try {
+                        android.content.SharedPreferences prefs = getSharedPreferences("StoryCamera", MODE_PRIVATE);
+                        android.content.SharedPreferences.Editor editor = prefs.edit();
+                        if (videoFile != null) {
+                            editor.putString("lastVideoPath", videoFile.getAbsolutePath());
+                        }
+                        editor.putBoolean("shouldNavigateToTest", true);
+                        editor.apply();
+                    } catch (Exception e) {
+                        Log.w(TAG, "Failed to write SharedPreferences: " + e.getMessage());
+                    }
+
+                    // Auto-finish and return result to the plugin so React can navigate
+                    try {
+                        Intent intent = new Intent();
+                        intent.putExtra("videoUri", videoFile != null ? videoFile.getAbsolutePath() : null);
+                        if (videoFile != null) {
+                            intent.putExtra(
+                                "contentUri",
+                                FileProvider.getUriForFile(
+                                    StoryCameraActivity.this,
+                                    getApplicationContext().getPackageName() + ".fileprovider",
+                                    videoFile
+                                ).toString()
+                            );
+                        }
+                        setResult(Activity.RESULT_OK, intent);
+                        finish();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to set result on finalize: " + e.getMessage());
+                        setResult(Activity.RESULT_CANCELED);
+                        finish();
+                    }
                 }
             }
         });
