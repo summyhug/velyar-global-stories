@@ -31,6 +31,8 @@ import android.view.ScaleGestureDetector;
 import android.view.MotionEvent;
 import android.graphics.Matrix;
 import android.graphics.RectF;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.InsetDrawable;
 import android.widget.TextView;
 import android.os.CountDownTimer;
 
@@ -95,6 +97,10 @@ public class StoryCameraActivity extends AppCompatActivity {
     private float minZoomRatio = 1.0f;
     private float maxZoomRatio = 10.0f;
     private boolean zoomEnabled = true;
+    // Simple filter overlay and index
+    private View filterOverlay;
+    private TextView filterLabel;
+    private int currentFilterIndex = 0; // 0=None, 1=Warm, 2=Cool, 3=Sunset, 4=Film
     private TextView countdownLabel;
     private CountDownTimer countdownTimer;
     private int maxDurationSeconds = 30;
@@ -174,6 +180,29 @@ public class StoryCameraActivity extends AppCompatActivity {
             throw new RuntimeException("PreviewView parent layout is null");
         }
         
+        // Add a full-screen filter overlay above the preview
+        filterOverlay = new View(this);
+        filterOverlay.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        RelativeLayout.LayoutParams overlayParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        overlayParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        overlayParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        overlayParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        overlayParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        layout.addView(filterOverlay, overlayParams);
+
+        // Filter name label (top center)
+        filterLabel = new TextView(this);
+        filterLabel.setTextColor(0xFFFFFFFF);
+        filterLabel.setTextSize(18f);
+        // No drop shadow for a cleaner look
+        filterLabel.setAlpha(0f);
+        filterLabel.setVisibility(View.GONE);
+        RelativeLayout.LayoutParams flParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        flParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        flParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        flParams.topMargin = 120; // between the close and flash buttons
+        layout.addView(filterLabel, flParams);
+
         // Create pulsing ring behind the record button
         pulsingRing = new View(this);
         GradientDrawable ringDrawable = new GradientDrawable();
@@ -216,6 +245,8 @@ public class StoryCameraActivity extends AppCompatActivity {
         paletteButton.setImageResource(R.drawable.ic_palette);
         paletteButton.setScaleType(ImageButton.ScaleType.CENTER_INSIDE);
         paletteButton.setPadding(25, 25, 25, 25);
+        // Ensure consistent icon color
+        paletteButton.setColorFilter(0xFFFFFFFF, PorterDuff.Mode.SRC_IN);
         
         // Create circular background for palette button
         GradientDrawable paletteDrawable = new GradientDrawable();
@@ -223,7 +254,7 @@ public class StoryCameraActivity extends AppCompatActivity {
         paletteDrawable.setColor(0xCC000000); // Semi-transparent black
         paletteButton.setBackground(paletteDrawable);
 
-        RelativeLayout.LayoutParams paletteParams = new RelativeLayout.LayoutParams(100, 100);
+        RelativeLayout.LayoutParams paletteParams = new RelativeLayout.LayoutParams(110, 110);
         paletteParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         paletteParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         paletteParams.bottomMargin = 120;
@@ -232,7 +263,10 @@ public class StoryCameraActivity extends AppCompatActivity {
 
         // Create modern switch camera button (bottom center, next to record button) with proper icon - large circle
         switchCameraButton = new ImageButton(this);
-        switchCameraButton.setImageResource(R.drawable.ic_camera_switch_new);
+        // Use the vector drawable now present in the plugin resources
+        switchCameraButton.setImageResource(R.drawable.flip_camera_ios_24);
+        // Tint icon to white so it is visible on dark background
+        switchCameraButton.setColorFilter(0xFFFFFFFF, PorterDuff.Mode.SRC_IN);
         switchCameraButton.setScaleType(ImageButton.ScaleType.CENTER_INSIDE);
         switchCameraButton.setPadding(25, 25, 25, 25);
         
@@ -242,7 +276,7 @@ public class StoryCameraActivity extends AppCompatActivity {
         switchDrawable.setColor(0xCC000000); // Semi-transparent black
         switchCameraButton.setBackground(switchDrawable);
 
-        RelativeLayout.LayoutParams switchParams = new RelativeLayout.LayoutParams(100, 100);
+        RelativeLayout.LayoutParams switchParams = new RelativeLayout.LayoutParams(110, 110);
         switchParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         switchParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         switchParams.bottomMargin = 120;
@@ -261,7 +295,7 @@ public class StoryCameraActivity extends AppCompatActivity {
         closeDrawable.setColor(0xCC000000); // Semi-transparent black
         closeButton.setBackground(closeDrawable);
         
-        RelativeLayout.LayoutParams closeParams = new RelativeLayout.LayoutParams(80, 80); // Smaller size
+        RelativeLayout.LayoutParams closeParams = new RelativeLayout.LayoutParams(110, 110); // match other buttons
         closeParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
         closeParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
         closeParams.topMargin = 120; // More space from top for safe area
@@ -280,7 +314,7 @@ public class StoryCameraActivity extends AppCompatActivity {
         flashDrawable.setColor(0xCC000000); // Semi-transparent black
         flashButton.setBackground(flashDrawable);
         
-        RelativeLayout.LayoutParams flashParams = new RelativeLayout.LayoutParams(100, 100);
+        RelativeLayout.LayoutParams flashParams = new RelativeLayout.LayoutParams(110, 110);
         flashParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
         flashParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         flashParams.topMargin = 120; // More space from top for safe area
@@ -326,7 +360,17 @@ public class StoryCameraActivity extends AppCompatActivity {
         switchCameraButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                switchCamera();
+                // Rotate icon for interactivity, then switch camera
+                switchCameraButton.animate()
+                    .rotationBy(180f)
+                    .setDuration(200)
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            switchCamera();
+                        }
+                    })
+                    .start();
             }
         });
         
@@ -336,6 +380,76 @@ public class StoryCameraActivity extends AppCompatActivity {
                 toggleFlash();
             }
         });
+
+        // Cycle through simple filter overlays
+        paletteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                currentFilterIndex = (currentFilterIndex + 1) % 5;
+                applyFilterOverlay(currentFilterIndex);
+                String name;
+                switch (currentFilterIndex) {
+                    case 1: name = "Warm Glow"; break;
+                    case 2: name = "Cool Mist"; break;
+                    case 3: name = "Sunset"; break;
+                    case 4: name = "Film Fade"; break;
+                    default: name = "None"; break;
+                }
+                showFilterLabel(name);
+                // Subtle pulse on theme change
+                paletteButton.animate().scaleX(0.92f).scaleY(0.92f).setDuration(90)
+                    .withEndAction(new Runnable() {
+                        @Override
+                        public void run() {
+                            paletteButton.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
+                        }
+                    }).start();
+            }
+        });
+    }
+
+    private void applyFilterOverlay(int index) {
+        if (filterOverlay == null) return;
+        switch (index) {
+            case 0: // None
+                filterOverlay.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+                break;
+            case 1: // Warm
+                filterOverlay.setBackgroundColor(android.graphics.Color.argb(80, 255, 183, 77));
+                break;
+            case 2: // Cool
+                filterOverlay.setBackgroundColor(android.graphics.Color.argb(80, 64, 156, 255));
+                break;
+            case 3: // Sunset
+                filterOverlay.setBackgroundColor(android.graphics.Color.argb(80, 255, 99, 132));
+                break;
+            case 4: // Film dim
+                filterOverlay.setBackgroundColor(android.graphics.Color.argb(70, 20, 20, 20));
+                break;
+            default:
+                filterOverlay.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        }
+    }
+
+    private void showFilterLabel(String name) {
+        if (filterLabel == null) return;
+        try {
+            filterLabel.setText(name);
+            filterLabel.setVisibility(View.VISIBLE);
+            filterLabel.animate().cancel();
+            filterLabel.setAlpha(1f);
+            filterLabel.animate()
+                .alpha(0f)
+                .setStartDelay(900)
+                .setDuration(400)
+                .withEndAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        filterLabel.setVisibility(View.GONE);
+                    }
+                })
+                .start();
+        } catch (Exception ignored) {}
     }
     
     private void setupZoomGestureDetector() {
@@ -489,6 +603,14 @@ public class StoryCameraActivity extends AppCompatActivity {
         
         if (imageCapture != null) {
             imageCapture.setFlashMode(isFlashOn ? ImageCapture.FLASH_MODE_ON : ImageCapture.FLASH_MODE_OFF);
+        }
+        // Also toggle torch for preview/recording
+        try {
+            if (camera != null && camera.getCameraInfo() != null && camera.getCameraInfo().hasFlashUnit()) {
+                camera.getCameraControl().enableTorch(isFlashOn);
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "enableTorch failed: " + e.getMessage());
         }
         
         // Update button appearance
@@ -685,34 +807,24 @@ public class StoryCameraActivity extends AppCompatActivity {
         // Create rounded square background with Octo accent fill (no stroke to avoid double circle)
         GradientDrawable recordingDrawable = new GradientDrawable();
         recordingDrawable.setShape(GradientDrawable.RECTANGLE);
-        recordingDrawable.setCornerRadius(25); // More rounded square
+        recordingDrawable.setCornerRadius(25); // Rounded square
         recordingDrawable.setColor(0xFFFF7F5A); // Octo accent fill
         // No stroke to avoid inner orange circle
-        
-        // Animate size change and background morph (circle to rounded square)
-        AnimatorSet animatorSet = new AnimatorSet();
-        
-        // Size animation (120px circle to 140px rounded square)
-        ObjectAnimator widthAnim = ObjectAnimator.ofInt(recordButton, "width", 120, 140);
-        ObjectAnimator heightAnim = ObjectAnimator.ofInt(recordButton, "height", 120, 140);
-        
-        // Background change
-        recordButton.setBackground(recordingDrawable);
-        
-        // Combine animations with spring effect (250ms as specified)
-        animatorSet.playTogether(widthAnim, heightAnim);
-        animatorSet.setDuration(250);
-        animatorSet.setInterpolator(new OvershootInterpolator(1.2f)); // Spring effect
-        
-        animatorSet.addListener(new android.animation.AnimatorListenerAdapter() {
+
+        // Inset the square inside the button to make it visibly smaller (~20%)
+        int insetPx = dpToPx(8); // slightly larger square than before
+        InsetDrawable insetDrawable = new InsetDrawable(recordingDrawable, insetPx);
+        recordButton.setBackground(insetDrawable);
+
+        // Subtle scale feedback
+        recordButton.setScaleX(0.96f);
+        recordButton.setScaleY(0.96f);
+        recordButton.animate().scaleX(1f).scaleY(1f).setDuration(180).setInterpolator(new OvershootInterpolator(1.1f)).withEndAction(new Runnable() {
             @Override
-            public void onAnimationEnd(android.animation.Animator animation) {
-                // Start pulsing ring animation after morph completes
+            public void run() {
                 startPulsingRing();
             }
-        });
-        
-        animatorSet.start();
+        }).start();
     }
     
     private void animateToIdleState() {
@@ -732,18 +844,18 @@ public class StoryCameraActivity extends AppCompatActivity {
         // Animate size change and background morph (rounded square back to circle)
         AnimatorSet animatorSet = new AnimatorSet();
         
-        // Size animation (140px rounded square back to 120px circle)
-        ObjectAnimator widthAnim = ObjectAnimator.ofInt(recordButton, "width", 140, 120);
-        ObjectAnimator heightAnim = ObjectAnimator.ofInt(recordButton, "height", 140, 120);
-        
         // Background change
         recordButton.setBackground(idleDrawable);
         
         // Combine animations with bounce effect
-        animatorSet.playTogether(widthAnim, heightAnim);
         animatorSet.setDuration(200);
         animatorSet.setInterpolator(new BounceInterpolator());
         animatorSet.start();
+    }
+
+    private int dpToPx(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
     }
     
     private void startPulsingRing() {
