@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, forwardRef } from "react";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -7,13 +7,14 @@ interface VideoPlayerProps {
   className?: string;
 }
 
-export const VideoPlayer = ({ 
+export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(({ 
   videoUrl, 
   onVideoEnd, 
   autoPlay = true, 
   className = "" 
-}: VideoPlayerProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
+}, ref) => {
+  const internalRef = useRef<HTMLVideoElement>(null);
+  const videoRef = ref || internalRef;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -52,4 +53,4 @@ export const VideoPlayer = ({
       }}
     />
   );
-};
+});

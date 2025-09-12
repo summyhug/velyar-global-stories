@@ -40,8 +40,10 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
   const [showComments, setShowComments] = useState(false);
   const [comment, setComment] = useState("");
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isPaused, setIsPaused] = useState(false);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const currentVideo = videos[currentIndex];
   const maxCommentLength = 100;
@@ -68,7 +70,41 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
     // Reset comments view when video changes
     setShowComments(false);
     setComment("");
+    setIsPaused(false);
   }, [currentIndex]);
+
+  const togglePause = () => {
+    // If comments are open, close them instead of pausing
+    if (showComments) {
+      setShowComments(false);
+      // Resume video when closing comments
+      if (videoRef.current && isPaused) {
+        videoRef.current.play();
+        setIsPaused(false);
+      }
+      return;
+    }
+
+    // Normal pause/unpause when comments are closed
+    if (videoRef.current) {
+      if (isPaused) {
+        videoRef.current.play();
+        setIsPaused(false);
+      } else {
+        videoRef.current.pause();
+        setIsPaused(true);
+      }
+    }
+  };
+
+  const handleCommentToggle = () => {
+    setShowComments(!showComments);
+    // Pause video when opening comments
+    if (!showComments && videoRef.current) {
+      videoRef.current.pause();
+      setIsPaused(true);
+    }
+  };
 
   const handleSwipe = (direction: 'next' | 'prev') => {
     if (direction === 'next') {
@@ -179,7 +215,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
   }, [currentIndex, videos.length]);
 
   return (
-    <div ref={containerRef} className="fixed inset-0 bg-black z-50 flex flex-col">
+    <div ref={containerRef} className="fixed inset-0 bg-black z-50">
       {/* Top Header Bar - Safe Area Aware */}
       <div className="absolute top-0 left-0 right-0 z-10 pt-safe-header bg-black/60 backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 py-3">
@@ -245,38 +281,21 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
               </AppealContentModal>
             )}
             
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: currentVideo.title || 'Check out this video',
-                    url: window.location.href,
-                  });
-                } else {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast({
-                    title: "Link copied to clipboard",
-                    duration: 2000,
-                  });
-                }
-              }}
-              className="text-white hover:bg-white/20"
-            >
-              <Share2 className="w-5 h-5" />
-            </Button>
           </div>
         </div>
       </div>
 
-      {/* Video Container - Full Bleed */}
-      <div className="flex-1 relative bg-black">
+      {/* Video Container - Full Screen (extends under all overlays) */}
+      <div 
+        className="absolute inset-0 bg-black cursor-pointer"
+        onClick={togglePause}
+      >
         <VideoPlayer
+          ref={videoRef}
           videoUrl={currentVideo.video_url}
           onVideoEnd={handleVideoEnd}
-          autoPlay={true}
-          className="w-full h-full object-contain"
+          autoPlay={!isPaused}
+          className="w-full h-full object-cover"
         />
 
         {/* Navigation arrows */}
@@ -336,7 +355,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowComments(!showComments)}
+                onClick={handleCommentToggle}
                 className="text-white hover:bg-white/20"
               >
                 <MessageCircle className="w-5 h-5" />
@@ -352,36 +371,44 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
         {/* Comment Section */}
         {showComments && (
           <div className="px-4 pb-4">
-            <Card className="bg-white/95 backdrop-blur-sm border-0 shadow-lg">
+            <Card className="bg-background/95 backdrop-blur-md border border-border/50 shadow-2xl">
               <CardContent className="p-4 flex flex-col max-h-80">
                 {/* Comments List */}
-                <div className="flex-1 overflow-y-auto mb-4 max-h-40">
+                <div className="flex-1 overflow-y-auto mb-4 max-h-40 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                   {loading ? (
-                    <div className="text-muted-foreground text-sm">Loading comments...</div>
+                    <div className="text-muted-foreground text-sm text-center py-4">Loading comments...</div>
                   ) : comments.length > 0 ? (
                     <div className="space-y-3">
                       {comments.map((comment) => (
-                        <div key={comment.id} className="text-sm">
-                          <div className="font-medium text-foreground">
+                        <div key={comment.id} className="text-sm p-3 rounded-lg bg-muted/30 border border-border/30">
+                          <div className="font-medium text-foreground mb-1 flex items-center gap-2">
                             {comment.profiles?.display_name || comment.profiles?.username || 'Anonymous'}
+                            {comment.profiles?.country && (
+                              <span className="text-sm">
+                                {getCountryFlag(comment.profiles.country)}
+                              </span>
+                            )}
                           </div>
-                          <div className="text-muted-foreground">{comment.content}</div>
+                          <div className="text-muted-foreground leading-relaxed">{comment.content}</div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-muted-foreground text-sm">No comments yet. Be the first!</div>
+                    <div className="text-muted-foreground text-sm text-center py-8">
+                      <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>No comments yet. Be the first!</p>
+                    </div>
                   )}
                 </div>
                 
                 {/* Comment Input */}
-                <div className="flex items-end gap-2 border-t pt-3">
+                <div className="flex items-end gap-3 border-t border-border/50 pt-4">
                   <div className="flex-1">
                     <Textarea
                       placeholder="Add a thoughtful comment (max 100 characters)..."
                       value={comment}
                       onChange={(e) => setComment(e.target.value.slice(0, maxCommentLength))}
-                      className="min-h-20 resize-none border-velyar-earth/20 focus:border-velyar-earth"
+                      className="min-h-20 resize-none border-border/50 focus:border-velyar-earth bg-background/50 backdrop-blur-sm"
                       maxLength={maxCommentLength}
                     />
                     <div className="text-xs text-muted-foreground mt-1 text-right">
@@ -391,7 +418,7 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
                   <Button
                     onClick={handleCommentSubmit}
                     disabled={!comment.trim()}
-                    className="bg-velyar-warm hover:bg-velyar-glow text-velyar-earth"
+                    className="bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-medium px-6"
                   >
                     Send
                   </Button>
