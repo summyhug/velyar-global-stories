@@ -402,8 +402,8 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
                 </div>
                 
                 {/* Comment Input */}
-                <div className="flex items-end gap-3 border-t border-border/50 pt-4">
-                  <div className="flex-1">
+                <div className="border-t border-border/50 pt-4 space-y-3">
+                  <div>
                     <Textarea
                       placeholder="Add a thoughtful comment (max 100 characters)..."
                       value={comment}
@@ -415,13 +415,15 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
                       {comment.length}/{maxCommentLength} characters
                     </div>
                   </div>
-                  <Button
-                    onClick={handleCommentSubmit}
-                    disabled={!comment.trim()}
-                    className="bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-medium px-6"
-                  >
-                    Send
-                  </Button>
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleCommentSubmit}
+                      disabled={!comment.trim()}
+                      className="bg-velyar-warm hover:bg-velyar-glow text-velyar-earth font-medium px-6"
+                    >
+                      Send
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

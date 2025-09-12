@@ -1,7 +1,6 @@
 import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
-import { FloatingActionButton } from "./FloatingActionButton";
 
 export const ProtectedLayout = () => {
   const location = useLocation();
@@ -11,7 +10,6 @@ export const ProtectedLayout = () => {
     <>
       <Outlet />
       {!hideChrome && <BottomNav />}
-      {!hideChrome && <FloatingActionButton />}
     </>
   );
 };
