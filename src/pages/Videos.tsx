@@ -130,7 +130,7 @@ const Videos = () => {
       for (const video of filteredVideos) {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('username, display_name')
+          .select('username, display_name, country')
           .eq('user_id', video.user_id)
           .single();
         

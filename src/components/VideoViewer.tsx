@@ -11,6 +11,7 @@ import { AppealContentModal } from "@/components/AppealContentModal";
 import { useVideoComments } from "@/hooks/useVideoComments";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getCountryFlag } from "@/utils/countryFlags";
 
 interface VideoViewerProps {
   videos: Array<{
@@ -22,6 +23,7 @@ interface VideoViewerProps {
     profiles?: {
       username?: string;
       display_name?: string;
+      country?: string;
     };
     location?: string;
     moderation_status?: string;
@@ -180,24 +182,28 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
     <div ref={containerRef} className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* Top Header Bar - Safe Area Aware */}
       <div className="absolute top-0 left-0 right-0 z-10 pt-safe-header bg-black/60 backdrop-blur-sm">
-        <div className="flex items-center justify-between p-4">
+        <div className="flex items-center justify-between px-4 py-3">
           <Button
             variant="ghost"
             size="sm"
             onClick={onBack}
-            className="text-white hover:bg-white/20"
+            className="text-white hover:bg-white/20 flex-shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="text-white text-center flex-1">
-            <div className="text-lg font-medium truncate">
-              {pageTitle || currentVideo.location || 'Unknown Location'}
-            </div>
-            <div className="text-sm text-white/80 truncate">
-              {currentVideo.profiles?.display_name || currentVideo.profiles?.username || 'Unknown User'}
+          <div className="text-white text-center flex-1 min-w-0 px-2">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-lg font-medium truncate">
+                {currentVideo.profiles?.display_name || currentVideo.profiles?.username || 'Unknown User'}
+              </span>
+              {currentVideo.profiles?.country && (
+                <span className="text-lg flex-shrink-0">
+                  {getCountryFlag(currentVideo.profiles.country)}
+                </span>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {currentUser?.id === currentVideo.user_id && (
               <Button
                 variant="ghost"

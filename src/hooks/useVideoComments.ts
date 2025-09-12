@@ -9,6 +9,7 @@ interface Comment {
   profiles?: {
     username?: string;
     display_name?: string;
+    country?: string;
   } | null;
 }
 
@@ -52,7 +53,7 @@ export const useVideoComments = (videoId: string) => {
         const profilePromises = commentsData.map(async (comment) => {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('username, display_name')
+            .select('username, display_name, country')
             .eq('user_id', comment.user_id)
             .single();
           

@@ -21,6 +21,7 @@ interface Video {
   profiles?: {
     username?: string;
     display_name?: string;
+    country?: string;
   } | null;
 }
 
@@ -63,7 +64,7 @@ const VideoList = () => {
         for (const video of videoList) {
           const { data: profileData } = await supabase
             .from('profiles')
-            .select('username, display_name')
+            .select('username, display_name, country')
             .eq('user_id', video.user_id)
             .single();
           
@@ -123,7 +124,7 @@ const VideoList = () => {
               for (const video of videosData) {
                 const { data: profileData } = await supabase
                   .from('profiles')
-                  .select('username, display_name')
+                  .select('username, display_name, country')
                   .eq('user_id', video.user_id)
                   .single();
                 
@@ -183,7 +184,7 @@ const VideoList = () => {
         for (const video of videosData) {
           const { data: profileData } = await supabase
             .from('profiles')
-            .select('username, display_name')
+            .select('username, display_name, country')
             .eq('user_id', video.user_id)
             .single();
           
