@@ -223,6 +223,14 @@ public class StoryCameraActivity extends AppCompatActivity {
         recordButton.setWidth(120); // Much larger button
         recordButton.setHeight(120);
         recordButton.setPadding(0, 0, 0, 0);
+        // Remove default elevation/shadow
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                recordButton.setStateListAnimator(null);
+            }
+            recordButton.setElevation(0f);
+            recordButton.setTranslationZ(0f);
+        } catch (Exception ignored) {}
         
         // Create circular background with only outer Octo accent border (transparent inside)
         GradientDrawable circularDrawable = new GradientDrawable();
@@ -815,6 +823,14 @@ public class StoryCameraActivity extends AppCompatActivity {
         int insetPx = dpToPx(8); // slightly larger square than before
         InsetDrawable insetDrawable = new InsetDrawable(recordingDrawable, insetPx);
         recordButton.setBackground(insetDrawable);
+        // Ensure no elevation/shadow while recording
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                recordButton.setStateListAnimator(null);
+            }
+            recordButton.setElevation(0f);
+            recordButton.setTranslationZ(0f);
+        } catch (Exception ignored) {}
 
         // Subtle scale feedback
         recordButton.setScaleX(0.96f);
@@ -846,6 +862,14 @@ public class StoryCameraActivity extends AppCompatActivity {
         
         // Background change
         recordButton.setBackground(idleDrawable);
+        // Keep elevation disabled to avoid drop shadow
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                recordButton.setStateListAnimator(null);
+            }
+            recordButton.setElevation(0f);
+            recordButton.setTranslationZ(0f);
+        } catch (Exception ignored) {}
         
         // Combine animations with bounce effect
         animatorSet.setDuration(200);
