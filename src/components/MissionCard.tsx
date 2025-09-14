@@ -62,7 +62,7 @@ export const MissionCard = ({ id, title, description, participants, location, im
           sessionStorage.setItem('lastMissionId', id);
           localStorage.setItem('lastMissionId', id);
         } catch {}
-        const target = `/record-test?filePath=${encodeURIComponent(fp)}&missionId=${encodeURIComponent(id)}`;
+        const target = `/video-preview?filePath=${encodeURIComponent(fp)}&missionId=${encodeURIComponent(id)}`;
         setTimeout(() => {
           navigate(target, { 
             state: { 

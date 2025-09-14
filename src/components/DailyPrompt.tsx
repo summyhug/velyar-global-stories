@@ -149,7 +149,7 @@ export const DailyPrompt = () => {
 
       if (fp) {
         try { sessionStorage.setItem('lastStoryVideoPath', fp); } catch {}
-        const target = '/record-test?filePath=' + encodeURIComponent(fp) + (currentPromptId ? ('&promptId=' + encodeURIComponent(currentPromptId)) : '');
+        const target = '/video-preview?filePath=' + encodeURIComponent(fp) + (currentPromptId ? ('&promptId=' + encodeURIComponent(currentPromptId)) : '');
         setTimeout(() => {
           navigate(target, { 
             state: { 

@@ -38,7 +38,7 @@ const Home = () => {
         const data = await (StoryCamera as any).getVideoData?.();
         if (data?.hasVideo && data.filePath) {
           try { sessionStorage.setItem('lastStoryVideoPath', data.filePath); } catch {}
-          navigate('/record-test?filePath=' + encodeURIComponent(data.filePath), { replace: true });
+          navigate('/video-preview?filePath=' + encodeURIComponent(data.filePath), { replace: true });
         }
       } catch {}
     };
@@ -51,7 +51,7 @@ const Home = () => {
           const data = await (StoryCamera as any).getVideoData?.();
           if (data?.hasVideo && data.filePath) {
             try { sessionStorage.setItem('lastStoryVideoPath', data.filePath); } catch {}
-            navigate('/record-test?filePath=' + encodeURIComponent(data.filePath), { replace: true });
+            navigate('/video-preview?filePath=' + encodeURIComponent(data.filePath), { replace: true });
           }
         } catch {}
       }

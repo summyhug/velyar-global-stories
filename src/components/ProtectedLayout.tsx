@@ -4,7 +4,7 @@ import { BottomNav } from "./BottomNav";
 
 export const ProtectedLayout = () => {
   const location = useLocation();
-  const hiddenChromePaths = ["/record-test"]; // Hide bottom nav & FAB on these routes
+  const hiddenChromePaths = ["/video-preview"]; // Hide bottom nav & FAB on these routes
   const hideChrome = hiddenChromePaths.includes(location.pathname);
   return (
     <>
