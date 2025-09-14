@@ -6,14 +6,22 @@ android {
         targetCompatibility JavaVersion.VERSION_21
     }
 
+    signingConfigs {
+        release {
+            storeFile file('../velyar-release-key.keystore')
+            // storePassword and keyPassword will be entered in Android Studio
+            keyAlias 'velyar-key-alias'
+        }
+    }
+
     namespace "app.lovable.e717c17b39ea497bb3f0803db35e66f4"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "app.lovable.e717c17b39ea497bb3f0803db35e66f4"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -25,6 +33,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }
