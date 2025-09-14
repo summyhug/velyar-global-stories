@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Clock, ArrowRight, Eye, MapPin, Users2, Sparkles, Camera } from "lucide-react";
+import { Clock, ArrowRight, Eye, MapPin, Users2, Sparkles, Camera, Play, Mic } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,12 +10,15 @@ import { useTranslation } from "react-i18next";
 import StoryCamera from "../../StoryCamera";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { getCountryFlag } from "@/utils/countryFlags";
 
 export const DailyPrompt = () => {
   const [stats, setStats] = useState({ voices: 0, countries: 0 });
   const [loading, setLoading] = useState(true);
   const [prompt, setPrompt] = useState("");
   const [currentPromptId, setCurrentPromptId] = useState<string | null>(null);
+  const [recentSubmissions, setRecentSubmissions] = useState<any[]>([]);
+  const [submissionsLoading, setSubmissionsLoading] = useState(false);
 
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -99,6 +102,56 @@ export const DailyPrompt = () => {
     fetchPromptData();
   }, []);
 
+  // Fetch recent submissions for the current prompt
+  const fetchRecentSubmissions = async (promptId: string) => {
+    try {
+      setSubmissionsLoading(true);
+      
+      const { data: submissions, error } = await supabase
+        .from('videos')
+        .select('*')
+        .eq('daily_prompt_id', promptId)
+        .eq('is_public', true)
+        .eq('is_hidden', false)
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (error) {
+        console.error('DailyPrompt: Error fetching submissions:', error);
+        return;
+      }
+
+      // Fetch profile data separately (matching VideoList logic)
+      const submissionsWithProfiles = [];
+      if (submissions) {
+        for (const submission of submissions) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username, display_name, country')
+            .eq('user_id', submission.user_id)
+            .single();
+          
+          submissionsWithProfiles.push({
+            ...submission,
+            profiles: profileData
+          });
+        }
+      }
+
+      setRecentSubmissions(submissionsWithProfiles);
+    } catch (error) {
+      console.error('DailyPrompt: Error in fetchRecentSubmissions:', error);
+    } finally {
+      setSubmissionsLoading(false);
+    }
+  };
+
+  // Fetch submissions when currentPromptId changes
+  useEffect(() => {
+    if (currentPromptId) {
+      fetchRecentSubmissions(currentPromptId);
+    }
+  }, [currentPromptId]);
 
   // Direct StoryCamera recording function
   const handleRespondWithStoryCamera = async () => {
@@ -187,9 +240,10 @@ export const DailyPrompt = () => {
   };
 
   return (
-    <Card 
-      className="card-interactive group overflow-hidden border-velyar-warm/30 bg-gradient-to-br from-velyar-soft/50 to-background"
-    >
+    <div className="space-y-6">
+      <Card 
+        className="card-interactive group overflow-hidden border-velyar-warm/30 bg-gradient-to-br from-velyar-soft/50 to-background"
+      >
       <CardContent className="p-6">
         <div className="space-y-4">
           {/* Header with enhanced typography */}
@@ -203,7 +257,7 @@ export const DailyPrompt = () => {
                 <p className="text-xs text-muted-foreground">Updated every 24 hours</p>
               </div>
             </div>
-            <Badge variant="secondary" className="bg-velyar-warm/20 text-velyar-earth border-velyar-warm/30">
+            <Badge variant="secondary" className="bg-velyar-warm/20 text-velyar-earth border-velyar-warm/30 animate-pulse">
               Live
             </Badge>
           </div>
@@ -256,5 +310,77 @@ export const DailyPrompt = () => {
         </div>
       </CardContent>
     </Card>
+
+    {/* Recent Voices Section */}
+    {recentSubmissions.length > 0 && (
+      <div className="space-y-4">
+        {/* Section Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-velyar-earth/10 rounded-full">
+              <Mic className="w-4 h-4 text-velyar-earth animate-pulse" />
+            </div>
+            <h3 className="text-lg font-display text-foreground">
+              Recent Voices
+            </h3>
+          </div>
+          <Link to={currentPromptId ? `/video-list/daily-prompt/${currentPromptId}` : "/video-list/daily-prompt"}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-velyar-earth hover:bg-velyar-soft hover:text-velyar-earth"
+            >
+              <span className="text-sm font-ui">{t('profile.viewAll')}</span>
+              <ArrowRight className="w-3 h-3 ml-1" />
+            </Button>
+          </Link>
+        </div>
+
+        {/* Recent Submissions Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {recentSubmissions.map((submission) => (
+            <Link 
+              key={submission.id} 
+              to={`/videos/daily-prompt/${currentPromptId}?video=${submission.id}`}
+              className="group"
+            >
+              <Card className="card-interactive overflow-hidden border-border/50 hover:border-velyar-warm/30 transition-all duration-200">
+                {/* Video Thumbnail */}
+                <div className="relative aspect-video overflow-hidden">
+                  <img 
+                    src={submission.thumbnail_url} 
+                    alt="Video thumbnail"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                </div>
+                
+                {/* Video Info */}
+                <CardContent className="p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-velyar-earth/20 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-ui text-velyar-earth">
+                          {submission.profiles?.display_name?.charAt(0) || '?'}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-ui text-foreground truncate">
+                          {submission.profiles?.display_name || 'Anonymous'}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {submission.profiles?.country}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+    )}
+    </div>
   );
 };
