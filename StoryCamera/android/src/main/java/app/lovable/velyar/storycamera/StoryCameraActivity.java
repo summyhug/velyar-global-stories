@@ -274,6 +274,8 @@ public class StoryCameraActivity extends AppCompatActivity {
         paletteDrawable.setShape(GradientDrawable.OVAL);
         paletteDrawable.setColor(0xCC000000); // Semi-transparent black
         paletteButton.setBackground(paletteDrawable);
+        // Temporarily hide theme/palette button
+        paletteButton.setVisibility(View.GONE);
 
         RelativeLayout.LayoutParams paletteParams = new RelativeLayout.LayoutParams(110, 110);
         paletteParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
