@@ -104,11 +104,23 @@ public class StoryCameraActivity extends AppCompatActivity {
     private TextView countdownLabel;
     private CountDownTimer countdownTimer;
     private int maxDurationSeconds = 30;
+    
+    // Context variables to pass back
+    private String activityContextType = null;
+    private String activityMissionId = null;
+    private String activityPromptId = null;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate - launching StoryCamera activity");
+        
+        // Read context from intent
+        Intent intent = getIntent();
+        String receivedPromptName = intent.getStringExtra("promptName");
+        this.activityContextType = intent.getStringExtra("contextType");
+        this.activityMissionId = intent.getStringExtra("missionId");
+        this.activityPromptId = intent.getStringExtra("promptId");
         
         try {
             // Hide action bar for full-screen experience
@@ -202,6 +214,7 @@ public class StoryCameraActivity extends AppCompatActivity {
         flParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
         flParams.topMargin = 120; // between the close and flash buttons
         layout.addView(filterLabel, flParams);
+
 
         // Create pulsing ring behind the record button
         pulsingRing = new View(this);
@@ -699,6 +712,8 @@ public class StoryCameraActivity extends AppCompatActivity {
                         if (videoFile != null) {
                             editor.putString("lastVideoPath", videoFile.getAbsolutePath());
                         }
+                        // Also persist context values if plugin stored them in prefs beforehand
+                        // (Optional: plugin can prefill lastContextType/lastMissionId/lastPromptId)
                         editor.putBoolean("shouldNavigateToTest", true);
                         editor.apply();
                     } catch (Exception e) {
@@ -708,17 +723,25 @@ public class StoryCameraActivity extends AppCompatActivity {
                     // Auto-finish and return result to the plugin so React can navigate
                     try {
                         Intent intent = new Intent();
-                        intent.putExtra("videoUri", videoFile != null ? videoFile.getAbsolutePath() : null);
+                        
+                        // File already has correct name from createVideoFile()
+                        String finalVideoPath = videoFile != null ? videoFile.getAbsolutePath() : null;
+                        intent.putExtra("videoUri", finalVideoPath);
+                        
                         if (videoFile != null) {
-                            intent.putExtra(
-                                "contentUri",
-                                FileProvider.getUriForFile(
-                                    StoryCameraActivity.this,
-                                    getApplicationContext().getPackageName() + ".fileprovider",
-                                    videoFile
-                                ).toString()
-                            );
+                            String contentUri = FileProvider.getUriForFile(
+                                StoryCameraActivity.this,
+                                getApplicationContext().getPackageName() + ".fileprovider",
+                                videoFile
+                            ).toString();
+                            intent.putExtra("contentUri", contentUri);
+                            
                         }
+                        
+                        // Pass context back to the plugin
+                        if (activityContextType != null) intent.putExtra("contextType", activityContextType);
+                        if (activityMissionId != null) intent.putExtra("missionId", activityMissionId);
+                        if (activityPromptId != null) intent.putExtra("promptId", activityPromptId);
                         setResult(Activity.RESULT_OK, intent);
                         finish();
                     } catch (Exception e) {
@@ -784,7 +807,16 @@ public class StoryCameraActivity extends AppCompatActivity {
         try {
             // Create a unique filename with timestamp
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            String fileName = "STORY_" + timeStamp + ".mp4";
+            String fileName;
+            
+            // Include context in filename if available
+            if (activityContextType != null && activityContextType.equals("mission") && activityMissionId != null) {
+                fileName = "MISSION_" + activityMissionId + "_" + timeStamp + ".mp4";
+            } else if (activityContextType != null && activityContextType.equals("daily") && activityPromptId != null) {
+                fileName = "DAILY_" + activityPromptId + "_" + timeStamp + ".mp4";
+            } else {
+                fileName = "STORY_" + timeStamp + ".mp4";
+            }
             
             // Get the external storage directory for movies
             File mediaDir = new File(getExternalFilesDir(null), "Movies");

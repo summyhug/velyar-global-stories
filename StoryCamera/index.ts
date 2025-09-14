@@ -4,6 +4,10 @@ export interface RecordVideoOptions {
   duration?: number; // max seconds, default 30
   camera?: 'front' | 'rear'; // default rear
   allowOverlays?: boolean; // default true
+  promptName?: string; // test parameter to verify communication
+  contextType?: 'mission' | 'daily'; // context for video assignment
+  missionId?: string; // mission ID if contextType is 'mission'
+  promptId?: string; // prompt ID if contextType is 'daily'
 }
 
 export interface RecordVideoResult {
@@ -13,6 +17,9 @@ export interface RecordVideoResult {
   size?: number;
   camera?: 'front' | 'rear';
   overlays?: string[];
+  contextType?: 'mission' | 'daily'; // echoed back context
+  missionId?: string; // echoed back mission ID
+  promptId?: string; // echoed back prompt ID
 }
 
 export interface StoryCameraPlugin {

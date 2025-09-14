@@ -14,6 +14,8 @@ interface LocationState {
   filePath?: string;
   contentUri?: string;
   promptId?: string | null;
+  missionId?: string | null;
+  contextType?: 'mission' | 'daily' | null;
 }
 
 const VideoPreviewShare: React.FC = () => {
@@ -24,10 +26,42 @@ const VideoPreviewShare: React.FC = () => {
   const qpFile = query.get('filePath') || undefined;
   const qpContent = query.get('contentUri') || undefined;
   const qpPrompt = query.get('promptId') || undefined;
+  const qpMission = query.get('missionId') || undefined;
+  const qpContextType = query.get('contextType') || undefined;
   const stored = (() => { try { return sessionStorage.getItem('lastStoryVideoPath') || undefined; } catch { return undefined; } })();
+  
+  // Prioritize: state (from plugin result) > URL params > storage
   const filePath = state.filePath || qpFile || stored;
   const contentUri = state.contentUri || qpContent;
-  const promptId = state.promptId || qpPrompt || null;
+  
+  // Parse context from filename if available
+  let filenameContextType: 'mission' | 'daily' | null = null;
+  let filenameMissionId: string | null = null;
+  let filenamePromptId: string | null = null;
+  
+  if (filePath) {
+    const fileName = filePath.split('/').pop() || '';
+    if (fileName.startsWith('MISSION_')) {
+      filenameContextType = 'mission';
+      // Extract mission ID from filename: MISSION_abc123_20250913_083034.mp4
+      const parts = fileName.split('_');
+      if (parts.length >= 2) {
+        filenameMissionId = parts[1];
+      }
+    } else if (fileName.startsWith('DAILY_')) {
+      filenameContextType = 'daily';
+      // Extract prompt ID from filename: DAILY_def456_20250913_083034.mp4
+      const parts = fileName.split('_');
+      if (parts.length >= 2) {
+        filenamePromptId = parts[1];
+      }
+    }
+  }
+  
+  const contextType = state.contextType || qpContextType || filenameContextType;
+  const promptId = state.promptId || qpPrompt || filenamePromptId;
+  const missionId = state.missionId || qpMission || filenameMissionId;
+  
 
   const playableSrc = useMemo(() => {
     if (contentUri) return contentUri; // content URIs are directly playable
@@ -37,19 +71,35 @@ const VideoPreviewShare: React.FC = () => {
   }, [filePath, contentUri]);
 
   const [desc, setDesc] = useState("");
+  const [isSharing, setIsSharing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState('');
   const remaining = Math.max(0, 150 - desc.length);
 
   const handleShare = async () => {
+    setIsSharing(true);
+    setUploadProgress(0);
+    setUploadStatus('Preparing video...');
+    
     try {
       if (!filePath) throw new Error('No video filePath');
 
-      alert('🔍 Share start: preparing to read file');
-      console.log('[Share] filePath:', filePath, '| promptId:', promptId);
 
-      // Ensure we have a promptId; if missing, derive today's or most recent active
-      let effectivePromptId: string | null = promptId;
-      if (!effectivePromptId) {
-        alert('ℹ️ No promptId provided. Attempting to resolve current prompt...');
+      // Determine if this is a mission or daily prompt video using context
+      let effectivePromptId: string | null = null;
+      let effectiveMissionId: string | null = null;
+      
+      if (contextType === 'mission' && missionId) {
+        effectiveMissionId = missionId;
+      } else if (contextType === 'daily' && promptId) {
+        effectivePromptId = promptId;
+      } else if (missionId) {
+        // Fallback: if no contextType but we have missionId
+        effectiveMissionId = missionId;
+      } else if (promptId) {
+        // Fallback: if no contextType but we have promptId
+        effectivePromptId = promptId;
+      } else {
         try {
           const today = new Date().toISOString().split('T')[0];
           const { data: todayPrompt } = await supabase
@@ -70,45 +120,45 @@ const VideoPreviewShare: React.FC = () => {
               .maybeSingle();
             if (recentPrompt?.id) effectivePromptId = recentPrompt.id as string;
           }
-          alert('✅ Resolved promptId: ' + (effectivePromptId || 'none'));
+          setUploadStatus('Resolved prompt context');
         } catch (e) {
           console.warn('[Share] Failed to resolve prompt id:', e);
-          alert('⚠️ Could not resolve promptId automatically.');
+          setUploadStatus('Using fallback prompt context');
         }
       }
 
       // Load file via fetch of convertFileSrc
+      setUploadProgress(10);
+      setUploadStatus('Loading video file...');
       const src = Cap.convertFileSrc(filePath);
-      alert('🔍 Converted file src: ' + src);
       const res = await fetch(src);
       const blob = await res.blob();
       const originalFile = new File([blob], 'story.mp4', { type: blob.type || 'video/mp4' });
-      alert(`📦 Original file loaded: size=${originalFile.size} type=${originalFile.type}`);
 
       // Compress
+      setUploadProgress(20);
+      setUploadStatus('Compressing video...');
       let compressed: File;
       try {
-        alert('🔧 Starting compression...');
         compressed = await compressVideo(originalFile, { maxSizeMB: 50, maxWidthOrHeight: 1280 });
-        alert(`✅ Compression complete: size=${compressed.size} type=${compressed.type}`);
       } catch (e) {
         // Fallback to original if compression fails
         console.warn('[Share] Compression failed, using original file. Error:', e);
-        alert('⚠️ Compression failed, using original file.');
         compressed = originalFile;
       }
 
       // Thumbnail
-      alert('🖼️ Generating thumbnail...');
+      setUploadProgress(40);
+      setUploadStatus('Generating thumbnail...');
       const thumbBase64 = await generateVideoThumbnail(compressed, 1.5);
-      alert(`🖼️ Thumbnail generated (length=${thumbBase64.length}) - uploading...`);
+      setUploadStatus('Uploading thumbnail...');
       const thumbUrl = await uploadThumbnailToStorage(thumbBase64, 'thumb');
-      alert('✅ Thumbnail uploaded: ' + thumbUrl);
 
       // Upload video to supabase storage
+      setUploadProgress(50);
+      setUploadStatus('Authenticating user...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-      alert('👤 User authenticated: ' + user.id);
 
       // Fetch profile location/country
       let locationStr: string | null = null;
@@ -124,45 +174,52 @@ const VideoPreviewShare: React.FC = () => {
         if (!locationStr && (user as any)?.user_metadata?.country) {
           locationStr = (user as any).user_metadata.country;
         }
-        alert('🌍 Location resolved: ' + (locationStr || 'none'));
+        setUploadStatus('Location resolved');
       } catch (e) {
         console.warn('[Share] Failed fetching profile location:', e);
       }
 
       const videoPath = `${user.id}/videos/${Date.now()}_${compressed.name}`;
-      alert('⬆️ Uploading video to storage path: ' + videoPath);
+      setUploadProgress(70);
+      setUploadStatus('Uploading video...');
       const { data: up, error: upErr } = await supabase.storage
         .from('videos')
         .upload(videoPath, compressed, { contentType: compressed.type || 'video/mp4', upsert: false });
       if (upErr) throw upErr;
       const { data: urlData } = supabase.storage.from('videos').getPublicUrl(up.path);
       const publicVideoUrl = urlData.publicUrl;
-      alert('✅ Video uploaded. Public URL: ' + publicVideoUrl);
 
       // Insert DB row into videos table
-      alert('🗄️ Inserting DB row...');
+      setUploadProgress(90);
+      setUploadStatus('Saving video data...');
       const { error: insErr } = await supabase.from('videos').insert({
         user_id: user.id,
         description: desc,
         video_url: publicVideoUrl,
         thumbnail_url: thumbUrl,
-        daily_prompt_id: effectivePromptId || null,
+        daily_prompt_id: effectivePromptId,
+        mission_id: effectiveMissionId,
         location: locationStr,
         is_public: true,
         is_hidden: false
       });
       if (insErr) throw insErr;
-      alert('✅ DB insert complete');
+      setUploadProgress(100);
+      setUploadStatus('Complete!');
 
-      // Navigate to the list page for the prompt if available
-      if (effectivePromptId) {
+      // Navigate to the appropriate list page
+      if (effectiveMissionId) {
+        navigate(`/video-list/mission/${effectiveMissionId}`, { replace: true });
+      } else if (effectivePromptId) {
         navigate(`/video-list/daily-prompt/${effectivePromptId}`, { replace: true });
       } else {
         navigate('/', { replace: true });
       }
     } catch (e) {
       console.error('[Share] Failed:', e);
-      alert('❌ Share failed: ' + ((e as any)?.message || String(e)));
+      setUploadStatus('Upload failed: ' + ((e as any)?.message || String(e)));
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -186,6 +243,7 @@ const VideoPreviewShare: React.FC = () => {
     <PageLayout header={header} showBottomNav={false}>
       <div className="px-4 pb-safe-bottom">
         <div className="max-w-md mx-auto space-y-5">
+          
           {(filePath || contentUri) && (
             <div className="space-y-3">
               {playableSrc ? (
@@ -218,20 +276,38 @@ const VideoPreviewShare: React.FC = () => {
             <div className="text-xs text-muted-foreground text-right">{remaining} left</div>
           </div>
 
+          {/* Upload Progress */}
+          {isSharing && (
+            <div className="space-y-3 pt-2">
+              <div className="text-center">
+                <div className="text-sm font-medium text-foreground mb-2">{uploadStatus}</div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">{uploadProgress}%</div>
+              </div>
+            </div>
+          )}
+
           {/* Primary actions */}
           <div className="grid grid-cols-2 gap-3 pt-1">
             <Button
               variant="outline"
               className="w-full bg-card/60 hover:bg-card text-foreground border-border"
               onClick={() => navigate(-1)}
+              disabled={isSharing}
             >
               Re-record
             </Button>
             <Button
               className="w-full btn-primary-enhanced"
               onClick={handleShare}
+              disabled={isSharing}
             >
-              Share
+              {isSharing ? 'Sharing...' : 'Share'}
             </Button>
           </div>
         </div>

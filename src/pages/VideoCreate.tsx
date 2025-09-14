@@ -56,10 +56,10 @@ const VideoCreate = () => {
   console.log('VideoCreate: location state =', routerLocation.state);
   const navigate = useNavigate();
 
-  // Handle pre-recorded video from DailyPrompt
+  // Handle pre-recorded video from DailyPrompt or Mission
   useEffect(() => {
     if (routerLocation.state?.recordedVideo) {
-      console.log('VideoCreate: Received pre-recorded video from DailyPrompt:', routerLocation.state.recordedVideo);
+      console.log('VideoCreate: Received pre-recorded video:', routerLocation.state.recordedVideo);
       const recordedVideoData = routerLocation.state.recordedVideo;
       
       // Convert the StoryCamera result to the expected format
@@ -82,36 +82,71 @@ const VideoCreate = () => {
   // Fetch current prompt or mission on component mount
   useEffect(() => {
     const fetchContent = async () => {
-      console.log('VideoCreate: fetchContent called with missionId =', missionId);
+      console.log('🎬 VideoCreate: fetchContent called with missionId =', missionId);
+      console.log('🎬 VideoCreate: URL path:', window.location.pathname);
       if (missionId) {
-        // Fetch mission data with theme
-        const { data: missionData } = await supabase
-          .from('missions')
-          .select(`
-            title, 
-            description, 
-            target_regions, 
-            theme_id,
-            themes:theme_id (
-              name
-            )
-          `)
-          .eq('id', missionId)
-          .single();
+        console.log('🎯 MISSION MODE: missionId detected, fetching mission data...');
+        // Check if mission data was passed from MissionCard
+        if (routerLocation.state?.missionData) {
+          console.log('VideoCreate: Using mission data from state:', routerLocation.state.missionData);
+          const missionData = routerLocation.state.missionData;
+          
+          // Fetch theme information for the mission
+          const { data: missionWithTheme } = await supabase
+            .from('missions')
+            .select(`
+              theme_id,
+              themes:theme_id (
+                name
+              )
+            `)
+            .eq('id', missionId)
+            .single();
 
-        if (missionData) {
-          console.log('VideoCreate: Mission data fetched:', missionData);
           setCurrentPrompt({
             text: missionData.description,
-            theme_id: missionData.theme_id || '',
-            theme_name: missionData.themes?.name || 'No theme',
+            theme_id: missionWithTheme?.theme_id || '',
+            theme_name: missionWithTheme?.themes?.name || 'No theme',
             type: 'mission',
             title: missionData.title
           });
         } else {
-          console.log('VideoCreate: No mission data found for ID:', missionId);
+          console.log('🎯 MISSION MODE: No mission data in state, fetching from database...');
+          // Fetch mission data with theme (fallback)
+          const { data: missionData, error: missionError } = await supabase
+            .from('missions')
+            .select(`
+              title, 
+              description, 
+              target_regions, 
+              theme_id,
+              themes:theme_id (
+                name
+              )
+            `)
+            .eq('id', missionId)
+            .single();
+
+          if (missionError) {
+            console.error('❌ MISSION ERROR: Failed to fetch mission data:', missionError);
+          }
+
+          if (missionData) {
+            console.log('✅ MISSION SUCCESS: Mission data fetched:', missionData);
+            setCurrentPrompt({
+              text: missionData.description,
+              theme_id: missionData.theme_id || '',
+              theme_name: missionData.themes?.name || 'No theme',
+              type: 'mission',
+              title: missionData.title
+            });
+          } else {
+            console.log('❌ MISSION FAILED: No mission data found for ID:', missionId);
+            console.log('❌ MISSION FAILED: This will cause fallback to daily prompt mode!');
+          }
         }
       } else {
+        console.log('📅 DAILY PROMPT MODE: No missionId, fetching daily prompt...');
         // Fetch daily prompt
         const today = new Date().toISOString().split('T')[0];
         const { data: promptData } = await supabase
@@ -129,6 +164,7 @@ const VideoCreate = () => {
           .single();
 
         if (promptData) {
+          console.log('📅 DAILY PROMPT: Found daily prompt:', promptData);
           setCurrentPrompt({
             text: promptData.prompt_text,
             theme_id: promptData.theme_id,
@@ -136,6 +172,8 @@ const VideoCreate = () => {
             type: 'daily',
             id: promptData.id
           });
+        } else {
+          console.log('📅 DAILY PROMPT: No daily prompt found for today');
         }
       }
     };
@@ -212,147 +250,9 @@ const VideoCreate = () => {
   };
 
   const startNativeRecording = async () => {
-    try {
-      console.log('🎬 ===== STARTING NATIVE RECORDING =====');
-      console.log('VideoCreate: Starting native recording');
-      console.log('VideoCreate: Platform:', Capacitor.getPlatform());
-      console.log('VideoCreate: isNative:', isNative);
-      console.log('VideoCreate: Capacitor.isNativePlatform():', Capacitor.isNativePlatform());
-      console.log('VideoCreate: window.location.href:', window.location.href);
-      console.log('VideoCreate: navigator.userAgent:', navigator.userAgent);
-      
-      // Force camera recording on mobile platforms OR for testing (add ?testNative=true to URL)
-      const urlParams = new URLSearchParams(window.location.search);
-      const testNative = urlParams.get('testNative') === 'true';
-      const isMobilePlatform = Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios';
-      
-      console.log('VideoCreate: testNative flag:', testNative);
-      console.log('VideoCreate: isMobilePlatform:', isMobilePlatform);
-      console.log('VideoCreate: Will use StoryCamera?', isMobilePlatform || testNative);
-      
-      if (isMobilePlatform || testNative) {
-        console.log('VideoCreate: Attempting StoryCamera plugin recording...');
-        
-        try {
-          // Try StoryCamera plugin first
-          console.log('🎥 ===== CALLING STORYCAMERA PLUGIN =====');
-          console.log('VideoCreate: About to call StoryCamera.recordVideo...');
-          console.log('VideoCreate: StoryCamera object:', StoryCamera);
-          console.log('VideoCreate: StoryCamera.recordVideo method:', StoryCamera.recordVideo);
-          console.log('VideoCreate: StoryCamera.recordVideo type:', typeof StoryCamera.recordVideo);
-          console.log('VideoCreate: StoryCamera keys:', Object.keys(StoryCamera));
-          
-          const options = {
-            duration: MAX_RECORDING_TIME,
-            camera: 'rear',
-            allowOverlays: true
-          };
-          console.log('VideoCreate: Calling StoryCamera.recordVideo with options:', options);
-          
-          const storyResult = await StoryCamera.recordVideo(options);
-          
-          console.log('✅ ===== STORYCAMERA SUCCESS =====');
-          console.log('VideoCreate: StoryCamera recording result:', storyResult);
-          console.log('VideoCreate: storyResult type:', typeof storyResult);
-          console.log('VideoCreate: storyResult keys:', storyResult ? Object.keys(storyResult) : 'null');
-          
-          // Convert the result to the expected format
-          if (storyResult.filePath) {
-            // For native platforms, we need to convert the file path to a File object
-            const response = await fetch(storyResult.filePath);
-            const blob = await response.blob();
-            const file = new File([blob], `story_${Date.now()}.mp4`, { type: 'video/mp4' });
-            const url = URL.createObjectURL(file);
-            
-            console.log('VideoCreate: Setting video state and moving to edit step');
-            setRecordedVideo(url);
-            setVideoFile(file);
-            localStorage.setItem('videoCreate_hasVideo', 'true');
-            setVideoDuration(storyResult.duration || 30);
-            setStep('edit');
-            return;
-          }
-        } catch (storyError) {
-          console.error('❌ ===== STORYCAMERA FAILED =====');
-          console.error('VideoCreate: StoryCamera failed:', storyError);
-          console.error('VideoCreate: StoryCamera error details:', {
-            message: storyError.message,
-            stack: storyError.stack,
-            name: storyError.name
-          });
-          console.log('VideoCreate: Falling back to useMobile...');
-        }
-        
-        // Fallback to useMobile if StoryCamera fails
-        console.log('📱 ===== FALLBACK TO USEMOBILE =====');
-        console.log('VideoCreate: Attempting useMobile video recording...');
-        
-        // Add timeout to handle cases where the file chooser doesn't respond
-        const recordingPromise = recordVideo();
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Recording timeout')), 30000); // 30 second timeout
-        });
-        
-        const videoResult = await Promise.race([recordingPromise, timeoutPromise]) as { file: File; url: string };
-        
-        console.log('📱 ===== USEMOBILE SUCCESS =====');
-        console.log('VideoCreate: Video recording result:', {
-          hasFile: !!videoResult.file,
-          hasUrl: !!videoResult.url,
-          fileSize: videoResult.file?.size || 0,
-          fileName: videoResult.file?.name || 'unknown',
-          fileType: videoResult.file?.type || 'unknown'
-        });
-        
-        console.log('VideoCreate: Setting video state and moving to edit step');
-        setRecordedVideo(videoResult.url);
-        setVideoFile(videoResult.file);
-        localStorage.setItem('videoCreate_hasVideo', 'true');
-        setVideoDuration(30);
-        setStep('edit');
-      } else {
-        console.log('VideoCreate: Web platform detected, but forcing StoryCamera for testing');
-        // Force StoryCamera even on web for testing
-        try {
-          const storyResult = await StoryCamera.recordVideo({
-            duration: MAX_RECORDING_TIME,
-            camera: 'rear',
-            allowOverlays: true
-          });
-          
-          console.log('VideoCreate: StoryCamera recording result:', storyResult);
-          
-          // Convert the result to the expected format
-          if (storyResult.filePath) {
-            // For web, we need to create a mock file
-            const mockFile = new File([''], `story_${Date.now()}.mp4`, { type: 'video/mp4' });
-            const url = URL.createObjectURL(mockFile);
-            
-            console.log('VideoCreate: Setting video state and moving to edit step');
-            setRecordedVideo(url);
-            setVideoFile(mockFile);
-            localStorage.setItem('videoCreate_hasVideo', 'true');
-            setVideoDuration(storyResult.duration || 30);
-            setStep('edit');
-            return;
-          }
-        } catch (storyError) {
-          console.error('VideoCreate: StoryCamera failed on web:', storyError);
-          // Fallback to file upload only if StoryCamera completely fails
-          document.getElementById('video-file-input')?.click();
-        }
-      }
-    } catch (error) {
-      console.error('💥 ===== FINAL ERROR - FALLING BACK TO FILE UPLOAD =====');
-      console.error('VideoCreate: Video recording failed:', error);
-      console.error('VideoCreate: Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
-      console.log('VideoCreate: Falling back to file upload due to error');
-      document.getElementById('video-file-input')?.click();
-    }
+    // This function is now deprecated - missions use direct StoryCamera integration
+    // Fall back to file upload for any remaining usage
+    document.getElementById('video-file-input')?.click();
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -546,27 +446,41 @@ const VideoCreate = () => {
 
       // Get current prompt ID if responding to daily prompt
       let promptId = null;
-      if (currentPrompt && currentPrompt.type === 'daily') {
+      let missionIdForVideo = null;
+      
+      // Use missionId from URL params to determine if this is a mission video
+      if (missionId) {
+        missionIdForVideo = missionId;
+        console.log('🎯 MISSION VIDEO: Using mission ID for video:', missionIdForVideo);
+        console.log('🎯 MISSION VIDEO: URL contains missionId, this is a mission video');
+      } else if (currentPrompt && currentPrompt.type === 'daily') {
         promptId = currentPrompt.id;
-        console.log('Using stored daily prompt ID for video:', promptId);
+        console.log('📅 DAILY PROMPT: Using stored daily prompt ID for video:', promptId);
+      } else {
+        console.log('❓ UNKNOWN: No missionId in URL and no daily prompt type detected');
+        console.log('❓ UNKNOWN: currentPrompt:', currentPrompt);
+        console.log('❓ UNKNOWN: missionId from URL:', missionId);
       }
 
       // Create video record with storage URL
-      console.log('VideoCreate: About to insert video with data:', {
+      console.log('🎬 FINAL VIDEO DATA:', {
         user_id: user.id,
         video_url: publicUrl,
         thumbnail_url: thumbnailUrl,
-        title: caption || (currentPrompt?.type === 'mission' ? 'Mission Response' : 'Daily Prompt Response'),
+        title: caption || (missionIdForVideo ? 'Mission Response' : 'Daily Prompt Response'),
         description: caption,
         location: location || null,
         daily_prompt_id: promptId,
-        mission_id: missionId || null,
+        mission_id: missionIdForVideo,
         is_public: true,
         is_hidden: false,
         moderation_status: 'approved'
       });
-      console.log('VideoCreate: Current prompt state:', currentPrompt);
-      console.log('VideoCreate: missionId value:', missionId);
+      console.log('🔍 DEBUG INFO:');
+      console.log('  - Current prompt state:', currentPrompt);
+      console.log('  - missionId from URL:', missionId);
+      console.log('  - missionIdForVideo (final):', missionIdForVideo);
+      console.log('  - promptId (final):', promptId);
       
       const { data: videoData, error: videoError } = await supabase
         .from('videos')
@@ -574,11 +488,11 @@ const VideoCreate = () => {
           user_id: user.id,
           video_url: publicUrl,
           thumbnail_url: thumbnailUrl,
-          title: caption || (currentPrompt?.type === 'mission' ? 'Mission Response' : 'Daily Prompt Response'),
+          title: caption || (missionIdForVideo ? 'Mission Response' : 'Daily Prompt Response'),
           description: caption,
           location: location || null,
           daily_prompt_id: promptId,
-          mission_id: missionId || null,
+          mission_id: missionIdForVideo,
           is_public: true,
           is_hidden: false,
           moderation_status: 'approved' // Content passed basic filtering
@@ -627,27 +541,6 @@ const VideoCreate = () => {
       setUploadProgress(100);
       console.log('Video submission complete!');
       
-      // Test query to verify the video is visible
-      if (videoData && videoData.id) {
-        console.log('VideoCreate: Testing visibility of created video...');
-        const { data: testVideo, error: testError } = await supabase
-          .from('videos')
-          .select('*')
-          .eq('id', videoData.id)
-          .single();
-        
-        if (testError) {
-          console.error('VideoCreate: Error testing video visibility:', testError);
-        } else {
-          console.log('VideoCreate: Video visibility test result:', {
-            id: testVideo.id,
-            is_public: testVideo.is_public,
-            is_hidden: testVideo.is_hidden,
-            moderation_status: testVideo.moderation_status,
-            mission_id: testVideo.mission_id
-          });
-        }
-      }
       
       // Show success toast
       toast({
@@ -711,6 +604,7 @@ const VideoCreate = () => {
           <h1 className="text-xl font-medium text-velyar-earth font-nunito">{t("videoCreate.shareYourStory")}</h1>
         </div>
       </header>
+
 
       {/* Current Prompt Banner */}
       {currentPrompt && (

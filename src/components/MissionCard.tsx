@@ -1,10 +1,11 @@
 
-import { MapPin, Users2, ArrowRight, Eye } from "lucide-react";
+import { MapPin, Users2, ArrowRight, Eye, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import StoryCamera from "../../StoryCamera";
 
 interface MissionCardProps {
   id: string;
@@ -18,10 +19,67 @@ interface MissionCardProps {
 
 export const MissionCard = ({ id, title, description, participants, location, imageUrl, targetRegions }: MissionCardProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   
   const displayLocation = targetRegions && targetRegions.length > 0 
     ? `${targetRegions.slice(0, 2).join(', ')}${targetRegions.length > 2 ? '...' : ''}`
     : location;
+
+  const handleNativeRecording = async () => {
+    try {
+      
+      const storyResult = await StoryCamera.recordVideo({
+        duration: 30,
+        camera: 'rear',
+        allowOverlays: true,
+        promptName: title || "Mission",
+        contextType: 'mission',
+        missionId: id
+      });
+      
+      // Mirror DailyPrompt robustness: determine filePath reliably
+      let fp: string | undefined = (storyResult as any)?.filePath;
+      if (!fp) {
+        try {
+          const data = await (StoryCamera as any).getVideoData?.();
+          if (data?.filePath) fp = data.filePath as string;
+        } catch {}
+      }
+
+      if (!fp) {
+        for (let i = 0; i < 3 && !fp; i++) {
+          await new Promise(r => setTimeout(r, 300));
+          try {
+            const data = await (StoryCamera as any).getVideoData?.();
+            if (data?.filePath) fp = data.filePath as string;
+          } catch {}
+        }
+      }
+
+      if (fp) {
+        try { 
+          sessionStorage.setItem('lastStoryVideoPath', fp);
+          sessionStorage.setItem('lastMissionId', id);
+          localStorage.setItem('lastMissionId', id);
+        } catch {}
+        const target = `/record-test?filePath=${encodeURIComponent(fp)}&missionId=${encodeURIComponent(id)}`;
+        setTimeout(() => {
+          navigate(target, { 
+            state: { 
+              filePath: fp, 
+              missionId: storyResult.missionId || id,
+              contextType: storyResult.contextType
+            } 
+          });
+        }, 0);
+      } else {
+        console.warn('MissionCard: Could not determine filePath after recording');
+      }
+      
+    } catch (error) {
+      console.error('MissionCard: Native recording failed:', error.message);
+    }
+  };
 
   return (
     <Card className="card-interactive group overflow-hidden border-border/50 hover:border-velyar-warm/30">
@@ -71,16 +129,18 @@ export const MissionCard = ({ id, title, description, participants, location, im
 
             {/* Action buttons */}
             <div className="flex gap-2 pt-1">
-              <Link to={`/create/mission/${id}`} className="flex-1">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="btn-secondary-enhanced w-full group-hover:bg-velyar-earth group-hover:text-white group-hover:border-velyar-earth transition-all duration-200"
-                >
-                  <span className="text-xs font-ui">{t('common.joinMission')}</span>
-                  <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
-                </Button>
-              </Link>
+              {/* Primary: Native Camera Button */}
+              <Button 
+                onClick={handleNativeRecording}
+                variant="default" 
+                size="sm" 
+                className="btn-primary-enhanced flex-1"
+              >
+                <span className="text-xs font-ui">Share Voice</span>
+                <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+              
+              {/* View videos button */}
               <Link to={`/video-list/mission/${id}`}>
                 <Button 
                   variant="ghost" 

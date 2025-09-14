@@ -8,7 +8,6 @@ extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-enabled = true
 port = 54322
 shadow_port = 54320
 major_version = 15
@@ -22,7 +21,7 @@ max_client_conn = 100
 
 [realtime]
 enabled = true
-ip_version = "ipv6"
+ip_version = "IPv6"
 
 [studio]
 enabled = true
@@ -50,9 +49,6 @@ enable_anonymous_sign_ins = false
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
-
-[edge_functions]
-enabled = true
 
 [functions.analyze-geography]
 verify_jwt = false

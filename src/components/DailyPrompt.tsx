@@ -9,16 +9,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
 import StoryCamera from "../../StoryCamera";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export const DailyPrompt = () => {
   const [stats, setStats] = useState({ voices: 0, countries: 0 });
   const [loading, setLoading] = useState(true);
   const [prompt, setPrompt] = useState("");
   const [currentPromptId, setCurrentPromptId] = useState<string | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
 
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchPromptData = async () => {
@@ -98,17 +99,6 @@ export const DailyPrompt = () => {
     fetchPromptData();
   }, []);
 
-  // Reset recording state after a timeout (fallback for when user leaves camera)
-  useEffect(() => {
-    if (isRecording) {
-      const timeout = setTimeout(() => {
-        console.log('DailyPrompt: Timeout reached, resetting recording state');
-        setIsRecording(false);
-      }, 10000); // Reset after 10 seconds
-
-      return () => clearTimeout(timeout);
-    }
-  }, [isRecording]);
 
   // Direct StoryCamera recording function
   const handleRespondWithStoryCamera = async () => {
@@ -126,17 +116,15 @@ export const DailyPrompt = () => {
         throw new Error('StoryCamera.recordVideo is not a function. Available methods: ' + Object.keys(StoryCamera).join(', '));
       }
       
-      setIsRecording(true);
       
       const storyResult = await StoryCamera.recordVideo({
         duration: 30,
         camera: 'rear',
-        allowOverlays: true
+        allowOverlays: true,
+        promptName: prompt || "Daily Prompt",
+        contextType: 'daily',
+        promptId: currentPromptId || undefined
       });
-      
-      console.log('✅ ===== DAILYPROMPT: STORYCAMERA SUCCESS =====');
-      console.log('DailyPrompt: StoryCamera recording result:', storyResult);
-      alert('✅ StoryCamera success: ' + JSON.stringify(storyResult));
       
       // Try to navigate using plugin result first
       let fp: string | undefined = (storyResult as any)?.filePath;
@@ -160,15 +148,19 @@ export const DailyPrompt = () => {
       }
 
       if (fp) {
-        alert('➡️ Navigating to /record-test with filePath: ' + fp);
         try { sessionStorage.setItem('lastStoryVideoPath', fp); } catch {}
         const target = '/record-test?filePath=' + encodeURIComponent(fp) + (currentPromptId ? ('&promptId=' + encodeURIComponent(currentPromptId)) : '');
         setTimeout(() => {
-          navigate(target, { state: { filePath: fp, promptId: currentPromptId } });
+          navigate(target, { 
+            state: { 
+              filePath: fp, 
+              promptId: storyResult.promptId || currentPromptId,
+              contextType: storyResult.contextType
+            } 
+          });
         }, 0);
       } else {
         console.warn('DailyPrompt: Could not determine filePath after recording');
-        alert('⚠️ Could not determine filePath after recording.');
       }
       
     } catch (error) {
@@ -182,12 +174,15 @@ export const DailyPrompt = () => {
       
       console.error('StoryCamera FAILED! Error: ' + error.message);
       
-      // Only navigate to VideoCreate as a fallback if StoryCamera completely fails
-      console.log('DailyPrompt: StoryCamera failed, falling back to VideoCreate page');
-      navigate('/create/daily-prompt');
+      // Show error message to user instead of redirecting to dead end
+      toast({
+        title: "Camera Error",
+        description: "Failed to open camera. Please try again.",
+        variant: "destructive",
+      });
       
     } finally {
-      setIsRecording(false);
+      // Recording completed or failed
     }
   };
 
@@ -238,7 +233,6 @@ export const DailyPrompt = () => {
           <div className="flex gap-3 pt-2">
             <Button 
               onClick={handleRespondWithStoryCamera}
-              disabled={isRecording}
               size="sm" 
               className="btn-primary-enhanced w-full group-hover:scale-105 transition-transform duration-200"
             >

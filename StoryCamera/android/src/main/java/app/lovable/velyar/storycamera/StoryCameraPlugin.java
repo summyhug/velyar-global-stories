@@ -26,10 +26,24 @@ public class StoryCameraPlugin extends Plugin {
     private static final String TAG = "StoryCameraPlugin";
     private static final int RECORD_VIDEO_REQUEST_CODE = 9901;
     private PluginCall pendingCall = null;
+    private String contextType = null;
+    private String missionId = null;
+    private String promptId = null;
+    private String promptName = null;
 
     @PluginMethod
     public void recordVideo(PluginCall call) {
         Log.d(TAG, "recordVideo called");
+        
+        // Read context parameters
+        try {
+            this.promptName = call.getString("promptName");
+            this.contextType = call.getString("contextType");
+            this.missionId = call.getString("missionId");
+            this.promptId = call.getString("promptId");
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to read context parameters: " + e.getMessage());
+        }
         
         // Check permissions using standard Android permission checking
         boolean hasCameraPermission = ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED;
@@ -79,6 +93,19 @@ public class StoryCameraPlugin extends Plugin {
     private void launchCameraActivity(PluginCall call) {
         try {
             Intent intent = new Intent(getContext(), StoryCameraActivity.class);
+            // Pass context to activity
+            if (promptName != null) {
+                intent.putExtra("promptName", promptName);
+            }
+            if (contextType != null) {
+                intent.putExtra("contextType", contextType);
+            }
+            if (missionId != null) {
+                intent.putExtra("missionId", missionId);
+            }
+            if (promptId != null) {
+                intent.putExtra("promptId", promptId);
+            }
             startActivityForResult(call, intent, RECORD_VIDEO_REQUEST_CODE);
         } catch (Exception e) {
             Log.e(TAG, "Failed to start StoryCameraActivity", e);
@@ -147,6 +174,15 @@ public class StoryCameraPlugin extends Plugin {
             if (contentUri != null) {
                 ret.put("contentUri", contentUri);
             }
+            
+            // Echo back context from the activity
+            String returnedContextType = data.getStringExtra("contextType");
+            String returnedMissionId = data.getStringExtra("missionId");
+            String returnedPromptId = data.getStringExtra("promptId");
+            
+            if (returnedContextType != null) ret.put("contextType", returnedContextType);
+            if (returnedMissionId != null) ret.put("missionId", returnedMissionId);
+            if (returnedPromptId != null) ret.put("promptId", returnedPromptId);
             savedCall.resolve(ret);
         } else if (resultCode == Activity.RESULT_CANCELED) {
             Log.d(TAG, "Recording cancelled");

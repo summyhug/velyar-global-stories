@@ -7,6 +7,10 @@ export interface RecordVideoOptions {
   duration?: number;
   camera?: 'front' | 'rear';
   allowOverlays?: boolean;
+  promptName?: string;
+  contextType?: 'mission' | 'daily';
+  missionId?: string;
+  promptId?: string;
 }
 
 export interface RecordVideoResult {
@@ -16,6 +20,9 @@ export interface RecordVideoResult {
   size: number;
   camera: 'front' | 'rear';
   overlays: string[];
+  contextType?: 'mission' | 'daily';
+  missionId?: string;
+  promptId?: string;
 }
 
 // Web fallback implementation
@@ -44,8 +51,12 @@ const webStoryCamera = {
         duration: Math.random() * 20 + 5, // 5-25 seconds
         size: Math.floor(Math.random() * 3000000) + 1000000, // 1-4MB
         camera: options.camera || 'rear',
-        overlays: options.allowOverlays ? ['text:Test Caption', 'emoji:😊'] : []
+        overlays: options.allowOverlays ? ['text:Test Caption', 'emoji:😊'] : [],
+        contextType: options.contextType,
+        missionId: options.missionId,
+        promptId: options.promptId
       };
+      
       
       console.log('🌐 Web fallback: Mock recording successful:', result);
       return result;
