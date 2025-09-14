@@ -106,7 +106,7 @@ const Explore = () => {
           variant="ghost" 
           size="sm" 
           className="p-2 text-velyar-earth hover:bg-velyar-soft"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>

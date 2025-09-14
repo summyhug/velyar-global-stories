@@ -159,28 +159,30 @@ const Videos = () => {
   }, [id, type, navigate]);
 
   const handleBack = () => {
-    if (type === 'daily-prompt' && videos.length > 0) {
+    if (type === 'daily-prompt' && id) {
       // For daily prompts, go back to video list view
-      const dailyPromptId = videos.find(v => v.daily_prompt_id)?.daily_prompt_id;
-      if (dailyPromptId) {
-        navigate(`/video-list/daily-prompt/${dailyPromptId}`);
-      } else {
-        navigate('/');
-      }
-    } else if (type === 'mission' && videos.length > 0) {
+      navigate(`/video-list/daily-prompt/${id}`);
+    } else if (type === 'mission' && id) {
       // For missions, go back to mission video list
-      const missionId = videos.find(v => v.mission_id)?.mission_id;
-      if (missionId) {
-        navigate(`/video-list/mission/${missionId}`);
-      } else {
-        navigate('/missions');
-      }
-    } else if (type && videos.length > 0) {
-      // For other types, go back to the video list
-      navigate(`/video-list/${type}`);
+      navigate(`/video-list/mission/${id}`);
+    } else if (type === 'theme' && id) {
+      // For themes, go back to theme video list
+      navigate(`/video-list/theme/${id}`);
+    } else if (type === 'archived-prompt' && id) {
+      // For archived prompts, go back to archived prompt video list
+      navigate(`/video-list/archived-prompt/${id}`);
+    } else if (type === 'daily-prompt') {
+      // Daily prompt without specific ID - go to home
+      navigate('/');
+    } else if (type === 'mission') {
+      // Mission without specific ID - go to missions page
+      navigate('/missions');
+    } else if (type === 'theme' || type === 'archived-prompt') {
+      // Theme/archived prompt without specific ID - go to explore
+      navigate('/explore');
     } else {
-      // If no type info, go back to previous page
-      navigate(-1);
+      // Fallback to home for unknown types
+      navigate('/');
     }
   };
 

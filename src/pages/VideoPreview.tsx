@@ -297,7 +297,7 @@ const VideoPreviewShare: React.FC = () => {
             <Button
               variant="outline"
               className="w-full bg-card/60 hover:bg-card text-foreground border-border"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/')}
               disabled={isSharing}
             >
               Re-record

@@ -48,7 +48,7 @@ const Contributions = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/profile')}
             className="text-velyar-teal hover:bg-velyar-teal/10"
           >
             <ArrowLeft className="w-5 h-5" />

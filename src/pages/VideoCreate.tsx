@@ -582,7 +582,16 @@ const VideoCreate = () => {
   const handleBack = () => {
     if (step === 'record') {
       clearVideoState();
-      navigate(-1);
+      // Navigate back to the appropriate page based on the route
+      const currentPath = window.location.pathname;
+      if (currentPath.includes('/create/mission/')) {
+        navigate('/missions');
+      } else if (currentPath.includes('/create/daily-prompt')) {
+        navigate('/');
+      } else {
+        // Default fallback to home
+        navigate('/');
+      }
     } else if (step === 'edit') {
       setStep('record');
     }

@@ -228,8 +228,11 @@ const VideoList = () => {
       navigate('/');
     } else if (type === 'theme' || type === 'archived-prompt') {
       navigate('/explore');
+    } else if (type === 'mission') {
+      navigate('/missions');
     } else {
-      navigate(-1);
+      // Fallback to home for unknown types
+      navigate('/');
     }
   };
 

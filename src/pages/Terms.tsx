@@ -11,7 +11,7 @@ const Terms = () => {
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           className="mb-4 text-foreground hover:bg-muted"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />

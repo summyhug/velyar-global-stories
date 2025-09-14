@@ -1,14 +1,10 @@
-require_relative '../../node_modules/@capacitor/cli/assets/capacitor.rb'
+require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 
-# The main target for our app
-ios_version = '13.0'
-deployment_target = '13.0'
-
-platform :ios, deployment_target
+platform :ios, '14.0'
 use_frameworks!
 
 # workaround to avoid Xcode caching of Pods that requires
-# Product -> Clean Build Folder after new Capacitor plugins installed
+# Product -> Clean Build Folder after new Cordova plugins installed
 # Requires CocoaPods 1.6 or newer
 install! 'cocoapods', :disable_input_output_paths => true
 
@@ -25,21 +21,14 @@ def capacitor_pods
   pod 'CapacitorKeyboard', :path => '../../node_modules/@capacitor/keyboard'
   pod 'CapacitorPushNotifications', :path => '../../node_modules/@capacitor/push-notifications'
   pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
+  pod 'StoryCamera', :path => '../../StoryCamera'
 end
 
 target 'App' do
   capacitor_pods
-  # Add your other dependencies here
+  # Add your Pods here
 end
 
 post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-      if config.build_settings['WRAPPER_EXTENSION'] == 'bundle'
-        config.build_settings['DEVELOPMENT_TEAM'] = '$(AppIdentifierPrefix)'
-      end
-      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = deployment_target
-      config.build_settings['ENABLE_BITCODE'] = 'NO'
-    end
-  end
+  assertDeploymentTarget(installer)
 end
