@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageLayout } from "@/components/PageLayout";
 import { useTranslation } from "react-i18next";
+import { getCountryFlag } from "@/utils/countryFlags";
 
 interface Video {
   id: string;
@@ -345,11 +346,13 @@ const VideoList = () => {
                       </div>
                     </div>
                     <div className="p-3">
-                      <div className="font-medium text-velyar-earth font-nunito text-sm mb-1">
-                        {video.location || 'Unknown location'}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {video.profiles?.display_name || video.profiles?.username || 'Anonymous'}
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">
+                          {getCountryFlag(video.profiles?.country)}
+                        </span>
+                        <div className="font-medium text-velyar-earth font-nunito text-sm">
+                          {video.profiles?.display_name || video.profiles?.username || 'Anonymous'}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
