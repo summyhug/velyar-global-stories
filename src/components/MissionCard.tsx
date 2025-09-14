@@ -132,11 +132,11 @@ export const MissionCard = ({ id, title, description, participants, location, im
               {/* Primary: Native Camera Button */}
               <Button 
                 onClick={handleNativeRecording}
-                variant="default" 
+                variant="outline" 
                 size="sm" 
-                className="btn-primary-enhanced flex-1"
+                className="btn-secondary-enhanced flex-1"
               >
-                <span className="text-xs font-ui">Share Voice</span>
+                <span className="text-xs font-ui">{t('missions.joinMission')}</span>
                 <ArrowRight className="w-3 h-3 ml-1" />
               </Button>
               
