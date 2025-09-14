@@ -87,8 +87,7 @@ public class StoryCameraActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_PERMISSIONS = 10;
     private static final String[] REQUIRED_PERMISSIONS = {
         Manifest.permission.CAMERA,
-        Manifest.permission.RECORD_AUDIO,
-        Manifest.permission.WRITE_EXTERNAL_STORAGE
+        Manifest.permission.RECORD_AUDIO
     };
     
     // Zoom-related fields
@@ -121,6 +120,15 @@ public class StoryCameraActivity extends AppCompatActivity {
         this.activityContextType = intent.getStringExtra("contextType");
         this.activityMissionId = intent.getStringExtra("missionId");
         this.activityPromptId = intent.getStringExtra("promptId");
+        
+        // Check permissions first
+        if (!allPermissionsGranted()) {
+            Log.d(TAG, "Requesting permissions");
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS);
+            return;
+        } else {
+            Log.d(TAG, "All permissions already granted, proceeding with camera setup");
+        }
         
         try {
             // Hide action bar for full-screen experience
@@ -168,9 +176,9 @@ public class StoryCameraActivity extends AppCompatActivity {
             setupZoomGestureDetector();
             Log.d(TAG, "Zoom gesture detector setup completed");
             
-            Log.d(TAG, "About to start camera");
+            // Start camera since permissions are already granted
+            Log.d(TAG, "Starting camera - permissions already granted");
             startCamera();
-            Log.d(TAG, "Camera start initiated");
             
         } catch (Exception e) {
             Log.e(TAG, "Error in onCreate", e);
@@ -535,11 +543,12 @@ public class StoryCameraActivity extends AppCompatActivity {
                     // Create ImageCapture for flash control
                     imageCapture = new ImageCapture.Builder().build();
                     
-                    // Create VideoCapture for video recording
+                    // Create VideoCapture for video recording (audio enabled by default)
                     Recorder recorder = new Recorder.Builder()
                         .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
                         .build();
                     videoCapture = VideoCapture.withOutput(recorder);
+                    Log.d(TAG, "VideoCapture created with default audio settings");
                     
                     if (previewView != null) {
                         preview.setSurfaceProvider(previewView.getSurfaceProvider());
@@ -617,7 +626,7 @@ public class StoryCameraActivity extends AppCompatActivity {
     
     private void toggleFlash() {
         if (isFrontCamera) {
-            Toast.makeText(this, "Flash not available on front camera", Toast.LENGTH_SHORT).show();
+            // Flash not available on front camera - no need for toast
             return;
         }
         
@@ -678,10 +687,12 @@ public class StoryCameraActivity extends AppCompatActivity {
         // Start recording
         Log.d(TAG, "About to prepare recording");
         PendingRecording pendingRecording = videoCapture.getOutput()
-            .prepareRecording(this, outputOptions);
-        Log.d(TAG, "PendingRecording created: " + (pendingRecording != null));
+            .prepareRecording(this, outputOptions)
+            .withAudioEnabled();  // Explicitly enable audio recording
+        Log.d(TAG, "PendingRecording created with audio enabled: " + (pendingRecording != null));
             
         Log.d(TAG, "About to start recording");
+        Log.d(TAG, "Recording with default audio configuration");
         recording = pendingRecording.start(ContextCompat.getMainExecutor(this), videoRecordEvent -> {
             Log.d(TAG, "VideoRecordEvent received: " + videoRecordEvent.getClass().getSimpleName());
             if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
@@ -728,6 +739,30 @@ public class StoryCameraActivity extends AppCompatActivity {
                         
                         // File already has correct name from createVideoFile()
                         String finalVideoPath = videoFile != null ? videoFile.getAbsolutePath() : null;
+                        
+                        // Debug: Check video file properties
+                        if (videoFile != null && videoFile.exists()) {
+                            Log.d(TAG, "Video file exists: " + videoFile.getAbsolutePath());
+                            Log.d(TAG, "Video file size: " + videoFile.length() + " bytes");
+                            
+                            // Try to get video metadata
+                            try {
+                                android.media.MediaMetadataRetriever mmr = new android.media.MediaMetadataRetriever();
+                                mmr.setDataSource(videoFile.getAbsolutePath());
+                                String duration = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION);
+                                String hasAudio = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_HAS_AUDIO);
+                                String videoWidth = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
+                                String videoHeight = mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
+                                mmr.release();
+                                
+                                Log.d(TAG, "Video duration: " + duration + " ms");
+                                Log.d(TAG, "Video has audio: " + hasAudio);
+                                Log.d(TAG, "Video resolution: " + videoWidth + "x" + videoHeight);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error reading video metadata: " + e.getMessage());
+                            }
+                        }
+                        
                         intent.putExtra("videoUri", finalVideoPath);
                         
                         if (videoFile != null) {
@@ -784,7 +819,7 @@ public class StoryCameraActivity extends AppCompatActivity {
             countdownTimer.start();
         } catch (Exception ignore) {}
 
-        Toast.makeText(this, "Recording started", Toast.LENGTH_SHORT).show();
+        // Recording started - no need for toast
     }
     
     private void stopRecording() {
@@ -802,7 +837,7 @@ public class StoryCameraActivity extends AppCompatActivity {
         try { if (countdownTimer != null) { countdownTimer.cancel(); countdownTimer = null; } } catch (Exception ignore) {}
         if (countdownLabel != null) countdownLabel.setText("");
         
-        Toast.makeText(this, "Recording stopped", Toast.LENGTH_SHORT).show();
+        // Recording stopped - no need for toast
     }
     
     private File createVideoFile() {
@@ -967,6 +1002,57 @@ public class StoryCameraActivity extends AppCompatActivity {
             }
         } catch (Exception e) {
             Log.w(TAG, "Could not trigger haptic feedback", e);
+        }
+    }
+    
+    private boolean allPermissionsGranted() {
+        for (String permission : REQUIRED_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "Permission not granted: " + permission);
+                return false;
+            }
+        }
+        Log.d(TAG, "All permissions granted");
+        return true;
+    }
+    
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                Log.d(TAG, "Permissions granted, initializing camera");
+                // Start camera setup after permissions are confirmed
+                try {
+                    startCamera();
+                } catch (Exception e) {
+                    Log.e(TAG, "Error starting camera after permissions granted", e);
+                    Toast.makeText(this, "Camera setup failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    setResult(Activity.RESULT_CANCELED);
+                    finish();
+                }
+            } else {
+                Log.e(TAG, "Permissions denied, closing camera");
+                // Check which specific permissions were denied
+                StringBuilder deniedPermissions = new StringBuilder();
+                for (int i = 0; i < permissions.length; i++) {
+                    if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                        if (deniedPermissions.length() > 0) {
+                            deniedPermissions.append(", ");
+                        }
+                        if (permissions[i].equals(Manifest.permission.CAMERA)) {
+                            deniedPermissions.append("Camera");
+                        } else if (permissions[i].equals(Manifest.permission.RECORD_AUDIO)) {
+                            deniedPermissions.append("Microphone");
+                        } else {
+                            deniedPermissions.append(permissions[i]);
+                        }
+                    }
+                }
+                Toast.makeText(this, "Required permissions denied: " + deniedPermissions.toString() + ". Please enable them in Settings.", Toast.LENGTH_LONG).show();
+                setResult(Activity.RESULT_CANCELED);
+                finish();
+            }
         }
     }
     
