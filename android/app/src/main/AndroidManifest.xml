@@ -63,6 +63,9 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    
+    <!-- Advertising ID permission for Firebase Analytics -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <!-- Camera features -->
     <uses-feature android:name="android.hardware.camera" android:required="true" />
