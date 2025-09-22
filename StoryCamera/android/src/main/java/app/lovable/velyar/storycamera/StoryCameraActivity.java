@@ -664,6 +664,13 @@ public class StoryCameraActivity extends AppCompatActivity {
         Log.d(TAG, "VideoCapture is null: " + (videoCapture == null));
         Log.d(TAG, "Is recording: " + isRecording);
         
+        // Check permissions before starting recording
+        if (!allPermissionsGranted()) {
+            Log.e(TAG, "Permissions not granted - cannot start recording");
+            Toast.makeText(this, "Camera and microphone permissions required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
         if (videoCapture == null) {
             Log.e(TAG, "VideoCapture is null - cannot start recording");
             Toast.makeText(this, "Camera not ready for recording", Toast.LENGTH_SHORT).show();
@@ -686,14 +693,15 @@ public class StoryCameraActivity extends AppCompatActivity {
         
         // Start recording
         Log.d(TAG, "About to prepare recording");
-        PendingRecording pendingRecording = videoCapture.getOutput()
-            .prepareRecording(this, outputOptions)
-            .withAudioEnabled();  // Explicitly enable audio recording
-        Log.d(TAG, "PendingRecording created with audio enabled: " + (pendingRecording != null));
-            
-        Log.d(TAG, "About to start recording");
-        Log.d(TAG, "Recording with default audio configuration");
-        recording = pendingRecording.start(ContextCompat.getMainExecutor(this), videoRecordEvent -> {
+        try {
+            PendingRecording pendingRecording = videoCapture.getOutput()
+                .prepareRecording(this, outputOptions)
+                .withAudioEnabled();  // Explicitly enable audio recording
+            Log.d(TAG, "PendingRecording created with audio enabled: " + (pendingRecording != null));
+                
+            Log.d(TAG, "About to start recording");
+            Log.d(TAG, "Recording with default audio configuration");
+            recording = pendingRecording.start(ContextCompat.getMainExecutor(this), videoRecordEvent -> {
             Log.d(TAG, "VideoRecordEvent received: " + videoRecordEvent.getClass().getSimpleName());
             if (videoRecordEvent instanceof VideoRecordEvent.Finalize) {
                 VideoRecordEvent.Finalize finalizeEvent = (VideoRecordEvent.Finalize) videoRecordEvent;
@@ -792,6 +800,15 @@ public class StoryCameraActivity extends AppCompatActivity {
         Log.d(TAG, "Recording started successfully");
         
         isRecording = true;
+        } catch (SecurityException e) {
+            Log.e(TAG, "SecurityException during recording: " + e.getMessage());
+            Toast.makeText(this, "Permission denied for recording", Toast.LENGTH_SHORT).show();
+            return;
+        } catch (Exception e) {
+            Log.e(TAG, "Exception during recording: " + e.getMessage());
+            Toast.makeText(this, "Failed to start recording: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            return;
+        }
         
         // Animate button morph from circle to rounded square
         animateToRecordingState();
@@ -992,6 +1009,12 @@ public class StoryCameraActivity extends AppCompatActivity {
     
     private void triggerHapticFeedback() {
         try {
+            // Check vibrate permission
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.VIBRATE) != PackageManager.PERMISSION_GRANTED) {
+                Log.w(TAG, "Vibrate permission not granted, skipping haptic feedback");
+                return;
+            }
+            
             Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
             if (vibrator != null && vibrator.hasVibrator()) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -1063,6 +1086,7 @@ public class StoryCameraActivity extends AppCompatActivity {
         Intent data = new Intent();
         data.putExtra("error", "Recording cancelled by user");
         setResult(Activity.RESULT_CANCELED, data);
+        super.onBackPressed();
         finish();
     }
     
