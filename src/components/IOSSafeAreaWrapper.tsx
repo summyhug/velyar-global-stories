@@ -12,7 +12,7 @@ export const IOSSafeAreaWrapper = ({ children, className = '' }: IOSSafeAreaWrap
   return (
     <div 
       className={`
-        ${isIOS ? 'safe-area-inset' : 'pb-20'}
+        ${isIOS ? 'safe-area-inset' : 'content-safe-bottom'}
         ${className}
       `}
     >

@@ -600,7 +600,7 @@ const VideoCreate = () => {
   return (
     <div className="min-h-screen-safe bg-background font-quicksand">
       {/* Header */}
-      <header className="sticky-header header-safe">
+      <header className="sticky-header">
         <div className="max-w-md mx-auto px-4 py-3 flex items-center gap-3">
           <Button 
             variant="ghost" 

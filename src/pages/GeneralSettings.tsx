@@ -20,7 +20,7 @@ const GeneralSettings = () => {
 
   // Header component
   const header = (
-    <div className="pt-safe-header px-4">
+    <div className="px-4">
       <div className="max-w-md mx-auto py-3 flex items-center gap-3">
         <Button variant="ghost" size="sm" className="p-2 text-velyar-earth hover:bg-velyar-soft" onClick={() => navigate('/profile')}>
           <ArrowLeft className="w-5 h-5" />

@@ -90,7 +90,7 @@ const Home = () => {
 
   // Header component
   const header = (
-    <div className="pt-safe-header px-4">
+    <div className="px-4">
       <div className="max-w-md mx-auto py-3 flex items-center justify-between">
         <h1 className="text-2xl font-display text-velyar-earth tracking-wide">{t("home.velyar")}</h1>
         <div className="flex items-center gap-1">

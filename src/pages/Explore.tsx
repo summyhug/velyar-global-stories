@@ -100,7 +100,7 @@ const Explore = () => {
 
   // Header component
   const header = (
-    <div className="pt-safe-header px-4">
+    <div className="px-4">
       <div className="max-w-md mx-auto py-3 flex items-center gap-3">
         <Button 
           variant="ghost" 

@@ -409,3 +409,28 @@ body.keyboard-open .bottom-nav {
 body.keyboard-open .fab {
   display: none !important;
 }
+
+/* iOS-specific overscroll prevention - only applies to iOS devices */
+@supports (-webkit-touch-callout: none) {
+  /* This targets iOS Safari specifically */
+  html, body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
+}
+
+/* iOS overscroll fix - applied via JavaScript when iOS is detected */
+body.ios-overscroll-fix {
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+}
+
+body.ios-overscroll-fix #root {
+  height: 100vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
+}

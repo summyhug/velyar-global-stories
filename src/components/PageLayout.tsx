@@ -17,13 +17,13 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
     <div className={`min-h-screen bg-background ${className}`}>
       {/* Header - positioned outside scroll container for proper sticky behavior */}
       {header && (
-        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/10">
+        <div className="sticky-header">
           {header}
         </div>
       )}
       
       {/* Main content area - NO top safe area padding here */}
-      <main className={`${showBottomNav ? 'pb-20' : ''}`}>
+      <main className={`${showBottomNav ? 'content-safe-bottom' : ''}`}>
         {children}
       </main>
     </div>

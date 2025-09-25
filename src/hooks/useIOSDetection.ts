@@ -11,6 +11,25 @@ export const useIOSDetection = () => {
       // Check if we're on native iOS platform
       if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios') {
         setIsIOS(true);
+        console.log('🍎 iOS detected - applying overscroll fix');
+        
+        // Apply iOS overscroll fix
+        document.body.classList.add('ios-overscroll-fix');
+        
+        // Additional fix for root element
+        const root = document.getElementById('root');
+        if (root) {
+          root.style.overscrollBehavior = 'none';
+          root.style.overscrollBehaviorY = 'none';
+          root.style.overscrollBehaviorX = 'none';
+          root.style.webkitOverflowScrolling = 'touch';
+        }
+        
+        // Also fix body overscroll
+        document.body.style.overscrollBehavior = 'none';
+        document.body.style.webkitOverflowScrolling = 'auto';
+        
+        console.log('✅ iOS overscroll fix applied');
         
         try {
           // Dynamic import for iOS-specific device info
@@ -28,10 +47,45 @@ export const useIOSDetection = () => {
         }
       } else {
         setIsIOS(false);
+        console.log('📱 Non-iOS platform detected:', Capacitor.getPlatform());
+        
+        // Remove iOS overscroll fix for non-iOS platforms
+        document.body.classList.remove('ios-overscroll-fix');
+        
+        // Reset root element styles
+        const root = document.getElementById('root');
+        if (root) {
+          root.style.overscrollBehavior = '';
+          root.style.overscrollBehaviorY = '';
+          root.style.overscrollBehaviorX = '';
+          root.style.webkitOverflowScrolling = '';
+        }
+        
+        // Reset body styles
+        document.body.style.overscrollBehavior = '';
+        document.body.style.webkitOverflowScrolling = '';
       }
     };
 
     detectIOS();
+    
+    // Cleanup function to remove the class when component unmounts
+    return () => {
+      document.body.classList.remove('ios-overscroll-fix');
+      
+      // Reset root element styles
+      const root = document.getElementById('root');
+      if (root) {
+        root.style.overscrollBehavior = '';
+        root.style.overscrollBehaviorY = '';
+        root.style.overscrollBehaviorX = '';
+        root.style.webkitOverflowScrolling = '';
+      }
+      
+      // Reset body styles
+      document.body.style.overscrollBehavior = '';
+      document.body.style.webkitOverflowScrolling = '';
+    };
   }, []);
 
   const handleIOSSpecificFeatures = async () => {

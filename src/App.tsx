@@ -37,7 +37,7 @@ function App() {
   // Set safe area values for CSS variables
   React.useEffect(() => {
     // Set reasonable fallback values for safe areas
-    document.documentElement.style.setProperty('--safe-area-top', '24px');
+    document.documentElement.style.setProperty('--safe-area-top', '44px');
     document.documentElement.style.setProperty('--safe-area-bottom', '34px');
     document.documentElement.style.setProperty('--safe-area-left', '0px');
     document.documentElement.style.setProperty('--safe-area-right', '0px');
@@ -86,6 +86,7 @@ function App() {
 
                   <Toaster />
                 </IOSSafeAreaWrapper>
+                
               </div>
             </VideoCreateProvider>
           </AuthProvider>

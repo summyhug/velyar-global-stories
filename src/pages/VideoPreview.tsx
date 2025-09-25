@@ -224,7 +224,7 @@ const VideoPreviewShare: React.FC = () => {
   };
 
   const header = (
-    <div className="pt-safe-header px-4">
+    <div className="px-4">
       <div className="max-w-md mx-auto py-3 flex items-center justify-between">
         <button
           aria-label="Close"
