@@ -10,12 +10,6 @@ PODS:
   - CapacitorCordova (7.4.3)
   - CapacitorDevice (7.0.2):
     - Capacitor
-  - CapacitorFilesystem (7.1.4):
-    - Capacitor
-    - IONFilesystemLib (~> 1.0.1)
-  - CapacitorGeolocation (7.1.5):
-    - Capacitor
-    - IONGeolocationLib (= 1.0.1)
   - CapacitorHaptics (7.0.2):
     - Capacitor
   - CapacitorKeyboard (7.0.2):
@@ -24,8 +18,6 @@ PODS:
     - Capacitor
   - CapacitorStatusBar (7.0.2):
     - Capacitor
-  - IONFilesystemLib (1.0.1)
-  - IONGeolocationLib (1.0.1)
   - StoryCamera (1.0.0):
     - Capacitor
 
@@ -36,18 +28,11 @@ DEPENDENCIES:
   - "CapacitorCommunitySafeArea (from `../../node_modules/@capacitor-community/safe-area`)"
   - "CapacitorCordova (from `../../node_modules/@capacitor/ios`)"
   - "CapacitorDevice (from `../../node_modules/@capacitor/device`)"
-  - "CapacitorFilesystem (from `../../node_modules/@capacitor/filesystem`)"
-  - "CapacitorGeolocation (from `../../node_modules/@capacitor/geolocation`)"
   - "CapacitorHaptics (from `../../node_modules/@capacitor/haptics`)"
   - "CapacitorKeyboard (from `../../node_modules/@capacitor/keyboard`)"
   - "CapacitorPushNotifications (from `../../node_modules/@capacitor/push-notifications`)"
   - "CapacitorStatusBar (from `../../node_modules/@capacitor/status-bar`)"
   - StoryCamera (from `../../StoryCamera`)
-
-SPEC REPOS:
-  trunk:
-    - IONFilesystemLib
-    - IONGeolocationLib
 
 EXTERNAL SOURCES:
   Capacitor:
@@ -62,10 +47,6 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/@capacitor/ios"
   CapacitorDevice:
     :path: "../../node_modules/@capacitor/device"
-  CapacitorFilesystem:
-    :path: "../../node_modules/@capacitor/filesystem"
-  CapacitorGeolocation:
-    :path: "../../node_modules/@capacitor/geolocation"
   CapacitorHaptics:
     :path: "../../node_modules/@capacitor/haptics"
   CapacitorKeyboard:
@@ -84,16 +65,12 @@ SPEC CHECKSUMS:
   CapacitorCommunitySafeArea: cc370b4f8d4aa340e4616acef9b73eda41ba0914
   CapacitorCordova: 435121e81a2df4d0034f0fb11fcefab5104cfdb5
   CapacitorDevice: a50a45f0d075e55e2392c7a4be5404d4f69515de
-  CapacitorFilesystem: ac0a386949ed6c295a3dffa129ecd26b881ae5be
-  CapacitorGeolocation: b96474c3259dd4a294227ea8ec19140b1837cceb
   CapacitorHaptics: 09d96bcb5a2b74ede8fd039b4cdf58fc43dcacf1
   CapacitorKeyboard: 056bbe3711830ccb782f1705a8ad183b27b6c51e
   CapacitorPushNotifications: 6ffcf5df95f17d71a1b02893549bc4727f80540c
   CapacitorStatusBar: 5526833b87fa9c96a2a90c1322bb1f663c04505f
-  IONFilesystemLib: 89258b8e3e85465da93127d25d7ce37f977e8a6f
-  IONGeolocationLib: 20f9d0248a0b5264511fb57a37e25dd2badf797a
   StoryCamera: dd10f700b08292bdfa6c9dcb1b7f4c51d7bab46f
 
-PODFILE CHECKSUM: b41bc259349471eafe1459f43aea9b7a150e11a1
+PODFILE CHECKSUM: c93960f93a7a600a213fe00a15ba0549287cb473
 
 COCOAPODS: 1.10.1
