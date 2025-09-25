@@ -381,7 +381,7 @@ const VideoCreate = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.error('User not authenticated');
-        alert('Please log in to upload videos');
+        console.log('Please log in to upload videos');
         return;
       }
 
@@ -502,7 +502,7 @@ const VideoCreate = () => {
 
       if (videoError) {
         console.error('Database error:', videoError);
-        alert(`Database error: ${videoError.message}`);
+        console.log(`Database error: ${videoError.message}`);
         return;
       }
 

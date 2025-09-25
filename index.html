@@ -19,6 +19,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&family=Quicksand:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      // Minimal iOS fix: prevent white screen from early alert() calls
+      (function () {
+        var ua = navigator.userAgent || "";
+        var isiOS = /(iPad|iPhone|iPod|Macintosh)/.test(ua) && 'ontouchend' in document;
+        if (!isiOS) return;
+        
+        var originalAlert = window.alert;
+        var restored = false;
+        function restore() {
+          if (restored) return;
+          restored = true;
+          window.alert = originalAlert;
+        }
+        
+        window.alert = function () { 
+          console.warn('Alert suppressed on iOS to prevent white screen');
+          setTimeout(restore, 1000);
+        };
+        
+        // Restore after first paint
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', restore);
+        } else {
+          setTimeout(restore, 100);
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

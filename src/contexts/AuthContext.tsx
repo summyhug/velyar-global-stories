@@ -75,7 +75,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     // Show confirmation dialog
-    const confirmed = window.confirm(
+    const confirmed = confirm(
       'Are you sure you want to delete your account? This action cannot be undone. Your videos will remain but will be disconnected from your account.'
     );
 
@@ -89,16 +89,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       if (error) {
         console.error('Error deleting account:', error);
-        alert('Failed to delete account. Please try again.');
+        console.log('Failed to delete account. Please try again.');
         return;
       }
 
       // Sign out after successful deletion
       await signOut();
-      alert('Account deleted successfully.');
+      console.log('Account deleted successfully.');
     } catch (error) {
       console.error('Error deleting account:', error);
-      alert('Failed to delete account. Please try again.');
+      console.log('Failed to delete account. Please try again.');
     }
   };
 
