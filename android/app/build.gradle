@@ -28,6 +28,18 @@ android {
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
+        
+        // Support for 16 KB page sizes (required for Android 15+)
+        ndk {
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
+        }
+        
+        // Disable native library extraction for 16 KB page size compatibility
+        packagingOptions {
+            jniLibs {
+                useLegacyPackaging = false
+            }
+        }
     }
     buildTypes {
         release {
@@ -37,6 +49,8 @@ android {
             signingConfig signingConfigs.release
             ndk {
                 debugSymbolLevel 'SYMBOL_TABLE'
+                // Support for 16 KB page sizes
+                abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
             }
         }
     }
