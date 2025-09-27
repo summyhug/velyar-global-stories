@@ -27,11 +27,6 @@ const config: CapacitorConfig = {
         camera: "Camera access is required to record videos and take photos."
       }
     },
-    Geolocation: {
-      permissions: {
-        location: "Location access is required to tag your videos with location."
-      }
-    },
     Keyboard: {
       resize: 'body',
       style: 'dark',

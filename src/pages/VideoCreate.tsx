@@ -44,7 +44,7 @@ const VideoCreate = () => {
   const MAX_RECORDING_TIME = 30; // 30 seconds
   const MAX_FILE_SIZE_MB = 50; // 50MB after compression
   const { missionId } = useParams<{ missionId?: string }>();
-  const { isNative, recordVideo, getCurrentLocation } = useMobile();
+  const { isNative, recordVideo } = useMobile();
   const { toast } = useToast();
   const { setIsEditing } = useVideoCreate();
   const { user } = useAuth();

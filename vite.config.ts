@@ -32,8 +32,6 @@ export default defineConfig(({ mode }) => ({
           '@capacitor/app',
           '@capacitor/camera',
           '@capacitor/device',
-          '@capacitor/filesystem',
-          '@capacitor/geolocation',
           '@capacitor/push-notifications',
           '@capacitor/status-bar'
         ];

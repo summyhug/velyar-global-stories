@@ -81,70 +81,11 @@ export const useMobile = () => {
     }
   };
 
-  const getCurrentLocation = async () => {
-    try {
-      if (!Capacitor.isNativePlatform()) {
-        throw new Error('Geolocation not available on web platform');
-      }
-      
-      const { Geolocation } = await import('@capacitor/geolocation');
-      const coordinates = await Geolocation.getCurrentPosition();
-      return {
-        lat: coordinates.coords.latitude,
-        lng: coordinates.coords.longitude
-      };
-    } catch (error) {
-      console.error('Location error:', error);
-      throw error;
-    }
-  };
-
-  const saveFile = async (data: string, fileName: string) => {
-    try {
-      if (!Capacitor.isNativePlatform()) {
-        throw new Error('File system not available on web platform');
-      }
-      
-      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
-      await Filesystem.writeFile({
-        path: fileName,
-        data: data,
-        directory: Directory.Documents,
-        encoding: Encoding.UTF8,
-      });
-      return true;
-    } catch (error) {
-      console.error('File save error:', error);
-      return false;
-    }
-  };
-
-  const readFile = async (fileName: string) => {
-    try {
-      if (!Capacitor.isNativePlatform()) {
-        throw new Error('File system not available on web platform');
-      }
-      
-      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem');
-      const contents = await Filesystem.readFile({
-        path: fileName,
-        directory: Directory.Documents,
-        encoding: Encoding.UTF8,
-      });
-      return contents.data;
-    } catch (error) {
-      console.error('File read error:', error);
-      return null;
-    }
-  };
 
   return {
     isNative,
     deviceInfo,
     takePhoto,
-    recordVideo,
-    getCurrentLocation,
-    saveFile,
-    readFile
+    recordVideo
   };
 };
