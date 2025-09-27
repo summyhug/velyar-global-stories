@@ -1,4 +1,4 @@
-package app.lovable.velyar.storycamera;
+package com.velyar.storycamera;
 
 import android.app.Activity;
 import android.content.Intent;

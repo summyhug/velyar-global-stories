@@ -1,4 +1,4 @@
-package app.lovable.velyar.storycamera;
+package com.velyar.storycamera;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -1135,7 +1135,7 @@ public class StoryCameraActivity extends AppCompatActivity {
     private Class<?> getMainActivityClass() {
         try {
             // Use the exact package name from the MainActivity
-            return Class.forName("app.lovable.e717c17b39ea497bb3f0803db35e66f4.MainActivity");
+            return Class.forName("com.velyar.app.MainActivity");
         } catch (ClassNotFoundException e) {
             Log.e(TAG, "MainActivity class not found: " + e.getMessage());
             // Fallback to the current activity

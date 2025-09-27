@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/black">
@@ -26,7 +27,7 @@
             android:layout_height="48dp"
             android:background="@drawable/circle_button"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:tint="@android:color/white"
+            app:tint="@android:color/white"
             android:contentDescription="Close" />
 
         <View
@@ -53,7 +54,7 @@
             android:layout_marginStart="16dp"
             android:background="@drawable/circle_button"
             android:src="@android:drawable/ic_menu_camera"
-            android:tint="@android:color/white"
+            app:tint="@android:color/white"
             android:contentDescription="Switch Camera" />
 
     </LinearLayout>
@@ -83,7 +84,7 @@
                 android:layout_marginEnd="16dp"
                 android:background="@drawable/circle_button"
                 android:src="@android:drawable/ic_menu_edit"
-                android:tint="@android:color/white"
+                app:tint="@android:color/white"
                 android:contentDescription="Add Text" />
 
             <ImageButton
@@ -93,7 +94,7 @@
                 android:layout_marginEnd="16dp"
                 android:background="@drawable/circle_button"
                 android:src="@android:drawable/ic_menu_send"
-                android:tint="@android:color/white"
+                app:tint="@android:color/white"
                 android:contentDescription="Add Emoji" />
 
             <ImageButton
@@ -102,7 +103,7 @@
                 android:layout_height="48dp"
                 android:background="@drawable/circle_button"
                 android:src="@android:drawable/ic_menu_view"
-                android:tint="@android:color/white"
+                app:tint="@android:color/white"
                 android:contentDescription="Filters" />
 
         </LinearLayout>

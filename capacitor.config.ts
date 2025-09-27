@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.e717c17b39ea497bb3f0803db35e66f4',
+  appId: 'com.velyar.app',
   appName: 'Velyar',
   webDir: 'dist',
   plugins: {
@@ -42,7 +42,6 @@ const config: CapacitorConfig = {
     }
   },
   ios: {
-    appId: 'com.velyar.app',
     contentInset: 'automatic',
     allowsLinkPreview: false,
     handleApplicationNotifications: false,

@@ -1,4 +1,4 @@
-package app.lovable.e717c17b39ea497bb3f0803db35e66f4;
+package com.velyar.app;
 
 import android.os.Build;
 import android.os.Bundle;

@@ -36,7 +36,7 @@
 
         <!-- StoryCamera Activity -->
         <activity
-            android:name="app.lovable.velyar.storycamera.StoryCameraActivity"
+            android:name="com.velyar.storycamera.StoryCameraActivity"
             android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme"

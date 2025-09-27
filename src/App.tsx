@@ -12,6 +12,7 @@ import { IOSSafeAreaWrapper } from "./components/IOSSafeAreaWrapper";
 import { IOSStatusBar } from "./components/IOSStatusBar";
 import { AuthGate } from "./components/AuthGate";
 import { useKeyboardToggle } from "./hooks/useKeyboardToggle";
+import { useSafeArea } from "./hooks/useSafeArea";
 import { ProtectedLayout } from "./components/ProtectedLayout";
 import { ScrollToTop } from "./components/ScrollToTop";
 import "./i18n";
@@ -34,14 +35,16 @@ import Terms from "./pages/Terms";
 import GeneralSettings from "./pages/GeneralSettings";
 
 function App() {
-  // Set safe area values for CSS variables
+  // Get safe area values and update CSS variables
+  const safeArea = useSafeArea();
+  
   React.useEffect(() => {
-    // Set reasonable fallback values for safe areas
-    document.documentElement.style.setProperty('--safe-area-top', '44px');
-    document.documentElement.style.setProperty('--safe-area-bottom', '34px');
-    document.documentElement.style.setProperty('--safe-area-left', '0px');
-    document.documentElement.style.setProperty('--safe-area-right', '0px');
-  }, []);
+    // Update CSS variables with actual safe area values
+    document.documentElement.style.setProperty('--safe-area-top', `${safeArea.top}px`);
+    document.documentElement.style.setProperty('--safe-area-bottom', `${safeArea.bottom}px`);
+    document.documentElement.style.setProperty('--safe-area-left', `${safeArea.left}px`);
+    document.documentElement.style.setProperty('--safe-area-right', `${safeArea.right}px`);
+  }, [safeArea]);
 
   // Handle keyboard show/hide events
   useKeyboardToggle();

@@ -14,10 +14,10 @@
 # Capacitor specific rules
 -keep class com.getcapacitor.** { *; }
 -keep class com.capacitorjs.** { *; }
--keep class app.lovable.** { *; }
+-keep class com.velyar.** { *; }
 
 # StoryCamera plugin rules
--keep class app.lovable.velyar.storycamera.** { *; }
+-keep class com.velyar.storycamera.** { *; }
 
 # Firebase Analytics rules
 -keep class com.google.firebase.** { *; }

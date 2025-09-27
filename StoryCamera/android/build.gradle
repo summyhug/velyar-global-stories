@@ -1,7 +1,7 @@
 apply plugin: 'com.android.library'
 
 android {
-    namespace "app.lovable.velyar.storycamera"
+    namespace "com.velyar.storycamera"
     compileSdk 35
     defaultConfig {
         minSdkVersion 21
