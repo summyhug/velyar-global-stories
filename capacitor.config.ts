@@ -42,6 +42,7 @@ const config: CapacitorConfig = {
     }
   },
   ios: {
+    appId: 'com.velyar.app',
     contentInset: 'automatic',
     allowsLinkPreview: false,
     handleApplicationNotifications: false,

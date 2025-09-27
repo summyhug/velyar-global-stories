@@ -29,11 +29,6 @@
 				"camera": "Camera access is required to record videos and take photos."
 			}
 		},
-		"Geolocation": {
-			"permissions": {
-				"location": "Location access is required to tag your videos with location."
-			}
-		},
 		"Keyboard": {
 			"resize": "body",
 			"style": "dark",
@@ -49,6 +44,7 @@
 		}
 	},
 	"ios": {
+		"appId": "com.velyar.app",
 		"contentInset": "automatic",
 		"allowsLinkPreview": false,
 		"handleApplicationNotifications": false,
