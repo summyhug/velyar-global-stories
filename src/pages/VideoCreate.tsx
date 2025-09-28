@@ -11,7 +11,6 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { generateVideoThumbnail, uploadThumbnailToStorage } from "@/utils/videoThumbnail";
 import { compressVideo, getVideoInfo } from "@/utils/videoCompression";
 import { supabase } from "@/integrations/supabase/client";
-import { useMobile } from "@/hooks/useMobile";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile } from "@/hooks/useProfile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -44,7 +43,7 @@ const VideoCreate = () => {
   const MAX_RECORDING_TIME = 30; // 30 seconds
   const MAX_FILE_SIZE_MB = 50; // 50MB after compression
   const { missionId } = useParams<{ missionId?: string }>();
-  const { isNative, recordVideo } = useMobile();
+  const isNative = Capacitor.isNativePlatform();
   const { toast } = useToast();
   const { setIsEditing } = useVideoCreate();
   const { user } = useAuth();

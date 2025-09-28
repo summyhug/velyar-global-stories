@@ -30,7 +30,6 @@ export default defineConfig(({ mode }) => ({
         const nodeModules = ['path', 'fs', 'os', 'crypto', 'tailwindcss-animate'];
         const capacitorPlugins = [
           '@capacitor/app',
-          '@capacitor/camera',
           '@capacitor/device',
           '@capacitor/push-notifications',
           '@capacitor/status-bar'

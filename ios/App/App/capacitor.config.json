@@ -24,11 +24,6 @@
 				"alert"
 			]
 		},
-		"Camera": {
-			"permissions": {
-				"camera": "Camera access is required to record videos and take photos."
-			}
-		},
 		"Keyboard": {
 			"resize": "body",
 			"style": "dark",
@@ -63,7 +58,6 @@
 	"packageClassList": [
 		"SafeAreaPlugin",
 		"AppPlugin",
-		"CAPCameraPlugin",
 		"DevicePlugin",
 		"HapticsPlugin",
 		"KeyboardPlugin",

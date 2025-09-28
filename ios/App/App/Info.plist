@@ -45,5 +45,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is required to record videos for stories.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access is required to record audio for videos.</string>
 </dict>
 </plist>
