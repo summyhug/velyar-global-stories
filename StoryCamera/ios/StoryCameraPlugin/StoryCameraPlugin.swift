@@ -164,7 +164,9 @@ public class StoryCameraPlugin: CAPPlugin {
         
         // Set up timer for max duration
         DispatchQueue.main.asyncAfter(deadline: .now() + maxDuration) { [weak self] in
-            self?.stopRecording()
+            guard let self = self, self.isRecording else { return }
+            self.videoOutput?.stopRecording()
+            self.isRecording = false
         }
         
         call.resolve()
