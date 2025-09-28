@@ -62,7 +62,15 @@ This project is built with:
 
 ## How can I deploy this project?
 
+### Web Deployment
 Simply open [Lovable](https://lovable.dev/projects/e717c17b-39ea-497b-b3f0-803db35e66f4) and click on Share -> Publish.
+
+### Mobile App Deployment
+For deploying to Android and iOS app stores, see our comprehensive [**DEPLOYMENT.md**](./DEPLOYMENT.md) guide which covers:
+- Version management across all platforms
+- Android APK/AAB builds and Play Store deployment
+- iOS archive builds and App Store deployment
+- Release checklists and troubleshooting
 
 ## Can I connect a custom domain to my Lovable project?
 
