@@ -78,6 +78,7 @@ public class StoryCameraActivity extends AppCompatActivity {
     private boolean isRecording = false;
     private boolean isFlashOn = false;
     private boolean isFrontCamera = false;
+    private boolean isInfoPressed = false;
     private ProcessCameraProvider cameraProvider;
     private Camera camera;
     private ImageCapture imageCapture;
@@ -108,6 +109,11 @@ public class StoryCameraActivity extends AppCompatActivity {
     private String activityContextType = null;
     private String activityMissionId = null;
     private String activityPromptId = null;
+    private String activityPromptName = null;
+    
+    // UI elements for info button and prompt display
+    private ImageButton infoButton;
+    private TextView promptText;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -116,7 +122,7 @@ public class StoryCameraActivity extends AppCompatActivity {
         
         // Read context from intent
         Intent intent = getIntent();
-        String receivedPromptName = intent.getStringExtra("promptName");
+        this.activityPromptName = intent.getStringExtra("promptName");
         this.activityContextType = intent.getStringExtra("contextType");
         this.activityMissionId = intent.getStringExtra("missionId");
         this.activityPromptId = intent.getStringExtra("promptId");
@@ -363,6 +369,45 @@ public class StoryCameraActivity extends AppCompatActivity {
         cdParams.topMargin = 140; // center between close and flash buttons
         layout.addView(countdownLabel, cdParams);
         
+        // Prompt text display (above record button)
+        promptText = new TextView(this);
+        promptText.setTextColor(0xFFFFFFFF);
+        promptText.setTextSize(14f);
+        promptText.setTypeface(null, android.graphics.Typeface.BOLD);
+        promptText.setGravity(android.view.Gravity.CENTER);
+        promptText.setPadding(16, 8, 16, 8);
+        promptText.setVisibility(View.GONE); // Initially hidden
+        
+        // Configure text wrapping for long prompts
+        promptText.setSingleLine(false);
+        promptText.setMaxLines(4); // Allow up to 4 lines
+        promptText.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        promptText.setLineSpacing(2, 1.0f); // Add some line spacing
+        RelativeLayout.LayoutParams promptParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
+        promptParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        promptParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        promptParams.bottomMargin = 280; // Higher above the record button to avoid intersection
+        layout.addView(promptText, promptParams);
+        
+        // Info button (left of record button)
+        infoButton = new ImageButton(this);
+        infoButton.setImageResource(R.drawable.info_24);
+        infoButton.setScaleType(ImageButton.ScaleType.CENTER_INSIDE);
+        infoButton.setPadding(20, 20, 20, 20);
+        
+        // Create circular background for info button (unpressed state)
+        GradientDrawable infoDrawable = new GradientDrawable();
+        infoDrawable.setShape(GradientDrawable.OVAL);
+        infoDrawable.setColor(0xCC000000); // Semi-transparent black
+        infoButton.setBackground(infoDrawable);
+        
+        RelativeLayout.LayoutParams infoParams = new RelativeLayout.LayoutParams(110, 110);
+        infoParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        infoParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        infoParams.bottomMargin = 120;
+        infoParams.leftMargin = 180; // Same distance as switch camera button (180px from right)
+        layout.addView(infoButton, infoParams);
+        
         // Set click listeners
         closeButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -411,6 +456,20 @@ public class StoryCameraActivity extends AppCompatActivity {
                 toggleFlash();
             }
         });
+        
+        // Info button click listener
+        infoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                togglePromptDisplay();
+            }
+        });
+        
+        // Set up prompt text if available (but keep it hidden by default)
+        if (activityPromptName != null && !activityPromptName.isEmpty()) {
+            promptText.setText(activityPromptName);
+            promptText.setVisibility(View.GONE); // Hidden by default, user must tap info button
+        }
 
         // Cycle through simple filter overlays
         paletteButton.setOnClickListener(new View.OnClickListener() {
@@ -657,6 +716,31 @@ public class StoryCameraActivity extends AppCompatActivity {
             flashDrawable.setColor(0xCC000000); // Black when off
         }
         flashButton.setBackground(flashDrawable);
+    }
+    
+    private void togglePromptDisplay() {
+        if (promptText == null || activityPromptName == null || activityPromptName.isEmpty()) {
+            return;
+        }
+        
+        isInfoPressed = !isInfoPressed;
+        
+        if (isInfoPressed) {
+            promptText.setVisibility(View.VISIBLE);
+        } else {
+            promptText.setVisibility(View.GONE);
+        }
+        
+        // Update button appearance based on state
+        GradientDrawable infoDrawable = new GradientDrawable();
+        infoDrawable.setShape(GradientDrawable.OVAL);
+        
+        if (isInfoPressed) {
+            infoDrawable.setColor(0xCCFFD700); // Gold when pressed (like flash button)
+        } else {
+            infoDrawable.setColor(0xCC000000); // Black when unpressed
+        }
+        infoButton.setBackground(infoDrawable);
     }
     
     private void startRecording() {

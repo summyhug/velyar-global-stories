@@ -7,7 +7,6 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { Toaster } from "./components/ui/toaster";
 import { BottomNav } from "./components/BottomNav";
-import { FloatingActionButton } from "./components/FloatingActionButton";
 import { IOSSafeAreaWrapper } from "./components/IOSSafeAreaWrapper";
 import { IOSStatusBar } from "./components/IOSStatusBar";
 import { AuthGate } from "./components/AuthGate";

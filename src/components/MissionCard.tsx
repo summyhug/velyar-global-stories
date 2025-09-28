@@ -32,7 +32,7 @@ export const MissionCard = ({ id, title, description, participants, location, im
         duration: 30,
         camera: 'rear',
         allowOverlays: true,
-        promptName: title || "Mission",
+        promptName: description || "Mission",
         contextType: 'mission',
         missionId: id
       });

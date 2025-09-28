@@ -108,13 +108,39 @@
 
         </LinearLayout>
 
-        <!-- Record Button -->
+        <!-- Prompt/Mission Display -->
+        <TextView
+            android:id="@+id/promptText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="8dp"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone" />
+
+        <!-- Record Button Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center">
 
+            <!-- Info Button -->
+            <ImageButton
+                android:id="@+id/infoButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="24dp"
+                android:background="@drawable/circle_button"
+                android:src="@android:drawable/ic_menu_info_details"
+                app:tint="@android:color/white"
+                android:contentDescription="Show Prompt Info" />
+
+            <!-- Record Button -->
             <Button
                 android:id="@+id/recordButton"
                 android:layout_width="80dp"
