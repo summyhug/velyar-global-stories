@@ -21,6 +21,10 @@ public class StoryCameraPlugin: CAPPlugin {
         let duration = call.getInt("duration") ?? 30
         let camera = call.getString("camera") ?? "rear"
         let overlays = call.getBool("allowOverlays") ?? true
+        let promptName = call.getString("promptName")
+        let contextType = call.getString("contextType")
+        let missionId = call.getString("missionId")
+        let promptId = call.getString("promptId")
         
         maxDuration = TimeInterval(duration)
         allowOverlays = overlays
@@ -125,6 +129,12 @@ public class StoryCameraPlugin: CAPPlugin {
         let cameraVC = StoryCameraViewController()
         cameraVC.plugin = self
         cameraVC.call = call
+        
+        // Pass context data to view controller
+        cameraVC.promptName = call.getString("promptName")
+        cameraVC.contextType = call.getString("contextType")
+        cameraVC.missionId = call.getString("missionId")
+        cameraVC.promptId = call.getString("promptId")
         
         // Present camera interface
         DispatchQueue.main.async {
@@ -337,6 +347,14 @@ class StoryCameraViewController: UIViewController {
     private var recordButton: UIButton!
     private var switchCameraButton: UIButton!
     private var cancelButton: UIButton!
+    private var infoButton: UIButton!
+    private var promptLabel: UILabel!
+    
+    // Context properties
+    var promptName: String?
+    var contextType: String?
+    var missionId: String?
+    var promptId: String?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -377,6 +395,27 @@ class StoryCameraViewController: UIViewController {
         cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
         view.addSubview(cancelButton)
         
+        // Info button (left of record button)
+        infoButton = UIButton(type: .system)
+        infoButton.setImage(UIImage(systemName: "info.circle"), for: .normal)
+        infoButton.tintColor = .white
+        infoButton.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+        infoButton.layer.cornerRadius = 25
+        infoButton.translatesAutoresizingMaskIntoConstraints = false
+        infoButton.addTarget(self, action: #selector(infoButtonTapped), for: .touchUpInside)
+        view.addSubview(infoButton)
+        
+        // Prompt label (above record button)
+        promptLabel = UILabel()
+        promptLabel.textColor = .white
+        promptLabel.font = UIFont.boldSystemFont(ofSize: 14)
+        promptLabel.textAlignment = .center
+        promptLabel.numberOfLines = 4 // Allow up to 4 lines
+        promptLabel.lineBreakMode = .byTruncatingTail
+        promptLabel.isHidden = true
+        promptLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(promptLabel)
+        
         // Setup constraints
         NSLayoutConstraint.activate([
             previewView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -393,7 +432,17 @@ class StoryCameraViewController: UIViewController {
             switchCameraButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
             
             cancelButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20)
+            cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            
+            infoButton.centerYAnchor.constraint(equalTo: recordButton.centerYAnchor),
+            infoButton.trailingAnchor.constraint(equalTo: recordButton.leadingAnchor, constant: -30),
+            infoButton.widthAnchor.constraint(equalToConstant: 50),
+            infoButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            promptLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            promptLabel.bottomAnchor.constraint(equalTo: recordButton.topAnchor, constant: -20),
+            promptLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
+            promptLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20)
         ])
         
         // Setup preview layer
@@ -403,6 +452,12 @@ class StoryCameraViewController: UIViewController {
             previewLayer.frame = previewView.bounds
             previewView.layer.addSublayer(previewLayer)
             plugin?.previewLayer = previewLayer
+        }
+        
+        // Set up prompt text if available
+        if let promptName = promptName, !promptName.isEmpty {
+            promptLabel.text = promptName
+            promptLabel.isHidden = false
         }
     }
     
@@ -426,5 +481,15 @@ class StoryCameraViewController: UIViewController {
     @objc private func cancelTapped() {
         plugin?.cancelRecording(CAPPluginCall(callbackId: "cancelRecording", options: [:], success: { _ in }, error: { _ in }))
         dismiss(animated: true)
+    }
+    
+    @objc private func infoButtonTapped() {
+        guard let promptName = promptName, !promptName.isEmpty else { return }
+        
+        if promptLabel.isHidden {
+            promptLabel.isHidden = false
+        } else {
+            promptLabel.isHidden = true
+        }
     }
 }

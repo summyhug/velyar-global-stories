@@ -88,6 +88,77 @@ const Home = () => {
     return () => document.removeEventListener('visibilitychange', onVisibility);
   }, []);
 
+  const handleStartRecording = async () => {
+    try {
+      console.log('🎬 ===== HOME: STARTING STORYCAMERA =====');
+      
+      // Fetch current daily prompt
+      let promptText = "Daily Prompt";
+      let promptId = undefined;
+      
+      try {
+        const today = new Date().toISOString().split('T')[0];
+        console.log('Home: Looking for prompt for date:', today);
+        
+        let { data: todayPrompt, error: todayError } = await supabase
+          .from('daily_prompts')
+          .select('id, prompt_text')
+          .eq('date', today)
+          .eq('is_active', true)
+          .maybeSingle();
+          
+        if (todayError) {
+          console.error('Home: Error fetching today\'s prompt:', todayError);
+        }
+
+        // If no prompt for today, get the most recent active prompt
+        if (!todayPrompt) {
+          console.log('Home: No prompt for today, fetching most recent active prompt');
+          const { data: recentPrompt, error: recentError } = await supabase
+            .from('daily_prompts')
+            .select('id, prompt_text')
+            .eq('is_active', true)
+            .order('date', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+            
+          if (recentError) {
+            console.error('Home: Error fetching recent prompt:', recentError);
+          }
+          
+          if (recentPrompt) {
+            promptText = recentPrompt.prompt_text;
+            promptId = recentPrompt.id;
+            console.log('Home: Using recent prompt:', promptText);
+          }
+        } else {
+          promptText = todayPrompt.prompt_text;
+          promptId = todayPrompt.id;
+          console.log('Home: Using today\'s prompt:', promptText);
+        }
+      } catch (error) {
+        console.error('Home: Error fetching prompt:', error);
+        // Continue with default prompt
+      }
+      
+      const storyResult = await StoryCamera.recordVideo({
+        duration: 30,
+        camera: 'rear',
+        allowOverlays: true,
+        promptName: promptText,
+        contextType: 'daily',
+        promptId: promptId
+      });
+      
+      console.log('✅ ===== HOME: STORYCAMERA SUCCESS =====');
+      console.log('Home StoryCamera result:', storyResult);
+      
+    } catch (error) {
+      console.error('❌ ===== HOME: STORYCAMERA FAILED =====');
+      console.error('Home StoryCamera error:', error.message);
+    }
+  };
+
   // Header component
   const header = (
     <div className="px-4">
@@ -180,7 +251,10 @@ const Home = () => {
                   {t("home.joinConversation")}
                 </p>
                 <div className="pt-2">
-                  <button className="btn-primary-enhanced px-6 py-2 rounded-full font-ui text-sm">
+                  <button 
+                    className="btn-primary-enhanced px-6 py-2 rounded-full font-ui text-sm"
+                    onClick={handleStartRecording}
+                  >
                     {t("home.startRecording")}
                   </button>
                 </div>
