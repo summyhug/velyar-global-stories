@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Velyar Brand Colors -->
+    <!-- Primary colors -->
+    <color name="colorPrimary">#285A66</color> <!-- Dark Teal - velyar-earth -->
+    <color name="colorPrimaryDark">#1E4048</color> <!-- Darker Teal -->
+    <color name="colorAccent">#D1A15D</color> <!-- Warm Brown - velyar-warm -->
+    
+    <!-- Velyar specific colors -->
+    <color name="velyar_earth">#285A66</color> <!-- Dark Teal -->
+    <color name="velyar_warm">#D1A15D</color> <!-- Warm Brown -->
+    <color name="velyar_soft">#F5F1E1</color> <!-- Warm Beige -->
+    <color name="velyar_glow">#E6B366</color> <!-- Lighter Warm Brown -->
+    <color name="velyar_coral">#FF7F5A</color> <!-- Muted Coral -->
+    <color name="velyar_olive">#6E8A3D</color> <!-- Olive Green -->
+    
+    <!-- Material Design colors -->
+    <color name="colorOnSurface">#FFFFFF</color> <!-- White for icons -->
+    <color name="colorOnSurfaceVariant">#F5F5F5</color> <!-- Light gray for secondary icons -->
+    <color name="colorSurface">#F5F1E1</color> <!-- Warm Beige background -->
+    <color name="colorSurfaceVariant">#F0EBD8</color> <!-- Lighter Warm Beige -->
+    
+    <!-- Standard colors -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="transparent">#00000000</color>
+</resources>

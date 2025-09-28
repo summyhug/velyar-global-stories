@@ -22,11 +22,6 @@ const config: CapacitorConfig = {
     PushNotifications: {
       presentationOptions: ["badge", "sound", "alert"]
     },
-    Camera: {
-      permissions: {
-        camera: "Camera access is required to record videos and take photos."
-      }
-    },
     Keyboard: {
       resize: 'body',
       style: 'dark',
