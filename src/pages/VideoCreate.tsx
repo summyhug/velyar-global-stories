@@ -596,6 +596,32 @@ const VideoCreate = () => {
     }
   };
 
+  // Handle OS back button (Android/iOS)
+  useEffect(() => {
+    const handlePopState = () => {
+      handleBack();
+    };
+
+    // Add popstate listener for browser back button
+    window.addEventListener('popstate', handlePopState);
+
+    // For native platforms, we need to handle the back button differently
+    if (isNative) {
+      // Use Capacitor's App plugin to handle back button
+      import('@capacitor/app').then(({ App }) => {
+        App.addListener('backButton', ({ canGoBack }) => {
+          if (!canGoBack) {
+            handleBack();
+          }
+        });
+      });
+    }
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [step, isNative]);
+
   return (
     <div className="min-h-screen-safe bg-background font-quicksand">
       {/* Header */}
