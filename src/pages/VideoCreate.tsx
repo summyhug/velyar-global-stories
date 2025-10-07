@@ -41,7 +41,7 @@ const VideoCreate = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   
   const MAX_RECORDING_TIME = 30; // 30 seconds
-  const MAX_FILE_SIZE_MB = 50; // 50MB after compression
+  const MAX_FILE_SIZE_MB = 10; // 10MB - compress to save storage with preserved audio
   const { missionId } = useParams<{ missionId?: string }>();
   const isNative = Capacitor.isNativePlatform();
   const { toast } = useToast();
@@ -290,14 +290,14 @@ const VideoCreate = () => {
       setStep('edit');
       console.log('VideoCreate: File upload complete, moved to edit step');
       
-      // Compress in background if needed (don't block UI)
+      // Compress in background if needed (now preserves audio!)
       if (fileSizeMB > MAX_FILE_SIZE_MB) {
         setIsCompressing(true);
         
         // Compress in background without blocking
         compressVideo(file, {
           maxSizeMB: MAX_FILE_SIZE_MB,
-          maxWidthOrHeight: 1280,
+          maxWidthOrHeight: 1920, // Support full HD
         }).then((compressedFile) => {
           // Update with compressed file
           const compressedUrl = URL.createObjectURL(compressedFile);
@@ -307,13 +307,18 @@ const VideoCreate = () => {
           
           toast({
             title: "Video compressed",
-            description: `Size reduced from ${fileSizeMB.toFixed(1)}MB to ${(compressedFile.size / (1024 * 1024)).toFixed(1)}MB`,
+            description: `Size reduced from ${fileSizeMB.toFixed(1)}MB to ${(compressedFile.size / (1024 * 1024)).toFixed(1)}MB with audio preserved`,
             duration: 2000,
           });
         }).catch((compressionError) => {
           console.error('Compression failed:', compressionError);
           setIsCompressing(false);
           // Continue with original file
+          toast({
+            title: "Compression failed",
+            description: "Using original video. Upload may take longer.",
+            duration: 2000,
+          });
         });
       }
     } catch (error) {

@@ -11,8 +11,8 @@ export const compressVideo = async (
   options: CompressionOptions = {}
 ): Promise<File> => {
   const {
-    maxSizeMB = 50, // 50MB max
-    maxWidthOrHeight = 1280, // Max 1280p
+    maxSizeMB = 10, // 10MB max - save storage with audio preserved
+    maxWidthOrHeight = 1920, // Max 1920p (Full HD)
     useWebWorker = true,
     fileType = 'video/mp4',
     initialQuality = 0.8
@@ -46,11 +46,26 @@ export const compressVideo = async (
       canvas.width = videoWidth;
       canvas.height = videoHeight;
 
-      // Create MediaRecorder for compression
-      const stream = canvas.captureStream(30); // 30 FPS
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm;codecs=vp8',
-        videoBitsPerSecond: 2000000 // 2 Mbps
+      // Get audio track from original video
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaElementSource(video);
+      const destination = audioContext.createMediaStreamDestination();
+      source.connect(destination);
+      
+      // Create combined stream with video from canvas and audio from original
+      const videoStream = canvas.captureStream(30); // 30 FPS
+      const audioTracks = destination.stream.getAudioTracks();
+      
+      // Combine video and audio tracks
+      const combinedStream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...audioTracks
+      ]);
+
+      const mediaRecorder = new MediaRecorder(combinedStream, {
+        mimeType: 'video/webm;codecs=vp9,opus',
+        videoBitsPerSecond: 4000000, // 4 Mbps - good quality with audio
+        audioBitsPerSecond: 128000 // 128 kbps audio
       });
 
       const chunks: Blob[] = [];
@@ -75,9 +90,13 @@ export const compressVideo = async (
           // If still too large, try with lower quality
           reject(new Error('Video still too large after compression'));
         }
+        
+        // Clean up audio context
+        audioContext.close();
       };
 
       mediaRecorder.onerror = (error) => {
+        audioContext.close();
         reject(error);
       };
 
