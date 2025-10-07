@@ -71,14 +71,17 @@ public class StoryCameraActivity extends AppCompatActivity {
     private static final String TAG = "StoryCameraActivity";
     private PreviewView previewView;
     private Button recordButton;
+    private ImageButton pauseButton;
     private ImageButton switchCameraButton;
     private ImageButton flashButton;
     private View pulsingRing;
     private ValueAnimator pulseAnimator;
     private boolean isRecording = false;
+    private boolean isPaused = false;
     private boolean isFlashOn = false;
     private boolean isFrontCamera = false;
     private boolean isInfoPressed = false;
+    private boolean isIntentionalCancellation = false;
     private ProcessCameraProvider cameraProvider;
     private Camera camera;
     private ImageCapture imageCapture;
@@ -104,6 +107,7 @@ public class StoryCameraActivity extends AppCompatActivity {
     private TextView countdownLabel;
     private CountDownTimer countdownTimer;
     private int maxDurationSeconds = 30;
+    private long remainingTimeMillis = 30000; // Track remaining time for pause/resume
     
     // Context variables to pass back
     private String activityContextType = null;
@@ -273,6 +277,27 @@ public class StoryCameraActivity extends AppCompatActivity {
         layout.addView(recordButton, recordParams);
         Log.d(TAG, "Record button added to layout - width: " + recordButton.getWidth() + ", height: " + recordButton.getHeight());
         
+        // Create pause/resume button (appears next to record button when recording)
+        pauseButton = new ImageButton(this);
+        pauseButton.setImageResource(android.R.drawable.ic_media_pause); // Will change to play when paused
+        pauseButton.setScaleType(ImageButton.ScaleType.CENTER_INSIDE);
+        pauseButton.setPadding(25, 25, 25, 25);
+        pauseButton.setColorFilter(0xFFFFFFFF, PorterDuff.Mode.SRC_IN);
+        
+        // Create circular background for pause button
+        GradientDrawable pauseDrawable = new GradientDrawable();
+        pauseDrawable.setShape(GradientDrawable.OVAL);
+        pauseDrawable.setColor(0xCC000000); // Semi-transparent black
+        pauseButton.setBackground(pauseDrawable);
+        pauseButton.setVisibility(View.GONE); // Hidden initially
+        
+        RelativeLayout.LayoutParams pauseParams = new RelativeLayout.LayoutParams(110, 110);
+        pauseParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        pauseParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        pauseParams.bottomMargin = 120;
+        pauseParams.rightMargin = 300; // Position next to switch camera button
+        layout.addView(pauseButton, pauseParams);
+        
         // (Removed) Text tool button
 
         // Create palette/filter button (bottom right of record button) with proper icon - large circle
@@ -432,6 +457,20 @@ public class StoryCameraActivity extends AppCompatActivity {
         });
         Log.d(TAG, "Record button click listener set up successfully");
         Log.d(TAG, "Record button visibility: " + recordButton.getVisibility() + ", enabled: " + recordButton.isEnabled());
+        
+        pauseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "Pause button clicked - isPaused: " + isPaused);
+                if (isPaused) {
+                    Log.d(TAG, "Resuming recording from button click");
+                    resumeRecording();
+                } else {
+                    Log.d(TAG, "Pausing recording from button click");
+                    pauseRecording();
+                }
+            }
+        });
         
         switchCameraButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -796,7 +835,12 @@ public class StoryCameraActivity extends AppCompatActivity {
                     // Stop timer
                     try { if (countdownTimer != null) { countdownTimer.cancel(); countdownTimer = null; } } catch (Exception ignore) {}
                     animateToIdleState();
-                    Toast.makeText(StoryCameraActivity.this, "Recording failed: " + finalizeEvent.getError(), Toast.LENGTH_LONG).show();
+                    
+                    // Only show error toast if it wasn't an intentional cancellation
+                    if (!isIntentionalCancellation) {
+                        Toast.makeText(StoryCameraActivity.this, "Recording failed: " + finalizeEvent.getError(), Toast.LENGTH_LONG).show();
+                    }
+                    
                     // Return error result
                     setResult(Activity.RESULT_CANCELED);
                     finish();
@@ -897,28 +941,19 @@ public class StoryCameraActivity extends AppCompatActivity {
         // Animate button morph from circle to rounded square
         animateToRecordingState();
         
-        // Start 30s countdown and auto-stop
-        try {
-            if (countdownTimer != null) {
-                countdownTimer.cancel();
-                countdownTimer = null;
-            }
-            countdownTimer = new CountDownTimer(maxDurationSeconds * 1000L, 500L) {
-                @Override
-                public void onTick(long millisUntilFinished) {
-                    long totalSec = Math.max(0L, millisUntilFinished / 1000L);
-                    String text = String.format(java.util.Locale.getDefault(), "%02d:%02d", totalSec / 60, totalSec % 60);
-                    countdownLabel.setText(text);
-                }
-
-                @Override
-                public void onFinish() {
-                    countdownLabel.setText("00:00");
-                    stopRecording();
-                }
-            };
-            countdownTimer.start();
-        } catch (Exception ignore) {}
+        // Show pause button when recording starts
+        if (pauseButton != null) {
+            pauseButton.setVisibility(View.VISIBLE);
+            pauseButton.setAlpha(0f);
+            pauseButton.animate().alpha(1f).setDuration(300).start();
+        }
+        
+        // Reset cancellation flag for new recording
+        isIntentionalCancellation = false;
+        
+        // Initialize remaining time and start countdown timer
+        remainingTimeMillis = maxDurationSeconds * 1000L;
+        startCountdownTimer();
 
         // Recording started - no need for toast
     }
@@ -938,7 +973,130 @@ public class StoryCameraActivity extends AppCompatActivity {
         try { if (countdownTimer != null) { countdownTimer.cancel(); countdownTimer = null; } } catch (Exception ignore) {}
         if (countdownLabel != null) countdownLabel.setText("");
         
+        // Hide pause button
+        if (pauseButton != null) {
+            pauseButton.animate().alpha(0f).setDuration(200).withEndAction(new Runnable() {
+                @Override
+                public void run() {
+                    pauseButton.setVisibility(View.GONE);
+                }
+            }).start();
+        }
+        
+        // Reset pause state
+        isPaused = false;
+        
         // Recording stopped - no need for toast
+    }
+    
+    private void pauseRecording() {
+        Log.d(TAG, "Pausing recording");
+        
+        if (recording == null || !isRecording || isPaused) {
+            Log.w(TAG, "Cannot pause - not recording or already paused");
+            return;
+        }
+        
+        // Pause the recording (requires CameraX 1.1.0+)
+        try {
+            recording.pause();
+            isPaused = true;
+            Log.d(TAG, "Recording paused successfully");
+            
+            // Pause the timer
+            if (countdownTimer != null) {
+                countdownTimer.cancel();
+                countdownTimer = null;
+            }
+            
+            // Update button to show resume icon (play)
+            pauseButton.setImageResource(android.R.drawable.ic_media_play);
+            
+            // Update button to show it's in paused state - gold/yellow color
+            GradientDrawable pausedDrawable = new GradientDrawable();
+            pausedDrawable.setShape(GradientDrawable.OVAL);
+            pausedDrawable.setColor(0xCCFFD700); // Gold when paused
+            pauseButton.setBackground(pausedDrawable);
+            
+            // Stop pulsing ring animation
+            stopPulsingRing();
+            
+            // Haptic feedback
+            triggerHapticFeedback();
+            
+            Log.d(TAG, "Pause UI updated");
+        } catch (Exception e) {
+            Log.e(TAG, "Error pausing recording: " + e.getMessage(), e);
+            Toast.makeText(this, "Failed to pause recording", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void resumeRecording() {
+        Log.d(TAG, "Resuming recording");
+        
+        if (recording == null || !isRecording || !isPaused) {
+            Log.w(TAG, "Cannot resume - not paused");
+            return;
+        }
+        
+        // Resume the recording (requires CameraX 1.1.0+)
+        try {
+            recording.resume();
+            isPaused = false;
+            Log.d(TAG, "Recording resumed successfully");
+            
+            // Resume the timer with remaining time
+            startCountdownTimer();
+            
+            // Update button back to pause icon
+            pauseButton.setImageResource(android.R.drawable.ic_media_pause);
+            
+            // Update button back to normal state
+            GradientDrawable resumeDrawable = new GradientDrawable();
+            resumeDrawable.setShape(GradientDrawable.OVAL);
+            resumeDrawable.setColor(0xCC000000); // Semi-transparent black
+            pauseButton.setBackground(resumeDrawable);
+            
+            // Restart pulsing ring animation
+            startPulsingRing();
+            
+            // Haptic feedback
+            triggerHapticFeedback();
+            
+            Log.d(TAG, "Resume UI updated");
+        } catch (Exception e) {
+            Log.e(TAG, "Error resuming recording: " + e.getMessage(), e);
+            Toast.makeText(this, "Failed to resume recording", Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    private void startCountdownTimer() {
+        try {
+            if (countdownTimer != null) {
+                countdownTimer.cancel();
+                countdownTimer = null;
+            }
+            
+            countdownTimer = new CountDownTimer(remainingTimeMillis, 500L) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    remainingTimeMillis = millisUntilFinished;
+                    long totalSec = Math.max(0L, millisUntilFinished / 1000L);
+                    String text = String.format(java.util.Locale.getDefault(), "%02d:%02d", totalSec / 60, totalSec % 60);
+                    countdownLabel.setText(text);
+                }
+
+                @Override
+                public void onFinish() {
+                    countdownLabel.setText("00:00");
+                    remainingTimeMillis = 0;
+                    stopRecording();
+                }
+            };
+            countdownTimer.start();
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting countdown timer: " + e.getMessage());
+        }
     }
     
     private File createVideoFile() {
@@ -1165,6 +1323,50 @@ public class StoryCameraActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         Log.d(TAG, "onBackPressed - user cancelled recording");
+        
+        // If currently recording, stop it gracefully and cancel without saving
+        if (isRecording && recording != null) {
+            isIntentionalCancellation = true;
+            
+            // Stop the recording immediately
+            try {
+                recording.stop();
+                recording = null;
+            } catch (Exception e) {
+                Log.w(TAG, "Error stopping recording on back press: " + e.getMessage());
+            }
+            
+            // Clean up timer
+            try {
+                if (countdownTimer != null) {
+                    countdownTimer.cancel();
+                    countdownTimer = null;
+                }
+            } catch (Exception ignore) {}
+            
+            // Reset state
+            isRecording = false;
+            isPaused = false;
+            
+            // Delete the video file if it was created
+            if (videoFile != null && videoFile.exists()) {
+                try {
+                    videoFile.delete();
+                    Log.d(TAG, "Deleted video file on cancellation");
+                } catch (Exception e) {
+                    Log.w(TAG, "Could not delete video file: " + e.getMessage());
+                }
+            }
+            
+            // Return cancelled result immediately - don't wait for finalize event
+            Intent data = new Intent();
+            data.putExtra("error", "Recording cancelled by user");
+            setResult(Activity.RESULT_CANCELED, data);
+            super.onBackPressed();
+            finish();
+            return;
+        }
+        
         // Return cancelled result when user presses back button
         Intent data = new Intent();
         data.putExtra("error", "Recording cancelled by user");
