@@ -18,7 +18,7 @@ The app version is managed in multiple locations that need to be kept in sync:
 #### 2. **Android Version** - `android/app/build.gradle`
 ```gradle
 defaultConfig {
-    versionCode 6        // Increment for each release
+    versionCode 9        // Increment for each release
     versionName "1.4"    // Should match package.json major.minor
 }
 ```
