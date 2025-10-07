@@ -10,6 +10,7 @@ import { BottomNav } from "./components/BottomNav";
 import { IOSSafeAreaWrapper } from "./components/IOSSafeAreaWrapper";
 import { IOSStatusBar } from "./components/IOSStatusBar";
 import { AuthGate } from "./components/AuthGate";
+import { AdminGate } from "./components/AdminGate";
 import { useKeyboardToggle } from "./hooks/useKeyboardToggle";
 import { useSafeArea } from "./hooks/useSafeArea";
 import { ProtectedLayout } from "./components/ProtectedLayout";
@@ -28,6 +29,7 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import AdminMissions from "./pages/AdminMissions";
 import AdminPrompts from "./pages/AdminPrompts";
+import AdminVideos from "./pages/AdminVideos";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
@@ -77,9 +79,14 @@ function App() {
                         <Route path="/video-list/:type/:id" element={<VideoList />} />
                         <Route path="/videos/:type/:id" element={<Videos />} />
                         <Route path="/profile" element={<Profile />} />
-                        <Route path="/admin/missions" element={<AdminMissions />} />
-                        <Route path="/admin/prompts" element={<AdminPrompts />} />
                         <Route path="/general-settings" element={<GeneralSettings />} />
+                        
+                        {/* Admin Routes - Restricted to admin@velyar.com */}
+                        <Route element={<AdminGate />}>
+                          <Route path="/admin/missions" element={<AdminMissions />} />
+                          <Route path="/admin/prompts" element={<AdminPrompts />} />
+                          <Route path="/admin/videos" element={<AdminVideos />} />
+                        </Route>
                       </Route>
                     </Route>
                     

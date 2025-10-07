@@ -171,47 +171,6 @@ const AdminPrompts = () => {
     }
   };
 
-  const deleteProblematicVideo = async () => {
-    try {
-      const videoId = 'bfc9d6f5-3fe2-41c8-abd0-dc5562ea802c';
-      const { error } = await supabase.from('videos').delete().eq('id', videoId);
-      
-      if (error) throw error;
-      
-      toast({ 
-        title: "Success", 
-        description: `Video ${videoId} deleted successfully` 
-      });
-    } catch (error) {
-      console.error('Error deleting video:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete video",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const deleteThirdProblematicVideo = async () => {
-    try {
-      const videoId = '4663d991-cc93-4cb4-8b5e-f6f2b4690840';
-      const { error } = await supabase.from('videos').delete().eq('id', videoId);
-      
-      if (error) throw error;
-      
-      toast({ 
-        title: "Success", 
-        description: `Third problematic video ${videoId} deleted successfully` 
-      });
-    } catch (error) {
-      console.error('Error deleting third problematic video:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete third problematic video",
-        variant: "destructive",
-      });
-    }
-  };
 
   const deleteCorruptedPrompt = async () => {
     try {

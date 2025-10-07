@@ -14,10 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { Eye, EyeOff } from 'lucide-react';
 import type { User, Session } from '@supabase/supabase-js';
 import { verifyAge, calculateAge } from "@/utils/contentModeration";
-
-const countries = [
-  "Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Austria", "Bangladesh", "Belgium", "Brazil", "Canada", "China", "Colombia", "Denmark", "Egypt", "Finland", "France", "Germany", "Ghana", "Greece", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Japan", "Jordan", "Kenya", "South Korea", "Malaysia", "Mexico", "Morocco", "Netherlands", "New Zealand", "Nigeria", "Norway", "Pakistan", "Peru", "Philippines", "Poland", "Portugal", "Russia", "Saudi Arabia", "South Africa", "Spain", "Sweden", "Switzerland", "Taiwan", "Thailand", "Turkey", "Ukraine", "United Kingdom", "United States", "Venezuela", "Vietnam"
-];
+import { countries } from "@/utils/countries";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -73,24 +70,43 @@ const Auth = () => {
       if (!formData.name.trim()) errors.name = t("auth.nameRequired");
       if (!formData.username.trim()) errors.username = t("auth.usernameRequired");
       if (formData.username.length < 3) errors.username = t("auth.usernameMinLength");
+      
+      // City, country, and DOB are MANDATORY
       if (!formData.city.trim()) errors.city = t("auth.cityRequired");
       if (!formData.country) errors.country = t("auth.countryRequired");
+      
       if (!formData.dob) {
         errors.dob = t("auth.dobRequired");
       } else {
-        const ageVerification = verifyAge(formData.dob);
-        if (!ageVerification.isValid) {
-          errors.dob = ageVerification.reason;
-        } else if (ageVerification.accountType === 'restricted') {
-          // We'll show a warning but allow signup
-          console.log('User will have restricted account:', ageVerification.reason);
+        // Calculate age
+        const today = new Date();
+        const birthDate = new Date(formData.dob);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          age--;
+        }
+        
+        // Block users under 14
+        if (age < 14) {
+          errors.dob = "You must be at least 14 years old to use Velyar";
+        } else {
+          // Still run the age verification for other checks
+          const ageVerification = verifyAge(formData.dob);
+          if (!ageVerification.isValid && age >= 14) {
+            errors.dob = ageVerification.reason;
+          } else if (ageVerification.accountType === 'restricted' && age >= 14) {
+            // Warning for 14-15 year olds, but allow signup
+            console.log('User will have restricted account:', ageVerification.reason);
+          }
         }
       }
     }
     
     if (!formData.email.trim()) {
       errors.email = t("auth.emailRequired");
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = t("auth.emailInvalid");
     }
     
@@ -405,7 +421,9 @@ const Auth = () => {
               <>
                  <div className="grid grid-cols-2 gap-2">
                    <div className="space-y-1">
-                     <Label htmlFor="city" className="text-velyar-earth font-nunito text-sm">{t("auth.city")}</Label>
+                     <Label htmlFor="city" className="text-velyar-earth font-nunito text-sm">
+                       {t("auth.city")} <span className="text-red-500">*</span>
+                     </Label>
                      <Input
                        id="city"
                        name="city"
@@ -415,16 +433,19 @@ const Auth = () => {
                        onBlur={() => handleBlur('city')}
                        required={!isLogin}
                        className="border-velyar-earth/20 focus:border-velyar-earth"
+                       placeholder="e.g., London"
                      />
                      {formErrors.city && touchedFields.city && <p className="text-red-500 text-xs">{formErrors.city}</p>}
                    </div>
                    <div className="space-y-1">
-                     <Label htmlFor="country" className="text-velyar-earth font-nunito text-sm">{t("auth.country")}</Label>
-                     <Select value={formData.country} onValueChange={handleCountryChange}>
+                     <Label htmlFor="country" className="text-velyar-earth font-nunito text-sm">
+                       {t("auth.country")} <span className="text-red-500">*</span>
+                     </Label>
+                     <Select value={formData.country} onValueChange={handleCountryChange} required>
                        <SelectTrigger className="border-velyar-earth/20 focus:border-velyar-earth">
                          <SelectValue placeholder="Select country" />
                        </SelectTrigger>
-                       <SelectContent>
+                       <SelectContent className="max-h-[200px]">
                          {countries.map((country) => (
                            <SelectItem key={country} value={country}>
                              {country}
@@ -437,7 +458,9 @@ const Auth = () => {
                  </div>
                  
                  <div className="space-y-1">
-                   <Label htmlFor="dob" className="text-velyar-earth font-nunito text-sm">{t("auth.dateOfBirth")}</Label>
+                   <Label htmlFor="dob" className="text-velyar-earth font-nunito text-sm">
+                     {t("auth.dateOfBirth")} <span className="text-red-500">*</span>
+                   </Label>
                    <Input
                      id="dob"
                      name="dob"
@@ -447,6 +470,7 @@ const Auth = () => {
                      onBlur={() => handleBlur('dob')}
                      required={!isLogin}
                      className="border-velyar-earth/20 focus:border-velyar-earth"
+                     max={new Date().toISOString().split('T')[0]}
                    />
                    {formErrors.dob && touchedFields.dob && <p className="text-red-500 text-xs">{formErrors.dob}</p>}
                    {formData.dob && !formErrors.dob && verifyAge(formData.dob).accountType === 'restricted' && (
