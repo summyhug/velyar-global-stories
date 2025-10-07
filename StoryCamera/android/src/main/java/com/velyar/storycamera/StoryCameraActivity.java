@@ -259,11 +259,11 @@ public class StoryCameraActivity extends AppCompatActivity {
             recordButton.setTranslationZ(0f);
         } catch (Exception ignored) {}
         
-        // Create circular background with only outer Octo accent border (transparent inside)
+        // Create circular background with orange fill (no border)
         GradientDrawable circularDrawable = new GradientDrawable();
         circularDrawable.setShape(GradientDrawable.OVAL);
-        circularDrawable.setColor(0x00000000); // Transparent background
-        circularDrawable.setStroke(8, 0xFFFF7F5A); // Only outer Octo accent border
+        circularDrawable.setColor(0xFFFF7F5A); // Orange background
+        // No stroke/border
         recordButton.setBackground(circularDrawable);
         
         RelativeLayout.LayoutParams recordParams = new RelativeLayout.LayoutParams(120, 120);
@@ -1017,15 +1017,14 @@ public class StoryCameraActivity extends AppCompatActivity {
         // Stop pulsing ring
         stopPulsingRing();
         
-        // Change text back to record dot
-        recordButton.setText("●");
-        recordButton.setTextColor(0xFFFFFFFF);
+        // Remove any text from the button
+        recordButton.setText("");
         
-        // Create circular background with Octo accent border
+        // Create circular background with orange fill (no border)
         GradientDrawable idleDrawable = new GradientDrawable();
         idleDrawable.setShape(GradientDrawable.OVAL);
-        idleDrawable.setColor(0xFFFFFFFF); // White background
-        idleDrawable.setStroke(8, 0xFFFF7F5A); // Octo accent border
+        idleDrawable.setColor(0xFFFF7F5A); // Orange background
+        // No stroke/border
         
         // Animate size change and background morph (rounded square back to circle)
         AnimatorSet animatorSet = new AnimatorSet();

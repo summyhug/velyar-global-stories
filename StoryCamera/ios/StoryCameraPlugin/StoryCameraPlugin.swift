@@ -373,10 +373,9 @@ class StoryCameraViewController: UIViewController {
         
         // Record button
         recordButton = UIButton(type: .custom)
-        recordButton.backgroundColor = UIColor.white
+        recordButton.backgroundColor = UIColor(red: 1.0, green: 0.5, blue: 0.35, alpha: 1.0) // Orange color #FF7F5A
         recordButton.layer.cornerRadius = 40
-        recordButton.layer.borderWidth = 4
-        recordButton.layer.borderColor = UIColor.white.cgColor
+        recordButton.layer.borderWidth = 0 // No border
         recordButton.translatesAutoresizingMaskIntoConstraints = false
         recordButton.addTarget(self, action: #selector(recordButtonTapped), for: .touchUpInside)
         view.addSubview(recordButton)

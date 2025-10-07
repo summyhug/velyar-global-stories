@@ -35,6 +35,60 @@ const Videos = () => {
       setLoading(true);
       console.log('Videos: Fetching videos for type:', type, 'id:', id);
       
+      // Handle theme videos separately
+      if (type === 'theme' && id) {
+        console.log('Videos: Fetching videos for theme:', id);
+        
+        // Fetch videos through video_themes junction table
+        const { data: themeVideos, error: themeError } = await supabase
+          .from('video_themes')
+          .select(`
+            videos!inner (
+              *
+            )
+          `)
+          .eq('theme_id', id);
+
+        if (themeError) {
+          console.error('Videos: Theme query error:', themeError);
+          throw themeError;
+        }
+
+        // Extract video data
+        const videoList = themeVideos?.map(item => item.videos).filter(Boolean) || [];
+        console.log('Videos: Found theme videos:', videoList.length);
+        
+        // Fetch theme title
+        const { data: themeData } = await supabase
+          .from('themes')
+          .select('name')
+          .eq('id', id)
+          .single();
+        
+        if (themeData) {
+          setPageTitle(`${themeData.name} videos`);
+        }
+
+        // Fetch profile data for each video
+        const videosWithProfiles = [];
+        for (const video of videoList) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username, display_name, country')
+            .eq('user_id', video.user_id)
+            .single();
+          
+          videosWithProfiles.push({
+            ...video,
+            profiles: profileData
+          });
+        }
+
+        setVideos(videosWithProfiles);
+        setLoading(false);
+        return;
+      }
+      
       // First, fetch all public videos to ensure we have the specific video
       let query = supabase
         .from('videos')
@@ -63,12 +117,6 @@ const Videos = () => {
       } else if (type === 'daily-prompt' && id) {
         filteredVideos = filteredVideos.filter(video => video.daily_prompt_id === id);
         console.log('Videos: Filtered by daily_prompt_id:', id, 'Result:', filteredVideos.length);
-      } else if (type === 'theme' && id) {
-        // For themes, we need to join with video_themes table
-        console.log('Videos: Theme videos not implemented yet');
-        setVideos([]);
-        setLoading(false);
-        return;
       } else if (type === 'archived-prompt' && id) {
         // For archived prompts, we need to find the original daily prompt
         console.log('Videos: Archived prompt videos not implemented yet');
