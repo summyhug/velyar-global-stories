@@ -63,7 +63,40 @@ This project is built with:
 ## How can I deploy this project?
 
 ### Web Deployment
-Simply open [Lovable](https://lovable.dev/projects/e717c17b-39ea-497b-b3f0-803db35e66f4) and click on Share -> Publish.
+
+#### Option 1: Vercel (Recommended)
+The project is configured for Vercel deployment:
+
+1. **Install Vercel CLI** (optional):
+   ```bash
+   npm i -g vercel
+   ```
+
+2. **Deploy via Vercel Dashboard**:
+   - Go to [vercel.com](https://vercel.com)
+   - Sign in with your GitHub account
+   - Click "Add New Project"
+   - Import your repository: `https://github.com/summyhug/velyar-global-stories`
+   - Vercel will automatically detect Vite and configure the build
+   - Click "Deploy"
+
+3. **Deploy via CLI**:
+   ```bash
+   vercel
+   ```
+
+   For production deployment:
+   ```bash
+   vercel --prod
+   ```
+
+The project includes:
+- ✅ `vercel.json` - Configuration for Vite builds and SPA routing
+- ✅ `.vercelignore` - Excludes unnecessary files from deployment
+- ✅ Automatic deployments on every Git push to main branch
+
+#### Option 2: Lovable Hosting
+Simply open your Lovable project and click on Share -> Publish.
 
 ### Mobile App Deployment
 For deploying to Android and iOS app stores, see our comprehensive [**DEPLOYMENT.md**](./DEPLOYMENT.md) guide which covers:
