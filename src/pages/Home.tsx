@@ -12,7 +12,7 @@ import { PageLayout } from "@/components/PageLayout";
 import { DailyPrompt } from "@/components/DailyPrompt";
 import { MissionCard } from "@/components/MissionCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import StoryCamera from "story-camera";
+import StoryCamera from "../../StoryCamera";
 import { useNavigate } from "react-router-dom";
 
 interface Mission {

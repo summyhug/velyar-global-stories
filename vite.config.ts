@@ -17,7 +17,6 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
-      "story-camera": resolve(__dirname, "./StoryCamera/index.ts"),
     },
   },
   define: {
