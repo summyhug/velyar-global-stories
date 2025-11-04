@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { resolve } from "path";
+import { existsSync } from "fs";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
@@ -17,6 +18,11 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": resolve(__dirname, "./src"),
+      // For web/Vercel builds, use stub instead of native StoryCamera
+      // Only apply this alias when StoryCamera folder doesn't exist (Vercel builds)
+      ...(process.env.VERCEL || !existsSync(resolve(__dirname, "./StoryCamera/index.ts"))
+        ? { "../../StoryCamera": resolve(__dirname, "./src/utils/storyCameraStub.ts") }
+        : {}),
     },
   },
   define: {
