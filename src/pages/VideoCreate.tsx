@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { Capacitor } from "@capacitor/core";
 import { validateVideoContent, getContentViolationMessage } from "@/utils/contentModeration";
 import { useVideoCreate } from "@/contexts/VideoCreateContext";
-import StoryCamera from "../../StoryCamera";
+import StoryCamera from "story-camera";
 
 const VideoCreate = () => {
   const { t } = useTranslation();

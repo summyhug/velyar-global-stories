@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
-import StoryCamera from "../../StoryCamera";
+import StoryCamera from "story-camera";
 
 interface MissionCardProps {
   id: string;
