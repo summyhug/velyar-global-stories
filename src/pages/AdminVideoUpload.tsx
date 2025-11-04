@@ -82,7 +82,7 @@ const AdminVideoUpload = () => {
       const previewUrl = URL.createObjectURL(file);
       setVideoPreview(previewUrl);
       
-      // Compress if needed
+      // ALWAYS compress large files before upload to save Supabase storage
       const fileSizeMB = file.size / (1024 * 1024);
       if (fileSizeMB > 10) {
         setIsCompressing(true);
@@ -91,6 +91,8 @@ const AdminVideoUpload = () => {
             maxSizeMB: 10,
             maxWidthOrHeight: 1920,
           });
+          
+          // Only use compressed file if compression succeeded
           setVideoFile(compressed);
           
           // Update preview with compressed version
@@ -101,16 +103,33 @@ const AdminVideoUpload = () => {
           setIsCompressing(false);
           toast({
             title: "Video compressed",
-            description: `Size reduced from ${fileSizeMB.toFixed(1)}MB to ${(compressed.size / (1024 * 1024)).toFixed(1)}MB`,
+            description: `Size reduced from ${fileSizeMB.toFixed(1)}MB to ${(compressed.size / (1024 * 1024)).toFixed(1)}MB. Ready to upload!`,
+            duration: 5000,
           });
-        } catch (compressionError) {
+        } catch (compressionError: any) {
           console.error('Compression failed:', compressionError);
           setIsCompressing(false);
-          toast({
-            title: "Compression failed",
-            description: "Using original video. Upload may take longer.",
-            variant: "destructive",
-          });
+          
+          // For very large files, don't allow upload without compression
+          if (fileSizeMB > 100) {
+            setVideoFile(null);
+            setVideoPreview(null);
+            URL.revokeObjectURL(previewUrl);
+            toast({
+              title: "Compression required",
+              description: compressionError?.message || `File is too large (${fileSizeMB.toFixed(1)}MB). Compression failed. Please use a smaller file or compress it manually.`,
+              variant: "destructive",
+              duration: 10000,
+            });
+          } else {
+            // For smaller files, allow upload but warn
+            toast({
+              title: "Compression failed",
+              description: compressionError?.message || "Compression failed. Uploading original file may fail due to size limits.",
+              variant: "destructive",
+              duration: 8000,
+            });
+          }
         }
       }
     } catch (error) {
