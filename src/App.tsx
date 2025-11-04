@@ -82,9 +82,11 @@ function App() {
                         <Route path="/profile" element={<Profile />} />
                         <Route path="/general-settings" element={<GeneralSettings />} />
                         <Route path="/admin/upload" element={<AdminVideoUpload />} />
-                        
-                        {/* Admin Routes - Restricted to admin@velyar.com */}
-                        <Route element={<AdminGate />}>
+                      </Route>
+                      
+                      {/* Admin Routes - Restricted to admin@velyar.com */}
+                      <Route element={<AdminGate />}>
+                        <Route element={<ProtectedLayout />}>
                           <Route path="/admin/missions" element={<AdminMissions />} />
                           <Route path="/admin/prompts" element={<AdminPrompts />} />
                           <Route path="/admin/videos" element={<AdminVideos />} />
