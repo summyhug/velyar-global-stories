@@ -26,6 +26,7 @@ import VideoList from "./pages/VideoList";
 import VideoPreviewShare from "./pages/VideoPreview";
 import Videos from "./pages/Videos";
 import Profile from "./pages/Profile";
+import Contributions from "./pages/Contributions";
 import Auth from "./pages/Auth";
 import AdminMissions from "./pages/AdminMissions";
 import AdminPrompts from "./pages/AdminPrompts";
@@ -80,6 +81,7 @@ function App() {
                         <Route path="/video-list/:type/:id" element={<VideoList />} />
                         <Route path="/videos/:type/:id" element={<Videos />} />
                         <Route path="/profile" element={<Profile />} />
+                        <Route path="/contributions" element={<Contributions />} />
                         <Route path="/general-settings" element={<GeneralSettings />} />
                         <Route path="/admin/upload" element={<AdminVideoUpload />} />
                       </Route>
