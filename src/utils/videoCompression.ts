@@ -22,12 +22,12 @@ export const compressVideo = async (
   const fileSizeMB = file.size / (1024 * 1024);
   
   // Adaptive compression settings based on file size and attempt number
-  // For 400MB+ files, we need very aggressive compression
+  // Only use aggressive compression for truly large files (200MB+)
   let videoBitrate: number;
   let targetResolution: number;
   let targetFPS: number;
   
-  // First attempt: aggressive settings for large files
+  // First attempt: only be aggressive for very large files
   if (fileSizeMB > 300 || attempt > 1) {
     // Very large files or retry: ultra-aggressive
     videoBitrate = 800000; // 0.8 Mbps - very low bitrate
@@ -39,19 +39,15 @@ export const compressVideo = async (
     targetResolution = 960; // ~960p
     targetFPS = 24;
   } else if (fileSizeMB > 100) {
-    // Large files: aggressive
-    videoBitrate = 2000000; // 2 Mbps
-    targetResolution = 1280; // 720p HD
-    targetFPS = 24;
-  } else if (fileSizeMB > 50) {
-    // Medium-large files: moderate
-    videoBitrate = 3000000; // 3 Mbps
+    // Large files: moderate-aggressive
+    videoBitrate = 2500000; // 2.5 Mbps
     targetResolution = 1600;
     targetFPS = 30;
   } else {
-    // Smaller files: standard
-    videoBitrate = 4000000; // 4 Mbps
-    targetResolution = maxWidthOrHeight;
+    // Files under 100MB: high quality (including ~47MB files)
+    // Use higher bitrate to maintain quality while still compressing
+    videoBitrate = 6000000; // 6 Mbps - high quality
+    targetResolution = maxWidthOrHeight; // Full resolution
     targetFPS = 30;
   }
 
