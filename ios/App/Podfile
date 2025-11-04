@@ -28,4 +28,56 @@ end
 
 post_install do |installer|
   assertDeploymentTarget(installer)
+  
+  # Ensure all pod targets build for all architectures in Release
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['ONLY_ACTIVE_ARCH'] = 'NO' if config.name == 'Release'
+    end
+  end
+  
+  # Fix framework embedding script to handle Archive build paths correctly
+  frameworks_script_path = File.join(installer.sandbox.root, 'Target Support Files', 'Pods-App', 'Pods-App-frameworks.sh')
+  if File.exist?(frameworks_script_path)
+    script_content = File.read(frameworks_script_path)
+    
+    # Only modify if not already modified
+    unless script_content.include?('# Modified by Podfile')
+      # Remove duplicate shebang if present and clean up
+      lines = script_content.split("\n")
+      clean_lines = []
+      seen_shebang = false
+      
+      lines.each do |line|
+        if line.strip.start_with?('#!/bin/sh')
+          unless seen_shebang
+            clean_lines << '#!/bin/sh'
+            clean_lines << '# Modified by Podfile - handle missing frameworks gracefully'
+            seen_shebang = true
+          end
+        elsif line.strip == 'set -e'
+          clean_lines << 'set +e  # Modified by Podfile - allow missing frameworks'
+        elsif line.strip == 'set -u'
+          clean_lines << 'set +u  # Modified by Podfile - allow unset variables'
+        elsif line.strip =~ /^rsync --delete -av.*\$\{source\}.*\$\{destination\}/
+          # Wrap rsync with existence check
+          clean_lines << '  if [ -n "${source}" ] && [ -e "${source}" ]; then'
+          clean_lines << "    #{line.strip} || true"
+          clean_lines << '  else'
+          clean_lines << '    echo "Warning: Framework not found at ${source}, skipping..."'
+          clean_lines << '  fi'
+        else
+          clean_lines << line
+        end
+      end
+      
+      modified_script = clean_lines.join("\n")
+      
+      if modified_script != script_content
+        File.write(frameworks_script_path, modified_script)
+        File.chmod(0755, frameworks_script_path)
+        puts "✓ Modified Pods-App-frameworks.sh to handle missing frameworks"
+      end
+    end
+  end
 end

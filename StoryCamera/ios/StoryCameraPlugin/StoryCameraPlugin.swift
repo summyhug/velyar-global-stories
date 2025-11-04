@@ -6,11 +6,11 @@ import Photos
 
 @objc(StoryCameraPlugin)
 public class StoryCameraPlugin: CAPPlugin {
-    private var captureSession: AVCaptureSession?
-    private var videoOutput: AVCaptureMovieFileOutput?
-    private var previewLayer: AVCaptureVideoPreviewLayer?
-    private var currentCamera: AVCaptureDevice?
-    private var isRecording = false
+    var captureSession: AVCaptureSession?
+    var videoOutput: AVCaptureMovieFileOutput?
+    var previewLayer: AVCaptureVideoPreviewLayer?
+    var currentCamera: AVCaptureDevice?
+    var isRecording = false
     private var maxDuration: TimeInterval = 30.0
     private var allowOverlays = true
     private var appliedOverlays: [String] = []
@@ -114,6 +114,9 @@ public class StoryCameraPlugin: CAPPlugin {
             return
         }
         
+        // Save the call for later resolution
+        bridge?.saveCall(call)
+        
         // Start capture session on background queue
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             captureSession.startRunning()
@@ -143,8 +146,16 @@ public class StoryCameraPlugin: CAPPlugin {
     }
     
     @objc func startRecording(_ call: CAPPluginCall) {
+        startRecording(call: call)
+    }
+
+    func startRecordingFromUI() {
+        startRecording(call: nil)
+    }
+
+    private func startRecording(call: CAPPluginCall?) {
         guard let videoOutput = videoOutput, !isRecording else {
-            call.reject("Already recording or video output not available")
+            call?.reject("Already recording or video output not available")
             return
         }
         
@@ -154,7 +165,7 @@ public class StoryCameraPlugin: CAPPlugin {
         videoFileURL = documentsPath.appendingPathComponent(videoName)
         
         guard let videoFileURL = videoFileURL else {
-            call.reject("Failed to create video file URL")
+            call?.reject("Failed to create video file URL")
             return
         }
         
@@ -169,23 +180,39 @@ public class StoryCameraPlugin: CAPPlugin {
             self.isRecording = false
         }
         
-        call.resolve()
+        call?.resolve()
     }
     
     @objc func stopRecording(_ call: CAPPluginCall) {
+        stopRecording(call: call)
+    }
+    
+    func stopRecordingFromUI() {
+        stopRecording(call: nil)
+    }
+    
+    private func stopRecording(call: CAPPluginCall?) {
         guard isRecording else {
-            call.reject("Not recording")
+            call?.reject("Not recording")
             return
         }
         
         videoOutput?.stopRecording()
         isRecording = false
-        call.resolve()
+        call?.resolve()
     }
     
     @objc func switchCamera(_ call: CAPPluginCall) {
+        switchCamera(call: call)
+    }
+    
+    func switchCameraFromUI() {
+        switchCamera(call: nil)
+    }
+    
+    private func switchCamera(call: CAPPluginCall?) {
         guard let captureSession = captureSession else {
-            call.reject("Capture session not available")
+            call?.reject("Capture session not available")
             return
         }
         
@@ -197,7 +224,7 @@ public class StoryCameraPlugin: CAPPlugin {
         // Switch camera position
         let newPosition: AVCaptureDevice.Position = currentCamera?.position == .back ? .front : .back
         guard let newCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: newPosition) else {
-            call.reject("Camera not available")
+            call?.reject("Camera not available")
             return
         }
         
@@ -207,12 +234,12 @@ public class StoryCameraPlugin: CAPPlugin {
             let newInput = try AVCaptureDeviceInput(device: newCamera)
             if captureSession.canAddInput(newInput) {
                 captureSession.addInput(newInput)
-                call.resolve()
+                call?.resolve()
             } else {
-                call.reject("Cannot add new camera input")
+                call?.reject("Cannot add new camera input")
             }
         } catch {
-            call.reject("Failed to switch camera: \(error.localizedDescription)")
+            call?.reject("Failed to switch camera: \(error.localizedDescription)")
         }
     }
     
@@ -230,6 +257,14 @@ public class StoryCameraPlugin: CAPPlugin {
     }
     
     @objc func cancelRecording(_ call: CAPPluginCall) {
+        cancelRecording(call: call)
+    }
+    
+    func cancelRecordingFromUI() {
+        cancelRecording(call: nil)
+    }
+    
+    private func cancelRecording(call: CAPPluginCall?) {
         if isRecording {
             videoOutput?.stopRecording()
             isRecording = false
@@ -243,7 +278,7 @@ public class StoryCameraPlugin: CAPPlugin {
             try? FileManager.default.removeItem(at: thumbnailFileURL)
         }
         
-        call.resolve()
+        call?.resolve()
     }
     
     private func processRecordedVideo(url: URL) {
@@ -260,7 +295,7 @@ public class StoryCameraPlugin: CAPPlugin {
         let metadata = getVideoMetadata(from: finalVideoURL)
         
         // Create result
-        var result: [String: Any] = [
+        let result: [String: Any] = [
             "filePath": finalVideoURL.path,
             "thumbnailPath": thumbnailURL.path,
             "duration": metadata.duration,
@@ -270,8 +305,9 @@ public class StoryCameraPlugin: CAPPlugin {
         ]
         
         // Resolve the original call
-        if let call = bridge?.getSavedCall("recordVideo") {
+        if let call = bridge?.savedCall(withID: "recordVideo") {
             call.resolve(result)
+            bridge?.releaseCall(call)
         }
     }
     
@@ -330,8 +366,9 @@ extension StoryCameraPlugin: AVCaptureFileOutputRecordingDelegate {
         
         if let error = error {
             print("Recording failed: \(error)")
-            if let call = bridge?.getSavedCall("recordVideo") {
+            if let call = bridge?.savedCall(withID: "recordVideo") {
                 call.reject("Recording failed: \(error.localizedDescription)")
+                bridge?.releaseCall(call)
             }
             return
         }
@@ -449,7 +486,7 @@ class StoryCameraViewController: UIViewController {
         // Setup preview layer
         if let captureSession = plugin?.captureSession {
             let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-            previewLayer.videoGravity = .resizeAspectFill
+            previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
             previewLayer.frame = previewView.bounds
             previewView.layer.addSublayer(previewLayer)
             plugin?.previewLayer = previewLayer
@@ -469,18 +506,18 @@ class StoryCameraViewController: UIViewController {
     
     @objc private func recordButtonTapped() {
         if plugin?.isRecording == true {
-            plugin?.stopRecording(CAPPluginCall(callbackId: "stopRecording", options: [:], success: { _ in }, error: { _ in }))
+            plugin?.stopRecordingFromUI()
         } else {
-            plugin?.startRecording(CAPPluginCall(callbackId: "startRecording", options: [:], success: { _ in }, error: { _ in }))
+            plugin?.startRecordingFromUI()
         }
     }
     
     @objc private func switchCameraTapped() {
-        plugin?.switchCamera(CAPPluginCall(callbackId: "switchCamera", options: [:], success: { _ in }, error: { _ in }))
+        plugin?.switchCameraFromUI()
     }
     
     @objc private func cancelTapped() {
-        plugin?.cancelRecording(CAPPluginCall(callbackId: "cancelRecording", options: [:], success: { _ in }, error: { _ in }))
+        plugin?.cancelRecordingFromUI()
         dismiss(animated: true)
     }
     
