@@ -31,7 +31,8 @@ const Auth = () => {
     password: "",
     city: "",
     country: "",
-    dob: ""
+    dob: "",
+    betaCode: ""
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
@@ -63,6 +64,9 @@ const Auth = () => {
     };
   }, []);
 
+  // Beta access code - hardcoded for now
+  const VALID_BETA_CODE = "BETAOCTO";
+
   const validateForm = () => {
     const errors: Record<string, string> = {};
     
@@ -70,6 +74,13 @@ const Auth = () => {
       if (!formData.name.trim()) errors.name = t("auth.nameRequired");
       if (!formData.username.trim()) errors.username = t("auth.usernameRequired");
       if (formData.username.length < 3) errors.username = t("auth.usernameMinLength");
+      
+      // Beta access code validation
+      if (!formData.betaCode.trim()) {
+        errors.betaCode = t("auth.betaCodeRequired");
+      } else if (formData.betaCode.toUpperCase() !== VALID_BETA_CODE) {
+        errors.betaCode = t("auth.betaCodeInvalid");
+      }
       
       // City, country, and DOB are MANDATORY
       if (!formData.city.trim()) errors.city = t("auth.cityRequired");
@@ -130,9 +141,13 @@ const Auth = () => {
   }, [formData, acceptedTerms, acceptedPrivacy, isLogin]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.name === 'betaCode' 
+      ? e.target.value.toUpperCase() 
+      : e.target.value;
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: value
     });
   };
 
@@ -340,7 +355,9 @@ const Auth = () => {
             {!isLogin && (
               <>
                  <div className="space-y-1">
-                   <Label htmlFor="name" className="text-velyar-earth font-nunito text-sm">{t("auth.fullName")}</Label>
+                   <Label htmlFor="name" className="text-velyar-earth font-nunito text-sm">
+                     {t("auth.fullName")} <span className="text-red-500">*</span>
+                   </Label>
                    <Input
                      id="name"
                      name="name"
@@ -354,7 +371,9 @@ const Auth = () => {
                    {formErrors.name && touchedFields.name && <p className="text-red-500 text-xs">{formErrors.name}</p>}
                  </div>
                  <div className="space-y-1">
-                   <Label htmlFor="username" className="text-velyar-earth font-nunito text-sm">{t("auth.username")}</Label>
+                   <Label htmlFor="username" className="text-velyar-earth font-nunito text-sm">
+                     {t("auth.username")} <span className="text-red-500">*</span>
+                   </Label>
                    <Input
                      id="username"
                      name="username"
@@ -368,11 +387,31 @@ const Auth = () => {
                    />
                    {formErrors.username && touchedFields.username && <p className="text-red-500 text-xs">{formErrors.username}</p>}
                  </div>
+                 <div className="space-y-1">
+                   <Label htmlFor="betaCode" className="text-velyar-earth font-nunito text-sm">
+                     {t("auth.betaAccessCode")} <span className="text-red-500">*</span>
+                   </Label>
+                   <Input
+                     id="betaCode"
+                     name="betaCode"
+                     type="text"
+                     value={formData.betaCode}
+                     onChange={handleInputChange}
+                     onBlur={() => handleBlur('betaCode')}
+                     required={!isLogin}
+                     className="border-velyar-earth/20 focus:border-velyar-earth uppercase"
+                     placeholder={t("auth.betaCodePlaceholder")}
+                     autoComplete="off"
+                   />
+                   {formErrors.betaCode && touchedFields.betaCode && <p className="text-red-500 text-xs">{formErrors.betaCode}</p>}
+                 </div>
               </>
             )}
             
              <div className="space-y-1">
-               <Label htmlFor="email" className="text-velyar-earth font-nunito text-sm">{t("auth.email")}</Label>
+               <Label htmlFor="email" className="text-velyar-earth font-nunito text-sm">
+                 {t("auth.email")} <span className="text-red-500">*</span>
+               </Label>
                <Input
                  id="email"
                  name="email"
@@ -387,7 +426,9 @@ const Auth = () => {
              </div>
              
              <div className="space-y-1">
-                <Label htmlFor="password" className="text-velyar-earth font-nunito text-sm">{t("auth.password")}</Label>
+                <Label htmlFor="password" className="text-velyar-earth font-nunito text-sm">
+                  {t("auth.password")} <span className="text-red-500">*</span>
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"

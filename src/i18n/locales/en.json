@@ -48,7 +48,11 @@
     "emailInvalid": "Email is invalid",
     "passwordRequired": "Password is required",
     "passwordMinLength": "Password must be at least 8 characters",
-    "passwordUpperLowerNumber": "Password must contain uppercase, lowercase, and number"
+    "passwordUpperLowerNumber": "Password must contain uppercase, lowercase, and number",
+    "betaAccessCode": "Beta Access Code",
+    "betaCodePlaceholder": "Enter your beta access code",
+    "betaCodeRequired": "Beta access code is required",
+    "betaCodeInvalid": "Invalid beta access code"
   },
   "home": {
     "velyar": "velyar",
