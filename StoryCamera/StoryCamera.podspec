@@ -5,7 +5,7 @@ Pod::Spec.new do |s|
   s.license = 'MIT'
   s.homepage = 'https://github.com/ionic-team/capacitor'
   s.author = 'Ionic Team'
-  s.source = { :git => 'https://github.com/ionic-team/capacitor.git', :tag => s.version.to_s }
+  s.source = { :git => '' }
   s.source_files = 'ios/StoryCameraPlugin/**/*.{swift,h,m,c,cc,mm,cpp}'
   s.ios.deployment_target = '13.0'
   s.dependency 'Capacitor'

@@ -156,20 +156,6 @@ export const DailyPrompt = () => {
   // Direct StoryCamera recording function
   const handleRespondWithStoryCamera = async () => {
     try {
-      console.log('🎬 ===== DAILYPROMPT: STARTING STORYCAMERA =====');
-      console.log('DailyPrompt: About to call StoryCamera.recordVideo...');
-      console.log('DailyPrompt: StoryCamera object:', StoryCamera);
-      console.log('DailyPrompt: StoryCamera.recordVideo method:', StoryCamera.recordVideo);
-      console.log('DailyPrompt: StoryCamera.recordVideo type:', typeof StoryCamera.recordVideo);
-      console.log('DailyPrompt: StoryCamera keys:', Object.keys(StoryCamera));
-      console.log('DailyPrompt: StoryCamera constructor:', StoryCamera.constructor.name);
-      
-      // Check if the method exists
-      if (typeof StoryCamera.recordVideo !== 'function') {
-        throw new Error('StoryCamera.recordVideo is not a function. Available methods: ' + Object.keys(StoryCamera).join(', '));
-      }
-      
-      
       const storyResult = await StoryCamera.recordVideo({
         duration: 30,
         camera: 'rear',
@@ -216,26 +202,15 @@ export const DailyPrompt = () => {
         console.warn('DailyPrompt: Could not determine filePath after recording');
       }
       
-    } catch (error) {
-      console.error('❌ ===== DAILYPROMPT: STORYCAMERA FAILED =====');
-      console.error('DailyPrompt: StoryCamera failed:', error);
-      console.error('DailyPrompt: Error details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.toString?.() || 'Unknown error';
+      console.error('StoryCamera error:', errorMessage);
       
-      console.error('StoryCamera FAILED! Error: ' + error.message);
-      
-      // Show error message to user instead of redirecting to dead end
       toast({
         title: "Camera Error",
-        description: "Failed to open camera. Please try again.",
+        description: errorMessage || "Failed to open camera. Please try again.",
         variant: "destructive",
       });
-      
-    } finally {
-      // Recording completed or failed
     }
   };
 

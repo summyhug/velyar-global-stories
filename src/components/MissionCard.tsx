@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
+import { useToast } from "@/hooks/use-toast";
 import StoryCamera from "../../StoryCamera";
 
 interface MissionCardProps {
@@ -20,6 +21,7 @@ interface MissionCardProps {
 export const MissionCard = ({ id, title, description, participants, location, imageUrl, targetRegions }: MissionCardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   const displayLocation = targetRegions && targetRegions.length > 0 
     ? `${targetRegions.slice(0, 2).join(', ')}${targetRegions.length > 2 ? '...' : ''}`
@@ -76,8 +78,17 @@ export const MissionCard = ({ id, title, description, participants, location, im
         console.warn('MissionCard: Could not determine filePath after recording');
       }
       
-    } catch (error) {
-      console.error('MissionCard: Native recording failed:', error.message);
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.toString?.() || 'Unknown error';
+      console.error('❌ MissionCard: Native recording failed:', errorMessage);
+      console.error('MissionCard: Error details:', error);
+      
+      // Show error message to user with actual error details
+      toast({
+        title: "Camera Error",
+        description: errorMessage || "Failed to open camera. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

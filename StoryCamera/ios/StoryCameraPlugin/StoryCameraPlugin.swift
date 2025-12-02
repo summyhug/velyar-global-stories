@@ -5,19 +5,34 @@ import UIKit
 import Photos
 
 @objc(StoryCameraPlugin)
-public class StoryCameraPlugin: CAPPlugin {
+public class StoryCameraPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "StoryCameraPlugin"
+    public let jsName = "StoryCamera"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "recordVideo", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getVideoData", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "ping", returnType: CAPPluginReturnPromise),
+    ]
+    
     var captureSession: AVCaptureSession?
     var videoOutput: AVCaptureMovieFileOutput?
     var previewLayer: AVCaptureVideoPreviewLayer?
     var currentCamera: AVCaptureDevice?
     var isRecording = false
-    private var maxDuration: TimeInterval = 30.0
+    var maxDuration: TimeInterval = 30.0
     private var allowOverlays = true
     private var appliedOverlays: [String] = []
     private var videoFileURL: URL?
     private var thumbnailFileURL: URL?
+    var savedRecordVideoCall: CAPPluginCall?
+    
+    public override func load() {
+        super.load()
+    }
     
     @objc func recordVideo(_ call: CAPPluginCall) {
+        print("📹 StoryCamera: recordVideo called")
+        
         let duration = call.getInt("duration") ?? 30
         let camera = call.getString("camera") ?? "rear"
         let overlays = call.getBool("allowOverlays") ?? true
@@ -26,100 +41,130 @@ public class StoryCameraPlugin: CAPPlugin {
         let missionId = call.getString("missionId")
         let promptId = call.getString("promptId")
         
+        print("📹 StoryCamera: Options - duration: \(duration), camera: \(camera), overlays: \(overlays)")
+        
         maxDuration = TimeInterval(duration)
         allowOverlays = overlays
         appliedOverlays.removeAll()
         
+        // Store the call for later resolution
+        savedRecordVideoCall = call
+        
         // Check camera permission
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        let cameraStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        print("📹 StoryCamera: Camera permission status: \(cameraStatus.rawValue)")
+        
+        switch cameraStatus {
         case .authorized:
+            print("📹 StoryCamera: Camera authorized, starting camera")
             startCamera(call: call, camera: camera)
         case .notDetermined:
+            print("📹 StoryCamera: Camera permission not determined, requesting...")
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+                print("📹 StoryCamera: Camera permission request result: \(granted)")
                 if granted {
                     DispatchQueue.main.async {
                         self?.startCamera(call: call, camera: camera)
                     }
                 } else {
+                    print("❌ StoryCamera: Camera permission denied")
                     call.reject("Camera permission denied")
                 }
             }
         case .denied, .restricted:
+            print("❌ StoryCamera: Camera permission denied or restricted")
             call.reject("Camera permission required")
         @unknown default:
+            print("❌ StoryCamera: Unknown camera permission status")
             call.reject("Unknown camera permission status")
         }
     }
     
     private func startCamera(call: CAPPluginCall, camera: String) {
+        print("📹 StoryCamera: startCamera called with camera: \(camera)")
+        
         captureSession = AVCaptureSession()
         
         guard let captureSession = captureSession else {
+            print("❌ StoryCamera: Failed to create capture session")
             call.reject("Failed to create capture session")
             return
         }
         
         // Configure video quality
         captureSession.sessionPreset = .high
+        print("📹 StoryCamera: Capture session created with preset: high")
         
         // Set up camera input
         let cameraPosition: AVCaptureDevice.Position = camera == "front" ? .front : .back
         guard let cameraDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: cameraPosition) else {
+            print("❌ StoryCamera: Camera device not available for position: \(cameraPosition == .front ? "front" : "back")")
             call.reject("Camera not available")
             return
         }
         
+        print("📹 StoryCamera: Camera device found: \(cameraDevice.localizedName)")
         currentCamera = cameraDevice
         
         do {
             let cameraInput = try AVCaptureDeviceInput(device: cameraDevice)
             if captureSession.canAddInput(cameraInput) {
                 captureSession.addInput(cameraInput)
+                print("📹 StoryCamera: Camera input added successfully")
             } else {
+                print("❌ StoryCamera: Cannot add camera input")
                 call.reject("Cannot add camera input")
                 return
             }
         } catch {
+            print("❌ StoryCamera: Failed to create camera input: \(error.localizedDescription)")
             call.reject("Failed to create camera input: \(error.localizedDescription)")
             return
         }
         
-        // Set up audio input
-        guard let audioDevice = AVCaptureDevice.default(for: .audio) else {
-            call.reject("Audio device not available")
-            return
-        }
+        // Set up audio input (optional - don't fail if unavailable)
+        print("📹 StoryCamera: Checking microphone permission...")
+        let microphoneStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+        print("📹 StoryCamera: Microphone permission status: \(microphoneStatus.rawValue)")
         
-        do {
-            let audioInput = try AVCaptureDeviceInput(device: audioDevice)
-            if captureSession.canAddInput(audioInput) {
-                captureSession.addInput(audioInput)
+        if let audioDevice = AVCaptureDevice.default(for: .audio) {
+            do {
+                let audioInput = try AVCaptureDeviceInput(device: audioDevice)
+                if captureSession.canAddInput(audioInput) {
+                    captureSession.addInput(audioInput)
+                    print("📹 StoryCamera: Audio input added successfully")
+                } else {
+                    print("⚠️ StoryCamera: Cannot add audio input (continuing without audio)")
+                }
+            } catch {
+                print("⚠️ StoryCamera: Failed to create audio input: \(error.localizedDescription) (continuing without audio)")
             }
-        } catch {
-            call.reject("Failed to create audio input: \(error.localizedDescription)")
-            return
+        } else {
+            print("⚠️ StoryCamera: Audio device not available (continuing without audio)")
         }
         
         // Set up video output
         videoOutput = AVCaptureMovieFileOutput()
         guard let videoOutput = videoOutput else {
+            print("❌ StoryCamera: Failed to create video output")
             call.reject("Failed to create video output")
             return
         }
         
         if captureSession.canAddOutput(videoOutput) {
             captureSession.addOutput(videoOutput)
+            print("📹 StoryCamera: Video output added successfully")
         } else {
+            print("❌ StoryCamera: Cannot add video output")
             call.reject("Cannot add video output")
             return
         }
         
-        // Save the call for later resolution
-        bridge?.saveCall(call)
-        
         // Start capture session on background queue
+        print("📹 StoryCamera: Starting capture session...")
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             captureSession.startRunning()
+            print("📹 StoryCamera: Capture session started")
             
             DispatchQueue.main.async {
                 self?.presentCameraInterface(call: call)
@@ -128,6 +173,8 @@ public class StoryCameraPlugin: CAPPlugin {
     }
     
     private func presentCameraInterface(call: CAPPluginCall) {
+        print("📹 StoryCamera: Presenting camera interface")
+        
         // Create camera view controller
         let cameraVC = StoryCameraViewController()
         cameraVC.plugin = self
@@ -140,8 +187,16 @@ public class StoryCameraPlugin: CAPPlugin {
         cameraVC.promptId = call.getString("promptId")
         
         // Present camera interface
+        guard let viewController = self.bridge?.viewController else {
+            print("❌ StoryCamera: View controller not available")
+            call.reject("View controller not available")
+            return
+        }
+        
         DispatchQueue.main.async {
-            self.bridge?.viewController?.present(cameraVC, animated: true)
+            viewController.present(cameraVC, animated: true) {
+                print("📹 StoryCamera: Camera interface presented")
+            }
         }
     }
     
@@ -265,6 +320,8 @@ public class StoryCameraPlugin: CAPPlugin {
     }
     
     private func cancelRecording(call: CAPPluginCall?) {
+        print("📹 StoryCamera: cancelRecording called")
+        
         if isRecording {
             videoOutput?.stopRecording()
             isRecording = false
@@ -278,10 +335,37 @@ public class StoryCameraPlugin: CAPPlugin {
             try? FileManager.default.removeItem(at: thumbnailFileURL)
         }
         
+        // Clear saved call reference
+        if savedRecordVideoCall != nil {
+            savedRecordVideoCall = nil
+        }
+        
         call?.resolve()
     }
     
+    @objc func getVideoData(_ call: CAPPluginCall) {
+        print("📹 StoryCamera: getVideoData called")
+        
+        if let videoFileURL = videoFileURL, FileManager.default.fileExists(atPath: videoFileURL.path) {
+            call.resolve([
+                "hasVideo": true,
+                "filePath": videoFileURL.path
+            ])
+        } else {
+            call.resolve([
+                "hasVideo": false
+            ])
+        }
+    }
+    
+    @objc func ping(_ call: CAPPluginCall) {
+        print("📹 StoryCamera: ping called")
+        call.resolve()
+    }
+    
     private func processRecordedVideo(url: URL) {
+        print("📹 StoryCamera: Processing recorded video at: \(url.path)")
+        
         // Check file size and compress if needed
         let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         let maxSize: Int64 = 50 * 1024 * 1024 // 50MB
@@ -295,7 +379,7 @@ public class StoryCameraPlugin: CAPPlugin {
         let metadata = getVideoMetadata(from: finalVideoURL)
         
         // Create result
-        let result: [String: Any] = [
+        var result: [String: Any] = [
             "filePath": finalVideoURL.path,
             "thumbnailPath": thumbnailURL.path,
             "duration": metadata.duration,
@@ -304,10 +388,29 @@ public class StoryCameraPlugin: CAPPlugin {
             "overlays": appliedOverlays
         ]
         
-        // Resolve the original call
-        if let call = bridge?.savedCall(withID: "recordVideo") {
+        // Add context data if available
+        if let call = savedRecordVideoCall {
+            if let contextType = call.getString("contextType") {
+                result["contextType"] = contextType
+            }
+            if let missionId = call.getString("missionId") {
+                result["missionId"] = missionId
+            }
+            if let promptId = call.getString("promptId") {
+                result["promptId"] = promptId
+            }
+        }
+        
+        print("📹 StoryCamera: Video processed successfully, resolving call")
+        print("📹 StoryCamera: Result - filePath: \(result["filePath"] ?? "nil"), duration: \(metadata.duration)")
+        
+        // Resolve the original call using the stored reference
+        if let call = savedRecordVideoCall {
             call.resolve(result)
-            bridge?.releaseCall(call)
+            savedRecordVideoCall = nil
+            print("📹 StoryCamera: Call resolved successfully")
+        } else {
+            print("❌ StoryCamera: No saved call found to resolve")
         }
     }
     
@@ -365,14 +468,15 @@ extension StoryCameraPlugin: AVCaptureFileOutputRecordingDelegate {
         isRecording = false
         
         if let error = error {
-            print("Recording failed: \(error)")
-            if let call = bridge?.savedCall(withID: "recordVideo") {
+            print("❌ StoryCamera: Recording failed: \(error.localizedDescription)")
+            if let call = savedRecordVideoCall {
                 call.reject("Recording failed: \(error.localizedDescription)")
-                bridge?.releaseCall(call)
+                savedRecordVideoCall = nil
             }
             return
         }
         
+        print("📹 StoryCamera: Recording finished successfully")
         processRecordedVideo(url: outputFileURL)
     }
 }
@@ -384,10 +488,15 @@ class StoryCameraViewController: UIViewController {
     
     private var previewView: UIView!
     private var recordButton: UIButton!
+    private var pulsingRing: UIView!
     private var switchCameraButton: UIButton!
     private var cancelButton: UIButton!
     private var infoButton: UIButton!
     private var promptLabel: UILabel!
+    private var countdownLabel: UILabel!
+    private var recordTimer: Timer?
+    private var recordingStartTime: Date?
+    private var maxDuration: TimeInterval = 30.0
     
     // Context properties
     var promptName: String?
@@ -408,27 +517,43 @@ class StoryCameraViewController: UIViewController {
         previewView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(previewView)
         
-        // Record button
+        // Pulsing ring behind record button
+        pulsingRing = UIView()
+        pulsingRing.backgroundColor = UIColor.clear
+        pulsingRing.layer.borderColor = UIColor(red: 1.0, green: 0.5, blue: 0.35, alpha: 1.0).cgColor
+        pulsingRing.layer.borderWidth = 8
+        pulsingRing.layer.cornerRadius = 80
+        pulsingRing.alpha = 0
+        pulsingRing.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(pulsingRing)
+        
+        // Record button (larger, 120x120 like Android)
         recordButton = UIButton(type: .custom)
         recordButton.backgroundColor = UIColor(red: 1.0, green: 0.5, blue: 0.35, alpha: 1.0) // Orange color #FF7F5A
-        recordButton.layer.cornerRadius = 40
-        recordButton.layer.borderWidth = 0 // No border
+        recordButton.layer.cornerRadius = 60
+        recordButton.layer.borderWidth = 0
         recordButton.translatesAutoresizingMaskIntoConstraints = false
         recordButton.addTarget(self, action: #selector(recordButtonTapped), for: .touchUpInside)
         view.addSubview(recordButton)
         
-        // Switch camera button
+        // Switch camera button (with icon, bottom right)
         switchCameraButton = UIButton(type: .system)
-        switchCameraButton.setTitle("Switch", for: .normal)
-        switchCameraButton.setTitleColor(.white, for: .normal)
+        switchCameraButton.setImage(UIImage(systemName: "camera.rotate"), for: .normal)
+        switchCameraButton.tintColor = .white
+        switchCameraButton.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+        switchCameraButton.layer.cornerRadius = 55
+        switchCameraButton.imageEdgeInsets = UIEdgeInsets(top: 25, left: 25, bottom: 25, right: 25)
         switchCameraButton.translatesAutoresizingMaskIntoConstraints = false
         switchCameraButton.addTarget(self, action: #selector(switchCameraTapped), for: .touchUpInside)
         view.addSubview(switchCameraButton)
         
-        // Cancel button
+        // Cancel button (with X icon, top left)
         cancelButton = UIButton(type: .system)
-        cancelButton.setTitle("Cancel", for: .normal)
-        cancelButton.setTitleColor(.white, for: .normal)
+        cancelButton.setImage(UIImage(systemName: "xmark"), for: .normal)
+        cancelButton.tintColor = .white
+        cancelButton.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+        cancelButton.layer.cornerRadius = 55
+        cancelButton.imageEdgeInsets = UIEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
         cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
         view.addSubview(cancelButton)
@@ -439,16 +564,26 @@ class StoryCameraViewController: UIViewController {
         infoButton.tintColor = .white
         infoButton.backgroundColor = UIColor.black.withAlphaComponent(0.8)
         infoButton.layer.cornerRadius = 25
+        infoButton.imageEdgeInsets = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
         infoButton.translatesAutoresizingMaskIntoConstraints = false
         infoButton.addTarget(self, action: #selector(infoButtonTapped), for: .touchUpInside)
         view.addSubview(infoButton)
+        
+        // Countdown timer label (top center)
+        countdownLabel = UILabel()
+        countdownLabel.textColor = .white
+        countdownLabel.font = UIFont.monospacedDigitSystemFont(ofSize: 16, weight: .medium)
+        countdownLabel.textAlignment = .center
+        countdownLabel.text = ""
+        countdownLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(countdownLabel)
         
         // Prompt label (above record button)
         promptLabel = UILabel()
         promptLabel.textColor = .white
         promptLabel.font = UIFont.boldSystemFont(ofSize: 14)
         promptLabel.textAlignment = .center
-        promptLabel.numberOfLines = 4 // Allow up to 4 lines
+        promptLabel.numberOfLines = 4
         promptLabel.lineBreakMode = .byTruncatingTail
         promptLabel.isHidden = true
         promptLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -461,21 +596,33 @@ class StoryCameraViewController: UIViewController {
             previewView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             previewView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             
+            pulsingRing.centerXAnchor.constraint(equalTo: recordButton.centerXAnchor),
+            pulsingRing.centerYAnchor.constraint(equalTo: recordButton.centerYAnchor),
+            pulsingRing.widthAnchor.constraint(equalToConstant: 160),
+            pulsingRing.heightAnchor.constraint(equalToConstant: 160),
+            
             recordButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            recordButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -50),
-            recordButton.widthAnchor.constraint(equalToConstant: 80),
-            recordButton.heightAnchor.constraint(equalToConstant: 80),
+            recordButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -60),
+            recordButton.widthAnchor.constraint(equalToConstant: 120),
+            recordButton.heightAnchor.constraint(equalToConstant: 120),
             
-            switchCameraButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            switchCameraButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            switchCameraButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -60),
+            switchCameraButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -60),
+            switchCameraButton.widthAnchor.constraint(equalToConstant: 110),
+            switchCameraButton.heightAnchor.constraint(equalToConstant: 110),
             
-            cancelButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            cancelButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 60),
+            cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 60),
+            cancelButton.widthAnchor.constraint(equalToConstant: 110),
+            cancelButton.heightAnchor.constraint(equalToConstant: 110),
             
             infoButton.centerYAnchor.constraint(equalTo: recordButton.centerYAnchor),
             infoButton.trailingAnchor.constraint(equalTo: recordButton.leadingAnchor, constant: -30),
             infoButton.widthAnchor.constraint(equalToConstant: 50),
             infoButton.heightAnchor.constraint(equalToConstant: 50),
+            
+            countdownLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            countdownLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 70),
             
             promptLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             promptLabel.bottomAnchor.constraint(equalTo: recordButton.topAnchor, constant: -20),
@@ -492,6 +639,9 @@ class StoryCameraViewController: UIViewController {
             plugin?.previewLayer = previewLayer
         }
         
+        // Set max duration from plugin
+        maxDuration = plugin?.maxDuration ?? 30.0
+        
         // Set up prompt text if available
         if let promptName = promptName, !promptName.isEmpty {
             promptLabel.text = promptName
@@ -505,11 +655,119 @@ class StoryCameraViewController: UIViewController {
     }
     
     @objc private func recordButtonTapped() {
-        if plugin?.isRecording == true {
-            plugin?.stopRecordingFromUI()
+        guard let plugin = plugin else { return }
+        
+        if plugin.isRecording {
+            stopRecording()
         } else {
-            plugin?.startRecordingFromUI()
+            startRecording()
         }
+    }
+    
+    private func startRecording() {
+        guard let plugin = plugin else { return }
+        
+        plugin.startRecordingFromUI()
+        recordingStartTime = Date()
+        
+        // Start pulsing animation
+        startPulsingAnimation()
+        
+        // Start countdown timer
+        startCountdownTimer()
+        
+        // Update button appearance
+        UIView.animate(withDuration: 0.2) {
+            self.recordButton.transform = CGAffineTransform(scaleX: 0.9, y: 0.9)
+        }
+    }
+    
+    private func stopRecording() {
+        guard let plugin = plugin else { return }
+        
+        plugin.stopRecordingFromUI()
+        
+        // Stop pulsing animation
+        stopPulsingAnimation()
+        
+        // Stop countdown timer
+        stopCountdownTimer()
+        
+        // Reset button appearance
+        UIView.animate(withDuration: 0.2) {
+            self.recordButton.transform = .identity
+        }
+    }
+    
+    private func startPulsingAnimation() {
+        let pulse = CABasicAnimation(keyPath: "transform.scale")
+        pulse.duration = 1.0
+        pulse.fromValue = 1.0
+        pulse.toValue = 1.2
+        pulse.autoreverses = true
+        pulse.repeatCount = .infinity
+        
+        let opacity = CABasicAnimation(keyPath: "opacity")
+        opacity.duration = 1.0
+        opacity.fromValue = 0.8
+        opacity.toValue = 0.3
+        opacity.autoreverses = true
+        opacity.repeatCount = .infinity
+        
+        pulsingRing.alpha = 0.8
+        pulsingRing.layer.add(pulse, forKey: "pulse")
+        pulsingRing.layer.add(opacity, forKey: "opacity")
+    }
+    
+    private func stopPulsingAnimation() {
+        pulsingRing.layer.removeAllAnimations()
+        UIView.animate(withDuration: 0.3) {
+            self.pulsingRing.alpha = 0
+        }
+    }
+    
+    private func startCountdownTimer() {
+        countdownLabel.text = formatTime(maxDuration)
+        
+        recordTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] timer in
+            guard let self = self,
+                  let startTime = self.recordingStartTime,
+                  let plugin = self.plugin else {
+                timer.invalidate()
+                return
+            }
+            
+            let elapsed = Date().timeIntervalSince(startTime)
+            let remaining = max(0, self.maxDuration - elapsed)
+            
+            if remaining > 0 {
+                self.countdownLabel.text = self.formatTime(remaining)
+                
+                // Auto-stop at max duration
+                if elapsed >= self.maxDuration {
+                    if plugin.isRecording {
+                        self.stopRecording()
+                    }
+                }
+            } else {
+                self.stopCountdownTimer()
+                self.countdownLabel.text = "00:00"
+            }
+        }
+    }
+    
+    private func stopCountdownTimer() {
+        recordTimer?.invalidate()
+        recordTimer = nil
+        recordingStartTime = nil
+        countdownLabel.text = ""
+    }
+    
+    private func formatTime(_ seconds: TimeInterval) -> String {
+        let totalSeconds = Int(seconds)
+        let minutes = totalSeconds / 60
+        let secs = totalSeconds % 60
+        return String(format: "%02d:%02d", minutes, secs)
     }
     
     @objc private func switchCameraTapped() {
@@ -517,17 +775,27 @@ class StoryCameraViewController: UIViewController {
     }
     
     @objc private func cancelTapped() {
+        print("📹 StoryCamera: Cancel tapped")
+        stopCountdownTimer()
+        stopPulsingAnimation()
         plugin?.cancelRecordingFromUI()
+        if let plugin = plugin, let savedCall = plugin.savedRecordVideoCall {
+            savedCall.reject("User cancelled recording")
+            plugin.savedRecordVideoCall = nil
+        }
         dismiss(animated: true)
     }
     
     @objc private func infoButtonTapped() {
         guard let promptName = promptName, !promptName.isEmpty else { return }
         
-        if promptLabel.isHidden {
-            promptLabel.isHidden = false
-        } else {
-            promptLabel.isHidden = true
+        UIView.animate(withDuration: 0.3) {
+            self.promptLabel.isHidden.toggle()
         }
+    }
+    
+    deinit {
+        stopCountdownTimer()
+        stopPulsingAnimation()
     }
 }

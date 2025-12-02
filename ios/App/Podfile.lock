@@ -63,7 +63,7 @@ SPEC CHECKSUMS:
   CapacitorKeyboard: 056bbe3711830ccb782f1705a8ad183b27b6c51e
   CapacitorPushNotifications: 6ffcf5df95f17d71a1b02893549bc4727f80540c
   CapacitorStatusBar: 5526833b87fa9c96a2a90c1322bb1f663c04505f
-  StoryCamera: 1ae39b21767eb896205d86bc2b0956c278f3f2f4
+  StoryCamera: cb2a167b4ff45c17c8c8a21768db44cdaf5b5eef
 
 PODFILE CHECKSUM: 1c41393cb763c0e7b87fbce135b0a38c59a630a3
 
