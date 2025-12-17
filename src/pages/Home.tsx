@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -32,32 +31,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // One-shot check for video data to navigate to test page (on mount)
-    const checkOnce = async () => {
-      try {
-        const data = await (StoryCamera as any).getVideoData?.();
-        if (data?.hasVideo && data.filePath) {
-          try { sessionStorage.setItem('lastStoryVideoPath', data.filePath); } catch {}
-          navigate('/video-preview?filePath=' + encodeURIComponent(data.filePath), { replace: true });
-        }
-      } catch {}
-    };
-    checkOnce();
-
-    // Also check on app resume (when Home becomes visible)
-    const onVisibility = async () => {
-      if (document.visibilityState === 'visible') {
-        try {
-          const data = await (StoryCamera as any).getVideoData?.();
-          if (data?.hasVideo && data.filePath) {
-            try { sessionStorage.setItem('lastStoryVideoPath', data.filePath); } catch {}
-            navigate('/video-preview?filePath=' + encodeURIComponent(data.filePath), { replace: true });
-          }
-        } catch {}
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-
+    // Simple like Android - just fetch missions, no video checking
     const fetchMissions = async () => {
       try {
         const { data: missionsData, error } = await supabase
@@ -85,7 +59,9 @@ const Home = () => {
 
     fetchMissions();
     
-    return () => document.removeEventListener('visibilitychange', onVisibility);
+    return () => {
+      console.log('🏠 Home: useEffect cleanup');
+    };
   }, []);
 
   const handleStartRecording = async () => {
