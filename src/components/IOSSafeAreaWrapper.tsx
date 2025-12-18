@@ -10,9 +10,9 @@ export const IOSSafeAreaWrapper = ({ children, className = '' }: IOSSafeAreaWrap
   const { isIOS } = useIOSDetection();
 
   return (
-    <div 
+    <div
       className={`
-        ${isIOS ? 'safe-area-inset' : 'content-safe-bottom'}
+        ${isIOS ? 'safe-area-inset' : ''}
         ${className}
       `}
     >
