@@ -348,7 +348,7 @@ const VideoPreviewShare: React.FC = () => {
   };
 
   const header = (
-    <div className="px-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}>
+    <div className="px-4">
       <div className="max-w-md mx-auto py-3 flex items-center justify-between">
         <button
           aria-label="Close"
@@ -369,9 +369,9 @@ const VideoPreviewShare: React.FC = () => {
 
   return (
     <PageLayout header={header} showBottomNav={false}>
-      <div className="px-4 pb-safe-bottom min-h-[calc(100vh-var(--safe-area-top,0px)-var(--safe-area-bottom,0px))]">
+      <div className="px-4">
         <div className="max-w-md mx-auto space-y-5">
-          
+
           {(filePath || contentUri) && (
             <div className="space-y-3">
               {playableSrc ? (
@@ -418,7 +418,7 @@ const VideoPreviewShare: React.FC = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 pt-1 mb-4" style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))' }}>
+          <div className="grid grid-cols-2 gap-3 pt-1">
             <Button
               variant="outline"
               className="w-full bg-card/60 hover:bg-card text-foreground border-border"
