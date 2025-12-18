@@ -50,12 +50,46 @@ const VideoPreviewShare: React.FC = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [promptText, setPromptText] = useState<string>("Record your story");
   const remaining = Math.max(0, 150 - desc.length);
 
   useEffect(() => {
     console.log('📹 VideoPreview: Component mounted');
     console.log('📹 VideoPreview: filePath:', filePath);
-  }, []);
+
+    // Fetch prompt text based on context
+    const fetchPromptText = async () => {
+      try {
+        if (contextType === 'daily' && promptId) {
+          const { data, error } = await supabase
+            .from('daily_prompts')
+            .select('prompt_text')
+            .eq('id', promptId)
+            .maybeSingle();
+
+          if (!error && data?.prompt_text) {
+            setPromptText(data.prompt_text);
+            console.log('📹 VideoPreview: Fetched daily prompt text:', data.prompt_text);
+          }
+        } else if (contextType === 'mission' && missionId) {
+          const { data, error } = await supabase
+            .from('missions')
+            .select('description')
+            .eq('id', missionId)
+            .maybeSingle();
+
+          if (!error && data?.description) {
+            setPromptText(data.description);
+            console.log('📹 VideoPreview: Fetched mission description:', data.description);
+          }
+        }
+      } catch (error) {
+        console.error('📹 VideoPreview: Error fetching prompt text:', error);
+      }
+    };
+
+    fetchPromptText();
+  }, [contextType, promptId, missionId]);
 
   const handleExit = async (e?: React.MouseEvent) => {
     e?.preventDefault();
@@ -71,18 +105,9 @@ const VideoPreviewShare: React.FC = () => {
       console.warn('📹 VideoPreview: Failed to clear video data:', err);
     }
 
-    // On iOS, dismiss the camera modal (if still present) before navigating
-    if (Capacitor.getPlatform() === 'ios') {
-      try {
-        console.log('📹 VideoPreview: iOS - dismissing camera modal');
-        await StoryCamera.dismissCamera?.();
-        console.log('📹 VideoPreview: iOS - camera dismissed, now navigating back');
-      } catch (err) {
-        console.warn('📹 VideoPreview: Failed to dismiss camera:', err);
-      }
-    }
-
-    navigate(-1); // Go back in browser history
+    // Navigate to home page explicitly (camera already auto-dismissed by plugin)
+    console.log('📹 VideoPreview: Navigating to home');
+    navigate('/', { replace: true });
   };
 
   const handleReRecord = async (e?: React.MouseEvent) => {
@@ -99,18 +124,72 @@ const VideoPreviewShare: React.FC = () => {
       console.warn('📹 VideoPreview: Failed to clear video data:', err);
     }
 
-    // On iOS, dismiss the camera modal (if still present) before navigating
-    if (Capacitor.getPlatform() === 'ios') {
-      try {
-        console.log('📹 VideoPreview: iOS - dismissing camera modal for re-record');
-        await StoryCamera.dismissCamera?.();
-        console.log('📹 VideoPreview: iOS - camera dismissed, now navigating back to record');
-      } catch (err) {
-        console.warn('📹 VideoPreview: Failed to dismiss camera:', err);
-      }
-    }
+    // Immediately reopen camera with same context
+    try {
+      console.log('📹 VideoPreview: Starting re-record with context:', { contextType, promptId, missionId, promptText });
 
-    navigate(-1); // Go back to the camera/record screen
+      const storyResult = await StoryCamera.recordVideo({
+        duration: 30,
+        camera: 'rear',
+        allowOverlays: true,
+        promptName: promptText,
+        contextType: contextType as 'mission' | 'daily' | undefined,
+        promptId: promptId || undefined,
+        missionId: missionId || undefined
+      });
+
+      console.log('📹 VideoPreview: Re-record completed:', storyResult);
+
+      // Extract filePath with retry logic (mirror DailyPrompt pattern)
+      let fp: string | undefined = (storyResult as any)?.filePath;
+      if (!fp) {
+        try {
+          const data = await (StoryCamera as any).getVideoData?.();
+          if (data?.filePath) fp = data.filePath;
+        } catch {}
+      }
+
+      if (!fp) {
+        for (let i = 0; i < 3 && !fp; i++) {
+          await new Promise(r => setTimeout(r, 300));
+          try {
+            const data = await (StoryCamera as any).getVideoData?.();
+            if (data?.filePath) fp = data.filePath;
+          } catch {}
+        }
+      }
+
+      if (fp) {
+        try { sessionStorage.setItem('lastStoryVideoPath', fp); } catch {}
+
+        // Build target URL with context params
+        let target = `/video-preview?filePath=${encodeURIComponent(fp)}`;
+        if (contextType === 'mission' && missionId) {
+          target += `&missionId=${encodeURIComponent(missionId)}&contextType=mission`;
+        } else if (contextType === 'daily' && promptId) {
+          target += `&promptId=${encodeURIComponent(promptId)}&contextType=daily`;
+        }
+
+        console.log('📹 VideoPreview: Navigating to preview with new video');
+        setTimeout(() => {
+          navigate(target, {
+            replace: true,
+            state: {
+              filePath: fp,
+              promptId: storyResult.promptId || promptId,
+              missionId: storyResult.missionId || missionId,
+              contextType: storyResult.contextType || contextType
+            }
+          });
+        }, 0);
+      } else {
+        console.warn('VideoPreview: Could not determine filePath after re-recording');
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.toString?.() || 'Unknown error';
+      console.error('📹 VideoPreview: Re-record failed:', errorMessage);
+      // Stay on current page if re-record fails
+    }
   };
 
   const handleShare = async () => {
@@ -168,13 +247,24 @@ const VideoPreviewShare: React.FC = () => {
       const originalFile = new File([blob], 'story.mp4', { type: blob.type || 'video/mp4' });
 
       setUploadProgress(20);
-      setUploadStatus('Compressing video...');
+
+      // Skip browser-based compression on iOS - it can cause crashes
+      // Videos from StoryCamera are already well-optimized
       let compressed: File;
-      try {
-        compressed = await compressVideo(originalFile, { maxSizeMB: 50, maxWidthOrHeight: 1280 });
-      } catch (e) {
-        console.warn('[Share] Compression failed, using original file. Error:', e);
+      const isIOS = Capacitor.getPlatform() === 'ios';
+
+      if (isIOS) {
+        console.log('[Share] iOS detected - skipping browser compression (using native optimized video)');
+        setUploadStatus('Preparing video...');
         compressed = originalFile;
+      } else {
+        setUploadStatus('Compressing video...');
+        try {
+          compressed = await compressVideo(originalFile, { maxSizeMB: 50, maxWidthOrHeight: 1280 });
+        } catch (e) {
+          console.warn('[Share] Compression failed, using original file. Error:', e);
+          compressed = originalFile;
+        }
       }
 
       setUploadProgress(40);
@@ -241,17 +331,7 @@ const VideoPreviewShare: React.FC = () => {
         console.warn('📹 VideoPreview: Failed to clear video data:', err);
       }
 
-      // On iOS, dismiss the camera modal before navigating after successful share
-      if (Capacitor.getPlatform() === 'ios') {
-        try {
-          console.log('📹 VideoPreview: iOS - dismissing camera modal after successful share');
-          await StoryCamera.dismissCamera?.();
-          console.log('📹 VideoPreview: iOS - camera dismissed');
-        } catch (err) {
-          console.warn('📹 VideoPreview: Failed to dismiss camera:', err);
-        }
-      }
-
+      // Navigate after successful share (camera already auto-dismissed by plugin)
       if (effectiveMissionId) {
         navigate(`/video-list/mission/${effectiveMissionId}`, { replace: true });
       } else if (effectivePromptId) {
