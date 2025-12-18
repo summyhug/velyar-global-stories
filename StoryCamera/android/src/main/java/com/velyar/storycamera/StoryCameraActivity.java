@@ -861,10 +861,19 @@ public class StoryCameraActivity extends AppCompatActivity {
                         if (videoFile != null) {
                             editor.putString("lastVideoPath", videoFile.getAbsolutePath());
                         }
-                        // Also persist context values if plugin stored them in prefs beforehand
-                        // (Optional: plugin can prefill lastContextType/lastMissionId/lastPromptId)
+                        // Persist context values for navigation
+                        if (activityContextType != null) {
+                            editor.putString("lastContextType", activityContextType);
+                        }
+                        if (activityMissionId != null) {
+                            editor.putString("lastMissionId", activityMissionId);
+                        }
+                        if (activityPromptId != null) {
+                            editor.putString("lastPromptId", activityPromptId);
+                        }
                         editor.putBoolean("shouldNavigateToTest", true);
                         editor.apply();
+                        Log.d(TAG, "Saved context to SharedPreferences: contextType=" + activityContextType + ", missionId=" + activityMissionId + ", promptId=" + activityPromptId);
                     } catch (Exception e) {
                         Log.w(TAG, "Failed to write SharedPreferences: " + e.getMessage());
                     }

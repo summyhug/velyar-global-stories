@@ -121,8 +121,11 @@ public class StoryCameraPlugin extends Plugin {
             android.content.SharedPreferences prefs = getContext().getSharedPreferences("StoryCamera", android.content.Context.MODE_PRIVATE);
             boolean shouldNavigate = prefs.getBoolean("shouldNavigateToTest", false);
             String videoPath = prefs.getString("lastVideoPath", null);
+            String contextType = prefs.getString("lastContextType", null);
+            String missionId = prefs.getString("lastMissionId", null);
+            String promptId = prefs.getString("lastPromptId", null);
 
-            Log.d(TAG, "getVideoData: shouldNavigate=" + shouldNavigate + ", videoPath=" + videoPath);
+            Log.d(TAG, "getVideoData: shouldNavigate=" + shouldNavigate + ", videoPath=" + videoPath + ", contextType=" + contextType + ", missionId=" + missionId + ", promptId=" + promptId);
 
             // Optionally clear the navigate flag to avoid loops
             if (shouldNavigate) {
@@ -134,10 +137,33 @@ public class StoryCameraPlugin extends Plugin {
             JSObject result = new JSObject();
             result.put("hasVideo", shouldNavigate && videoPath != null);
             if (videoPath != null) result.put("filePath", videoPath);
+            if (contextType != null) result.put("contextType", contextType);
+            if (missionId != null) result.put("missionId", missionId);
+            if (promptId != null) result.put("promptId", promptId);
             call.resolve(result);
         } catch (Exception e) {
             Log.e(TAG, "Error in getVideoData", e);
             call.reject("Error getting video data: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void clearVideoData(PluginCall call) {
+        Log.d(TAG, "clearVideoData called");
+        try {
+            android.content.SharedPreferences prefs = getContext().getSharedPreferences("StoryCamera", android.content.Context.MODE_PRIVATE);
+            android.content.SharedPreferences.Editor editor = prefs.edit();
+            editor.remove("lastVideoPath");
+            editor.remove("lastContextType");
+            editor.remove("lastMissionId");
+            editor.remove("lastPromptId");
+            editor.remove("shouldNavigateToTest");
+            editor.apply();
+            Log.d(TAG, "Video data and context cleared from SharedPreferences");
+            call.resolve();
+        } catch (Exception e) {
+            Log.e(TAG, "Error clearing video data", e);
+            call.reject("Error clearing video data: " + e.getMessage());
         }
     }
 

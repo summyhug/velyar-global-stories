@@ -25,6 +25,8 @@ export interface RecordVideoResult {
 export interface StoryCameraPlugin {
   recordVideo(options?: RecordVideoOptions): Promise<RecordVideoResult>;
   getVideoData(): Promise<{ hasVideo: boolean; filePath?: string }>;
+  clearVideoData?(): Promise<void>;
+  dismissCamera?(): Promise<void>;
   ping?(): Promise<void>;
 }
 

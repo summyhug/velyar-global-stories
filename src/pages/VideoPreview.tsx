@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Capacitor } from "@capacitor/core";
@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { compressVideo } from "@/utils/videoCompression";
 import { generateVideoThumbnail, uploadThumbnailToStorage } from "@/utils/videoThumbnail";
 import { Capacitor as Cap } from "@capacitor/core";
+import StoryCamera from "../../StoryCamera";
 
 interface LocationState {
   filePath?: string;
@@ -19,6 +20,8 @@ interface LocationState {
 }
 
 const VideoPreviewShare: React.FC = () => {
+  console.log('📹 ===== VideoPreview: Component rendering START =====');
+  
   const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state || {}) as LocationState;
@@ -30,43 +33,16 @@ const VideoPreviewShare: React.FC = () => {
   const qpContextType = query.get('contextType') || undefined;
   const stored = (() => { try { return sessionStorage.getItem('lastStoryVideoPath') || undefined; } catch { return undefined; } })();
   
-  // Prioritize: state (from plugin result) > URL params > storage
   const filePath = state.filePath || qpFile || stored;
   const contentUri = state.contentUri || qpContent;
   
-  // Parse context from filename if available
-  let filenameContextType: 'mission' | 'daily' | null = null;
-  let filenameMissionId: string | null = null;
-  let filenamePromptId: string | null = null;
-  
-  if (filePath) {
-    const fileName = filePath.split('/').pop() || '';
-    if (fileName.startsWith('MISSION_')) {
-      filenameContextType = 'mission';
-      // Extract mission ID from filename: MISSION_abc123_20250913_083034.mp4
-      const parts = fileName.split('_');
-      if (parts.length >= 2) {
-        filenameMissionId = parts[1];
-      }
-    } else if (fileName.startsWith('DAILY_')) {
-      filenameContextType = 'daily';
-      // Extract prompt ID from filename: DAILY_def456_20250913_083034.mp4
-      const parts = fileName.split('_');
-      if (parts.length >= 2) {
-        filenamePromptId = parts[1];
-      }
-    }
-  }
-  
-  const contextType = state.contextType || qpContextType || filenameContextType;
-  const promptId = state.promptId || qpPrompt || filenamePromptId;
-  const missionId = state.missionId || qpMission || filenameMissionId;
-  
+  const contextType = state.contextType || qpContextType;
+  const promptId = state.promptId || qpPrompt;
+  const missionId = state.missionId || qpMission;
 
   const playableSrc = useMemo(() => {
-    if (contentUri) return contentUri; // content URIs are directly playable
+    if (contentUri) return contentUri;
     if (!filePath) return "";
-    // Convert native file path to a webview-playable URL
     return Capacitor.convertFileSrc(filePath);
   }, [filePath, contentUri]);
 
@@ -74,7 +50,147 @@ const VideoPreviewShare: React.FC = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadStatus, setUploadStatus] = useState('');
+  const [promptText, setPromptText] = useState<string>("Record your story");
   const remaining = Math.max(0, 150 - desc.length);
+
+  useEffect(() => {
+    console.log('📹 VideoPreview: Component mounted');
+    console.log('📹 VideoPreview: filePath:', filePath);
+
+    // Fetch prompt text based on context
+    const fetchPromptText = async () => {
+      try {
+        if (contextType === 'daily' && promptId) {
+          const { data, error } = await supabase
+            .from('daily_prompts')
+            .select('prompt_text')
+            .eq('id', promptId)
+            .maybeSingle();
+
+          if (!error && data?.prompt_text) {
+            setPromptText(data.prompt_text);
+            console.log('📹 VideoPreview: Fetched daily prompt text:', data.prompt_text);
+          }
+        } else if (contextType === 'mission' && missionId) {
+          const { data, error } = await supabase
+            .from('missions')
+            .select('description')
+            .eq('id', missionId)
+            .maybeSingle();
+
+          if (!error && data?.description) {
+            setPromptText(data.description);
+            console.log('📹 VideoPreview: Fetched mission description:', data.description);
+          }
+        }
+      } catch (error) {
+        console.error('📹 VideoPreview: Error fetching prompt text:', error);
+      }
+    };
+
+    fetchPromptText();
+  }, [contextType, promptId, missionId]);
+
+  const handleExit = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    console.log('📹 VideoPreview: handleExit called');
+
+    // Clear video data to prevent infinite navigation loop
+    try {
+      console.log('📹 VideoPreview: Clearing video data');
+      await StoryCamera.clearVideoData?.();
+      console.log('📹 VideoPreview: Video data cleared');
+    } catch (err) {
+      console.warn('📹 VideoPreview: Failed to clear video data:', err);
+    }
+
+    // Navigate to home page explicitly (camera already auto-dismissed by plugin)
+    console.log('📹 VideoPreview: Navigating to home');
+    navigate('/', { replace: true });
+  };
+
+  const handleReRecord = async (e?: React.MouseEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    console.log('📹 VideoPreview: handleReRecord called');
+
+    // Clear video data to prevent infinite navigation loop
+    try {
+      console.log('📹 VideoPreview: Clearing video data for re-record');
+      await StoryCamera.clearVideoData?.();
+      console.log('📹 VideoPreview: Video data cleared');
+    } catch (err) {
+      console.warn('📹 VideoPreview: Failed to clear video data:', err);
+    }
+
+    // Immediately reopen camera with same context
+    try {
+      console.log('📹 VideoPreview: Starting re-record with context:', { contextType, promptId, missionId, promptText });
+
+      const storyResult = await StoryCamera.recordVideo({
+        duration: 30,
+        camera: 'rear',
+        allowOverlays: true,
+        promptName: promptText,
+        contextType: contextType as 'mission' | 'daily' | undefined,
+        promptId: promptId || undefined,
+        missionId: missionId || undefined
+      });
+
+      console.log('📹 VideoPreview: Re-record completed:', storyResult);
+
+      // Extract filePath with retry logic (mirror DailyPrompt pattern)
+      let fp: string | undefined = (storyResult as any)?.filePath;
+      if (!fp) {
+        try {
+          const data = await (StoryCamera as any).getVideoData?.();
+          if (data?.filePath) fp = data.filePath;
+        } catch {}
+      }
+
+      if (!fp) {
+        for (let i = 0; i < 3 && !fp; i++) {
+          await new Promise(r => setTimeout(r, 300));
+          try {
+            const data = await (StoryCamera as any).getVideoData?.();
+            if (data?.filePath) fp = data.filePath;
+          } catch {}
+        }
+      }
+
+      if (fp) {
+        try { sessionStorage.setItem('lastStoryVideoPath', fp); } catch {}
+
+        // Build target URL with context params
+        let target = `/video-preview?filePath=${encodeURIComponent(fp)}`;
+        if (contextType === 'mission' && missionId) {
+          target += `&missionId=${encodeURIComponent(missionId)}&contextType=mission`;
+        } else if (contextType === 'daily' && promptId) {
+          target += `&promptId=${encodeURIComponent(promptId)}&contextType=daily`;
+        }
+
+        console.log('📹 VideoPreview: Navigating to preview with new video');
+        setTimeout(() => {
+          navigate(target, {
+            replace: true,
+            state: {
+              filePath: fp,
+              promptId: storyResult.promptId || promptId,
+              missionId: storyResult.missionId || missionId,
+              contextType: storyResult.contextType || contextType
+            }
+          });
+        }, 0);
+      } else {
+        console.warn('VideoPreview: Could not determine filePath after re-recording');
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.toString?.() || 'Unknown error';
+      console.error('📹 VideoPreview: Re-record failed:', errorMessage);
+      // Stay on current page if re-record fails
+    }
+  };
 
   const handleShare = async () => {
     setIsSharing(true);
@@ -84,8 +200,6 @@ const VideoPreviewShare: React.FC = () => {
     try {
       if (!filePath) throw new Error('No video filePath');
 
-
-      // Determine if this is a mission or daily prompt video using context
       let effectivePromptId: string | null = null;
       let effectiveMissionId: string | null = null;
       
@@ -94,10 +208,8 @@ const VideoPreviewShare: React.FC = () => {
       } else if (contextType === 'daily' && promptId) {
         effectivePromptId = promptId;
       } else if (missionId) {
-        // Fallback: if no contextType but we have missionId
         effectiveMissionId = missionId;
       } else if (promptId) {
-        // Fallback: if no contextType but we have promptId
         effectivePromptId = promptId;
       } else {
         try {
@@ -127,7 +239,6 @@ const VideoPreviewShare: React.FC = () => {
         }
       }
 
-      // Load file via fetch of convertFileSrc
       setUploadProgress(10);
       setUploadStatus('Loading video file...');
       const src = Cap.convertFileSrc(filePath);
@@ -135,32 +246,38 @@ const VideoPreviewShare: React.FC = () => {
       const blob = await res.blob();
       const originalFile = new File([blob], 'story.mp4', { type: blob.type || 'video/mp4' });
 
-      // Compress
       setUploadProgress(20);
-      setUploadStatus('Compressing video...');
+
+      // Skip browser-based compression on iOS - it can cause crashes
+      // Videos from StoryCamera are already well-optimized
       let compressed: File;
-      try {
-        compressed = await compressVideo(originalFile, { maxSizeMB: 50, maxWidthOrHeight: 1280 });
-      } catch (e) {
-        // Fallback to original if compression fails
-        console.warn('[Share] Compression failed, using original file. Error:', e);
+      const isIOS = Capacitor.getPlatform() === 'ios';
+
+      if (isIOS) {
+        console.log('[Share] iOS detected - skipping browser compression (using native optimized video)');
+        setUploadStatus('Preparing video...');
         compressed = originalFile;
+      } else {
+        setUploadStatus('Compressing video...');
+        try {
+          compressed = await compressVideo(originalFile, { maxSizeMB: 50, maxWidthOrHeight: 1280 });
+        } catch (e) {
+          console.warn('[Share] Compression failed, using original file. Error:', e);
+          compressed = originalFile;
+        }
       }
 
-      // Thumbnail
       setUploadProgress(40);
       setUploadStatus('Generating thumbnail...');
       const thumbBase64 = await generateVideoThumbnail(compressed, 1.5);
       setUploadStatus('Uploading thumbnail...');
       const thumbUrl = await uploadThumbnailToStorage(thumbBase64, 'thumb');
 
-      // Upload video to supabase storage
       setUploadProgress(50);
       setUploadStatus('Authenticating user...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Fetch profile location/country
       let locationStr: string | null = null;
       try {
         const { data: profile } = await supabase
@@ -170,7 +287,6 @@ const VideoPreviewShare: React.FC = () => {
           .maybeSingle();
         if (profile?.city && profile?.country) locationStr = `${profile.city}, ${profile.country}`;
         else if (profile?.country) locationStr = profile.country;
-        // Fallback to auth metadata country if profile missing
         if (!locationStr && (user as any)?.user_metadata?.country) {
           locationStr = (user as any).user_metadata.country;
         }
@@ -189,7 +305,6 @@ const VideoPreviewShare: React.FC = () => {
       const { data: urlData } = supabase.storage.from('videos').getPublicUrl(up.path);
       const publicVideoUrl = urlData.publicUrl;
 
-      // Insert DB row into videos table
       setUploadProgress(90);
       setUploadStatus('Saving video data...');
       const { error: insErr } = await supabase.from('videos').insert({
@@ -207,7 +322,16 @@ const VideoPreviewShare: React.FC = () => {
       setUploadProgress(100);
       setUploadStatus('Complete!');
 
-      // Navigate to the appropriate list page
+      // Clear video data after successful upload
+      try {
+        console.log('📹 VideoPreview: Clearing video data after successful share');
+        await StoryCamera.clearVideoData?.();
+        console.log('📹 VideoPreview: Video data cleared');
+      } catch (err) {
+        console.warn('📹 VideoPreview: Failed to clear video data:', err);
+      }
+
+      // Navigate after successful share (camera already auto-dismissed by plugin)
       if (effectiveMissionId) {
         navigate(`/video-list/mission/${effectiveMissionId}`, { replace: true });
       } else if (effectivePromptId) {
@@ -224,12 +348,14 @@ const VideoPreviewShare: React.FC = () => {
   };
 
   const header = (
-    <div className="px-4">
+    <div className="px-4" style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 12px)' }}>
       <div className="max-w-md mx-auto py-3 flex items-center justify-between">
         <button
           aria-label="Close"
           className="p-2 rounded-full hover:bg-muted transition"
-          onClick={() => navigate("/", { replace: true })}
+          onClick={(e) => handleExit(e)}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
         >
           <X className="w-5 h-5 text-foreground dark:text-white" />
         </button>
@@ -239,9 +365,11 @@ const VideoPreviewShare: React.FC = () => {
     </div>
   );
 
+  console.log('📹 VideoPreview: About to return JSX');
+
   return (
     <PageLayout header={header} showBottomNav={false}>
-      <div className="px-4 pb-safe-bottom">
+      <div className="px-4 pb-safe-bottom min-h-[calc(100vh-var(--safe-area-top,0px)-var(--safe-area-bottom,0px))]">
         <div className="max-w-md mx-auto space-y-5">
           
           {(filePath || contentUri) && (
@@ -261,7 +389,6 @@ const VideoPreviewShare: React.FC = () => {
             </div>
           )}
 
-          {/* Description input */}
           <div className="space-y-1">
             <Textarea
               value={desc}
@@ -276,7 +403,6 @@ const VideoPreviewShare: React.FC = () => {
             <div className="text-xs text-muted-foreground text-right">{remaining} left</div>
           </div>
 
-          {/* Upload Progress */}
           {isSharing && (
             <div className="space-y-3 pt-2">
               <div className="text-center">
@@ -292,13 +418,14 @@ const VideoPreviewShare: React.FC = () => {
             </div>
           )}
 
-          {/* Primary actions */}
-          <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="grid grid-cols-2 gap-3 pt-1 mb-4" style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))' }}>
             <Button
               variant="outline"
               className="w-full bg-card/60 hover:bg-card text-foreground border-border"
-              onClick={() => navigate('/')}
+              onClick={(e) => handleReRecord(e)}
               disabled={isSharing}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
             >
               Re-record
             </Button>

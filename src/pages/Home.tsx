@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +13,7 @@ import { MissionCard } from "@/components/MissionCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import StoryCamera from "../../StoryCamera";
 import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 
 interface Mission {
   id: string;
@@ -30,30 +30,57 @@ const Home = () => {
   const navigate = useNavigate();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checkingVideo, setCheckingVideo] = useState(true); // Prevent flash on Android
 
   useEffect(() => {
-    // One-shot check for video data to navigate to test page (on mount)
-    const checkOnce = async () => {
+    // Android-specific: Check for video data on mount/resume and navigate to preview
+    // (iOS doesn't need this because camera is modal and navigation happens immediately)
+    const checkVideoAndNavigate = async () => {
       try {
+        const platform = Capacitor.getPlatform();
+        if (platform !== 'android') {
+          setCheckingVideo(false);
+          return; // Only run on Android
+        }
+
         const data = await (StoryCamera as any).getVideoData?.();
         if (data?.hasVideo && data.filePath) {
+          console.log('🏠 Home: Found recorded video on Android, navigating to preview');
+          console.log('🏠 Home: Video context:', { contextType: data.contextType, missionId: data.missionId, promptId: data.promptId });
           try { sessionStorage.setItem('lastStoryVideoPath', data.filePath); } catch {}
-          navigate('/video-preview?filePath=' + encodeURIComponent(data.filePath), { replace: true });
-        }
-      } catch {}
-    };
-    checkOnce();
 
-    // Also check on app resume (when Home becomes visible)
+          // Build URL with context parameters
+          let url = '/video-preview?filePath=' + encodeURIComponent(data.filePath);
+          if (data.contextType) url += '&contextType=' + encodeURIComponent(data.contextType);
+          if (data.missionId) url += '&missionId=' + encodeURIComponent(data.missionId);
+          if (data.promptId) url += '&promptId=' + encodeURIComponent(data.promptId);
+
+          navigate(url, {
+            replace: true,
+            state: {
+              filePath: data.filePath,
+              contextType: data.contextType,
+              missionId: data.missionId,
+              promptId: data.promptId
+            }
+          });
+        } else {
+          setCheckingVideo(false);
+        }
+      } catch (err) {
+        console.warn('Home: Error checking video data:', err);
+        setCheckingVideo(false);
+      }
+    };
+
+    // Check on mount
+    checkVideoAndNavigate();
+
+    // Also check on app resume (when Home becomes visible after Activity finishes)
     const onVisibility = async () => {
       if (document.visibilityState === 'visible') {
-        try {
-          const data = await (StoryCamera as any).getVideoData?.();
-          if (data?.hasVideo && data.filePath) {
-            try { sessionStorage.setItem('lastStoryVideoPath', data.filePath); } catch {}
-            navigate('/video-preview?filePath=' + encodeURIComponent(data.filePath), { replace: true });
-          }
-        } catch {}
+        setCheckingVideo(true);
+        await checkVideoAndNavigate();
       }
     };
     document.addEventListener('visibilitychange', onVisibility);
@@ -84,9 +111,12 @@ const Home = () => {
     };
 
     fetchMissions();
-    
-    return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, []);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      console.log('🏠 Home: useEffect cleanup');
+    };
+  }, [navigate]);
 
   const handleStartRecording = async () => {
     try {
@@ -149,9 +179,52 @@ const Home = () => {
         contextType: 'daily',
         promptId: promptId
       });
-      
+
       console.log('✅ ===== HOME: STORYCAMERA SUCCESS =====');
       console.log('Home StoryCamera result:', storyResult);
+
+      // On iOS, navigate immediately since camera is modal
+      // On Android, let the visibilitychange handler take care of navigation
+      const platform = Capacitor.getPlatform();
+      if (platform === 'ios') {
+        // Navigate to video preview with robust filePath extraction
+        let fp: string | undefined = (storyResult as any)?.filePath;
+        if (!fp) {
+          // Fallback: ask native for stored path
+          try {
+            const data = await (StoryCamera as any).getVideoData?.();
+            if (data?.filePath) fp = data.filePath;
+          } catch {}
+        }
+
+        if (!fp) {
+          // Retry a couple times with tiny delay in case webview resumes a tick later
+          for (let i = 0; i < 3 && !fp; i++) {
+            await new Promise(r => setTimeout(r, 300));
+            try {
+              const data = await (StoryCamera as any).getVideoData?.();
+              if (data?.filePath) fp = data.filePath;
+            } catch {}
+          }
+        }
+
+        if (fp) {
+          try { sessionStorage.setItem('lastStoryVideoPath', fp); } catch {}
+          const target = '/video-preview?filePath=' + encodeURIComponent(fp) + (promptId ? ('&promptId=' + encodeURIComponent(promptId)) : '') + '&contextType=daily';
+          console.log('🚀 Home (iOS): Navigating to:', target);
+          navigate(target, {
+            state: {
+              filePath: fp,
+              promptId: storyResult.promptId || promptId,
+              contextType: storyResult.contextType || 'daily'
+            }
+          });
+        } else {
+          console.error('❌ Home (iOS): Could not determine filePath after recording');
+        }
+      } else {
+        console.log('🤖 Home (Android): Recording complete, visibilitychange handler will handle navigation');
+      }
       
     } catch (error) {
       console.error('❌ ===== HOME: STORYCAMERA FAILED =====');
@@ -175,6 +248,11 @@ const Home = () => {
       </div>
     </div>
   );
+
+  // Show nothing while checking for video on Android (prevents flash)
+  if (checkingVideo) {
+    return null;
+  }
 
   return (
     <PageLayout header={header}>
