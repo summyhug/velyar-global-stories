@@ -28,6 +28,33 @@ public class StoryCameraPlugin: CAPPlugin, CAPBridgedPlugin {
     private var thumbnailFileURL: URL?
     var savedRecordVideoCall: CAPPluginCall?
     private weak var cameraViewController: StoryCameraViewController?
+
+    // ========================================
+    // VIDEO SEGMENT TRACKING - Pause/Resume Implementation
+    // ========================================
+    // iOS's AVCaptureMovieFileOutput doesn't natively support pause/resume like Android's CameraX.
+    // We implement pause/resume using a segment-based approach:
+    //
+    // HOW IT WORKS:
+    // 1. START: Begin recording to segment_0.mp4
+    // 2. PAUSE: Stop recording segment_0, save URL to videoSegments array
+    // 3. RESUME: Start recording to segment_1.mp4 (segment_0 stays in array)
+    // 4. PAUSE: Stop recording segment_1, add to videoSegments array (now has 2 segments)
+    // 5. STOP: Merge all segments using AVMutableComposition + AVAssetExportSession
+    //
+    // TECHNICAL DETAILS:
+    // - Each segment is a separate .mp4 file saved to Documents directory
+    // - Segments maintain orientation via AVVideoComposition transforms
+    // - Merging is seamless - no visible cuts in final video
+    // - Temporary segment files are cleaned up after merge
+    // - If no pauses occurred, only 1 segment exists - no merge needed
+    //
+    // FLAGS:
+    // - isPausedStop: Distinguishes pause-stop (save segment) from final-stop (merge segments)
+    // ========================================
+    private var videoSegments: [URL] = []
+    private var currentSegmentIndex = 0
+    private var isPausedStop = false // Flag to distinguish pause-stop from final-stop
     
     public override func load() {
         super.load()
@@ -301,28 +328,32 @@ public class StoryCameraPlugin: CAPPlugin, CAPBridgedPlugin {
             call?.reject("Already recording or video output not available")
             return
         }
-        
-        // Create temporary file URL
+
+        // Initialize segments for new recording
+        videoSegments = []
+        currentSegmentIndex = 0
+
+        // Create temporary file URL for first segment
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let videoName = "video_\(Date().timeIntervalSince1970).mp4"
+        let videoName = "video_segment_0_\(Date().timeIntervalSince1970).mp4"
         videoFileURL = documentsPath.appendingPathComponent(videoName)
-        
+
         guard let videoFileURL = videoFileURL else {
             call?.reject("Failed to create video file URL")
             return
         }
-        
+
         // Start recording
         videoOutput.startRecording(to: videoFileURL, recordingDelegate: self)
         isRecording = true
-        
+
         // Set up timer for max duration
         DispatchQueue.main.asyncAfter(deadline: .now() + maxDuration) { [weak self] in
             guard let self = self, self.isRecording else { return }
             self.videoOutput?.stopRecording()
             self.isRecording = false
         }
-        
+
         call?.resolve()
     }
     
@@ -333,18 +364,106 @@ public class StoryCameraPlugin: CAPPlugin, CAPBridgedPlugin {
     func stopRecordingFromUI() {
         stopRecording(call: nil)
     }
-    
+
+    // Finalize recording when paused (merge segments without stopping new recording)
+    func finalizePausedRecordingFromUI() {
+        print("📹 StoryCamera: 🏁 FINALIZE paused recording")
+        print("📹 StoryCamera: Current segments in array: \(videoSegments.count)")
+
+        // If we have segments, merge and process them
+        if videoSegments.count > 1 {
+            print("📹 StoryCamera: ✅ Merging \(videoSegments.count) paused segments:")
+            for (index, segment) in videoSegments.enumerated() {
+                print("📹 StoryCamera:   Segment \(index): \(segment.lastPathComponent)")
+            }
+            mergeVideoSegments(segments: videoSegments) { [weak self] mergedURL in
+                guard let self = self else { return }
+                if let mergedURL = mergedURL {
+                    print("📹 StoryCamera: Segments merged successfully")
+                    self.processRecordedVideo(url: mergedURL)
+                    // Clean up segment files
+                    self.cleanupSegments()
+                } else {
+                    print("❌ StoryCamera: Failed to merge segments")
+                    if let call = self.savedRecordVideoCall {
+                        call.reject("Failed to merge video segments")
+                        self.savedRecordVideoCall = nil
+                    }
+                }
+            }
+        } else if videoSegments.count == 1 {
+            // Only one segment, process it directly (no merge needed)
+            print("📹 StoryCamera: ✅ Single paused segment detected")
+            print("📹 StoryCamera: Skipping merge, processing directly: \(videoSegments[0].lastPathComponent)")
+            print("📹 StoryCamera: This happens when user records → pause → stop (without resume)")
+            processRecordedVideo(url: videoSegments[0])
+            // DON'T clean up the segment - it IS the final video!
+            // Only reset the array to prepare for next recording
+            videoSegments = []
+            currentSegmentIndex = 0
+        } else {
+            print("❌ StoryCamera: No segments to finalize!")
+        }
+    }
+
     private func stopRecording(call: CAPPluginCall?) {
         guard isRecording else {
             call?.reject("Not recording")
             return
         }
-        
+
+        print("📹 StoryCamera: ⏹️ STOP requested")
+        print("📹 StoryCamera: isPausedStop = \(isPausedStop) (should be false for final stop)")
+        print("📹 StoryCamera: Current segments in array: \(videoSegments.count)")
         videoOutput?.stopRecording()
         isRecording = false
+        print("📹 StoryCamera: Called videoOutput.stopRecording() - waiting for delegate callback")
         call?.resolve()
     }
-    
+
+    // Pause recording by stopping current segment
+    func pauseRecordingFromUI() {
+        guard let videoOutput = videoOutput, isRecording else {
+            print("📹 StoryCamera: Cannot pause - not recording")
+            return
+        }
+
+        print("📹 StoryCamera: ⏸️ PAUSE requested")
+        print("📹 StoryCamera: Setting isPausedStop = true")
+        print("📹 StoryCamera: Current segments in array: \(videoSegments.count)")
+        isPausedStop = true
+        videoOutput.stopRecording()
+        print("📹 StoryCamera: Called videoOutput.stopRecording() - waiting for delegate callback")
+        // Note: isRecording will be set to false in fileOutput delegate
+        // The segment will be saved in the delegate method
+    }
+
+    // Resume recording by starting a new segment
+    func resumeRecordingFromUI() {
+        guard let videoOutput = videoOutput, !isRecording else {
+            print("📹 StoryCamera: Cannot resume - already recording")
+            return
+        }
+
+        print("📹 StoryCamera: ▶️ RESUME requested")
+        print("📹 StoryCamera: isPausedStop = \(isPausedStop) (should be false)")
+        print("📹 StoryCamera: Current segments in array: \(videoSegments.count)")
+
+        // Create new segment file URL
+        currentSegmentIndex += 1
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let segmentName = "video_segment_\(currentSegmentIndex)_\(Date().timeIntervalSince1970).mp4"
+        let segmentURL = documentsPath.appendingPathComponent(segmentName)
+
+        print("📹 StoryCamera: Creating segment \(currentSegmentIndex): \(segmentName)")
+        videoFileURL = segmentURL
+
+        // Start recording new segment
+        videoOutput.startRecording(to: segmentURL, recordingDelegate: self)
+        isRecording = true
+        print("📹 StoryCamera: Recording resumed to new segment")
+    }
+
     @objc func switchCamera(_ call: CAPPluginCall) {
         switchCamera(call: call)
     }
@@ -643,7 +762,7 @@ public class StoryCameraPlugin: CAPPlugin, CAPBridgedPlugin {
 extension StoryCameraPlugin: AVCaptureFileOutputRecordingDelegate {
     public func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
         isRecording = false
-        
+
         if let error = error {
             print("❌ StoryCamera: Recording failed: \(error.localizedDescription)")
             if let call = savedRecordVideoCall {
@@ -659,9 +778,204 @@ extension StoryCameraPlugin: AVCaptureFileOutputRecordingDelegate {
             }
             return
         }
-        
-        print("📹 StoryCamera: Recording finished successfully")
-        processRecordedVideo(url: outputFileURL)
+
+        print("📹 StoryCamera: Recording segment finished successfully: \(outputFileURL.lastPathComponent)")
+        print("📹 StoryCamera: Current segments before append: \(videoSegments.map { $0.lastPathComponent })")
+
+        // Add segment to array
+        videoSegments.append(outputFileURL)
+        print("📹 StoryCamera: Segment added. Total segments: \(videoSegments.count)")
+        print("📹 StoryCamera: All segments: \(videoSegments.map { $0.lastPathComponent })")
+
+        // If this was a pause-stop, just save the segment and return (waiting for resume)
+        if isPausedStop {
+            print("📹 StoryCamera: This was a PAUSE-STOP. Saving segment and waiting for resume.")
+            print("📹 StoryCamera: isPausedStop will be reset to false")
+            isPausedStop = false
+            // Notify UI that pause completed
+            DispatchQueue.main.async { [weak self] in
+                self?.cameraViewController?.pauseRecordingCompleted()
+            }
+            return
+        }
+
+        // This is a final stop - merge all segments if needed
+        print("📹 StoryCamera: This was a FINAL-STOP. Checking if merge is needed...")
+        print("📹 StoryCamera: videoSegments.count = \(videoSegments.count)")
+        if videoSegments.count > 1 {
+            print("📹 StoryCamera: ✅ Merging \(videoSegments.count) segments:")
+            for (index, segment) in videoSegments.enumerated() {
+                print("📹 StoryCamera:   Segment \(index): \(segment.lastPathComponent)")
+            }
+            mergeVideoSegments(segments: videoSegments) { [weak self] mergedURL in
+                guard let self = self else { return }
+                if let mergedURL = mergedURL {
+                    print("📹 StoryCamera: Segments merged successfully")
+                    self.processRecordedVideo(url: mergedURL)
+                    // Clean up segment files
+                    self.cleanupSegments()
+                } else {
+                    print("❌ StoryCamera: Failed to merge segments")
+                    if let call = self.savedRecordVideoCall {
+                        call.reject("Failed to merge video segments")
+                        self.savedRecordVideoCall = nil
+                    }
+                }
+            }
+        } else {
+            // Only one segment, process it directly
+            print("📹 StoryCamera: Single segment, processing directly")
+            processRecordedVideo(url: outputFileURL)
+        }
+    }
+
+    private func cleanupSegments() {
+        // ========================================
+        // CLEANUP SEGMENTS - Called ONLY after merging
+        // ========================================
+        // This deletes temporary segment files after they've been merged.
+        // Should NOT be called when processing a single segment directly,
+        // as that segment IS the final video file.
+        // ========================================
+        print("📹 StoryCamera: Cleaning up \(videoSegments.count) temporary segment files")
+        for segmentURL in videoSegments {
+            print("📹 StoryCamera: Deleting: \(segmentURL.lastPathComponent)")
+            try? FileManager.default.removeItem(at: segmentURL)
+        }
+        videoSegments = []
+        currentSegmentIndex = 0
+    }
+
+    private func mergeVideoSegments(segments: [URL], completion: @escaping (URL?) -> Void) {
+        print("📹 StoryCamera: 🎬 mergeVideoSegments called with \(segments.count) segments")
+
+        guard segments.count > 1 else {
+            print("📹 StoryCamera: ⚠️ Only \(segments.count) segment(s), returning first segment without merge")
+            completion(segments.first)
+            return
+        }
+
+        print("📹 StoryCamera: Creating AVMutableComposition for merging...")
+        let mixComposition = AVMutableComposition()
+        guard let videoTrack = mixComposition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid),
+              let audioTrack = mixComposition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+            print("❌ StoryCamera: Failed to create composition tracks")
+            completion(nil)
+            return
+        }
+
+        print("📹 StoryCamera: Composition tracks created successfully")
+        var insertTime = CMTime.zero
+        var videoSize = CGSize.zero
+        var videoTransform = CGAffineTransform.identity
+
+        for (index, segmentURL) in segments.enumerated() {
+            print("📹 StoryCamera: Processing segment \(index): \(segmentURL.lastPathComponent)")
+            let asset = AVAsset(url: segmentURL)
+
+            do {
+                // Add video track
+                if let assetVideoTrack = asset.tracks(withMediaType: .video).first {
+                    // Capture transform and size from first segment
+                    if index == 0 {
+                        videoTransform = assetVideoTrack.preferredTransform
+                        videoSize = assetVideoTrack.naturalSize
+                        print("📹 StoryCamera: Video transform: \(videoTransform)")
+                        print("📹 StoryCamera: Natural size: \(videoSize)")
+                    }
+
+                    try videoTrack.insertTimeRange(
+                        CMTimeRange(start: .zero, duration: asset.duration),
+                        of: assetVideoTrack,
+                        at: insertTime
+                    )
+                }
+
+                // Add audio track
+                if let assetAudioTrack = asset.tracks(withMediaType: .audio).first {
+                    try audioTrack.insertTimeRange(
+                        CMTimeRange(start: .zero, duration: asset.duration),
+                        of: assetAudioTrack,
+                        at: insertTime
+                    )
+                }
+
+                insertTime = CMTimeAdd(insertTime, asset.duration)
+            } catch {
+                print("❌ StoryCamera: Error adding segment: \(error)")
+                completion(nil)
+                return
+            }
+        }
+
+        // Apply the transform to maintain orientation
+        videoTrack.preferredTransform = videoTransform
+
+        // Calculate proper render size based on transform
+        let renderSize: CGSize
+        let angle = atan2(videoTransform.b, videoTransform.a)
+        let isPortrait = abs(angle - .pi / 2) < 0.1 || abs(angle + .pi / 2) < 0.1
+        if isPortrait {
+            // For portrait videos, swap width and height
+            renderSize = CGSize(width: videoSize.height, height: videoSize.width)
+            print("📹 StoryCamera: Portrait video detected, render size: \(renderSize)")
+        } else {
+            renderSize = videoSize
+            print("📹 StoryCamera: Landscape video, render size: \(renderSize)")
+        }
+
+        // Create video composition to apply the transform
+        let videoComposition = AVMutableVideoComposition()
+        videoComposition.renderSize = renderSize
+        videoComposition.frameDuration = CMTime(value: 1, timescale: 30) // 30 fps
+
+        let instruction = AVMutableVideoCompositionInstruction()
+        instruction.timeRange = CMTimeRange(start: .zero, duration: mixComposition.duration)
+
+        let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
+        layerInstruction.setTransform(videoTransform, at: .zero)
+
+        instruction.layerInstructions = [layerInstruction]
+        videoComposition.instructions = [instruction]
+
+        // Export merged video
+        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let mergedVideoURL = documentsPath.appendingPathComponent("merged_video_\(Date().timeIntervalSince1970).mp4")
+
+        // Remove file if it exists
+        try? FileManager.default.removeItem(at: mergedVideoURL)
+
+        guard let exporter = AVAssetExportSession(asset: mixComposition, presetName: AVAssetExportPresetHighestQuality) else {
+            print("❌ StoryCamera: Failed to create export session")
+            completion(nil)
+            return
+        }
+
+        exporter.outputURL = mergedVideoURL
+        exporter.outputFileType = .mp4
+        exporter.shouldOptimizeForNetworkUse = true
+        exporter.videoComposition = videoComposition // Apply the video composition
+
+        print("📹 StoryCamera: Starting async export...")
+        exporter.exportAsynchronously {
+            DispatchQueue.main.async {
+                switch exporter.status {
+                case .completed:
+                    print("✅ StoryCamera: Video segments merged successfully!")
+                    print("📹 StoryCamera: Merged video URL: \(mergedVideoURL.lastPathComponent)")
+                    completion(mergedVideoURL)
+                case .failed:
+                    print("❌ StoryCamera: Export failed: \(exporter.error?.localizedDescription ?? "unknown error")")
+                    completion(nil)
+                case .cancelled:
+                    print("❌ StoryCamera: Export cancelled")
+                    completion(nil)
+                default:
+                    print("❌ StoryCamera: Export ended with unknown status: \(exporter.status.rawValue)")
+                    completion(nil)
+                }
+            }
+        }
     }
 }
 
@@ -680,6 +994,7 @@ class StoryCameraViewController: UIViewController {
     private var cancelButton: UIButton!
     private var infoButton: UIButton!
     private var pauseButton: UIButton!
+    private var flashButton: UIButton!
     private var promptLabel: UILabel!
     private var countdownLabel: UILabel!
     private var recordTimer: Timer?
@@ -753,36 +1068,48 @@ class StoryCameraViewController: UIViewController {
             recordButton.centerYAnchor.constraint(equalTo: recordButtonContainer.centerYAnchor)
         ])
         
-        // Switch camera button (smaller, fitted size ~48dp)
+        // Switch camera button (smaller, fitted size ~40dp)
         switchCameraButton = UIButton(type: .system)
         switchCameraButton.setImage(UIImage(systemName: "arrow.triangle.2.circlepath.camera.fill"), for: .normal)
         switchCameraButton.tintColor = .white
         switchCameraButton.backgroundColor = UIColor.black.withAlphaComponent(0.8) // Match Android 0xCC000000
-        switchCameraButton.layer.cornerRadius = 24
+        switchCameraButton.layer.cornerRadius = 20
         switchCameraButton.contentMode = .center
         switchCameraButton.imageView?.contentMode = .scaleAspectFit
         switchCameraButton.translatesAutoresizingMaskIntoConstraints = false
         switchCameraButton.addTarget(self, action: #selector(switchCameraTapped), for: .touchUpInside)
         view.addSubview(switchCameraButton)
         
-        // Cancel button (smaller, fitted size ~48dp)
+        // Cancel button (smaller, fitted size ~40dp)
         cancelButton = UIButton(type: .system)
         cancelButton.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
         cancelButton.tintColor = .white
         cancelButton.backgroundColor = UIColor.black.withAlphaComponent(0.8) // Match Android 0xCC000000
-        cancelButton.layer.cornerRadius = 24
+        cancelButton.layer.cornerRadius = 20
         cancelButton.contentMode = .center
         cancelButton.imageView?.contentMode = .scaleAspectFit
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
         cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
         view.addSubview(cancelButton)
-        
-        // Info button (smaller, fitted size ~48dp)
+
+        // Flash button (top right, smaller fitted size ~40dp)
+        flashButton = UIButton(type: .system)
+        flashButton.setImage(UIImage(systemName: "bolt.slash.fill"), for: .normal)
+        flashButton.tintColor = .white
+        flashButton.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+        flashButton.layer.cornerRadius = 20
+        flashButton.contentMode = .center
+        flashButton.imageView?.contentMode = .scaleAspectFit
+        flashButton.translatesAutoresizingMaskIntoConstraints = false
+        flashButton.addTarget(self, action: #selector(flashButtonTapped), for: .touchUpInside)
+        view.addSubview(flashButton)
+
+        // Info button (smaller, fitted size ~40dp)
         infoButton = UIButton(type: .system)
         infoButton.setImage(UIImage(systemName: "info.circle.fill"), for: .normal)
         infoButton.tintColor = .white
         infoButton.backgroundColor = UIColor.black.withAlphaComponent(0.8) // Match Android 0xCC000000
-        infoButton.layer.cornerRadius = 24
+        infoButton.layer.cornerRadius = 20
         infoButton.contentMode = .center
         infoButton.imageView?.contentMode = .scaleAspectFit
         infoButton.translatesAutoresizingMaskIntoConstraints = false
@@ -794,7 +1121,7 @@ class StoryCameraViewController: UIViewController {
         pauseButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
         pauseButton.tintColor = .white
         pauseButton.backgroundColor = UIColor.black.withAlphaComponent(0.8) // Match Android 0xCC000000
-        pauseButton.layer.cornerRadius = 24
+        pauseButton.layer.cornerRadius = 20
         pauseButton.contentMode = .center
         pauseButton.imageView?.contentMode = .scaleAspectFit
         pauseButton.translatesAutoresizingMaskIntoConstraints = false
@@ -836,32 +1163,38 @@ class StoryCameraViewController: UIViewController {
             pulsingRing.heightAnchor.constraint(equalToConstant: 120),
             
             recordButtonContainer.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            recordButtonContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -60),
+            recordButtonContainer.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -30),
             recordButtonContainer.widthAnchor.constraint(equalToConstant: 80),
             recordButtonContainer.heightAnchor.constraint(equalToConstant: 80),
-            
+
             // Close button - closer to left and higher up
             cancelButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
             cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            cancelButton.widthAnchor.constraint(equalToConstant: 48),
-            cancelButton.heightAnchor.constraint(equalToConstant: 48),
+            cancelButton.widthAnchor.constraint(equalToConstant: 40),
+            cancelButton.heightAnchor.constraint(equalToConstant: 40),
+
+            // Flash button - top right corner
+            flashButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+            flashButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            flashButton.widthAnchor.constraint(equalToConstant: 40),
+            flashButton.heightAnchor.constraint(equalToConstant: 40),
             
             // Info button - centered horizontally with record button, to the left
             infoButton.centerYAnchor.constraint(equalTo: recordButtonContainer.centerYAnchor),
             infoButton.trailingAnchor.constraint(equalTo: recordButtonContainer.leadingAnchor, constant: -30),
-            infoButton.widthAnchor.constraint(equalToConstant: 48),
-            infoButton.heightAnchor.constraint(equalToConstant: 48),
+            infoButton.widthAnchor.constraint(equalToConstant: 40),
+            infoButton.heightAnchor.constraint(equalToConstant: 40),
             
             // Pause button - appears directly to the right of record button when recording
             pauseButton.centerYAnchor.constraint(equalTo: recordButtonContainer.centerYAnchor),
             pauseButton.leadingAnchor.constraint(equalTo: recordButtonContainer.trailingAnchor, constant: 30),
-            pauseButton.widthAnchor.constraint(equalToConstant: 48),
-            pauseButton.heightAnchor.constraint(equalToConstant: 48),
+            pauseButton.widthAnchor.constraint(equalToConstant: 40),
+            pauseButton.heightAnchor.constraint(equalToConstant: 40),
             
             // Switch camera button - initially to the right of record button, shifts right when recording
             switchCameraButton.centerYAnchor.constraint(equalTo: recordButtonContainer.centerYAnchor),
-            switchCameraButton.widthAnchor.constraint(equalToConstant: 48),
-            switchCameraButton.heightAnchor.constraint(equalToConstant: 48),
+            switchCameraButton.widthAnchor.constraint(equalToConstant: 40),
+            switchCameraButton.heightAnchor.constraint(equalToConstant: 40),
             
             countdownLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             countdownLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 70),
@@ -892,6 +1225,12 @@ class StoryCameraViewController: UIViewController {
         if let promptName = promptName, !promptName.isEmpty {
             promptLabel.text = promptName
             promptLabel.isHidden = false
+        }
+
+        // Set initial flash button visibility based on camera capabilities
+        if let device = plugin?.currentCamera {
+            let hasFlash = device.hasTorch && device.isTorchAvailable
+            flashButton.isHidden = !hasFlash
         }
     }
     
@@ -925,18 +1264,54 @@ class StoryCameraViewController: UIViewController {
             infoButton.contentVerticalAlignment = .center
             infoButton.contentHorizontalAlignment = .center
         }
+
+        // Configure flash button icon
+        if let imageView = flashButton.imageView {
+            imageView.contentMode = .scaleAspectFit
+            flashButton.contentVerticalAlignment = .center
+            flashButton.contentHorizontalAlignment = .center
+        }
     }
     
     @objc private func recordButtonTapped() {
         guard let plugin = plugin else { return }
-        
+
         // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
-        
-        if plugin.isRecording {
+
+        // ========================================
+        // RECORD BUTTON UX - OPTION B
+        // ========================================
+        // This implements "Option B" where the record button serves as both start and stop:
+        //
+        // IDLE STATE (not recording, not paused):
+        //   - Record button shows as circle (red/orange)
+        //   - Tap → START recording
+        //
+        // RECORDING STATE (plugin.isRecording = true):
+        //   - Record button shows as rounded square (visual feedback)
+        //   - Pause button is visible for pause/resume
+        //   - Tap record button → STOP and finalize
+        //
+        // PAUSED STATE (plugin.isRecording = false, isPaused = true):
+        //   - Record button still shows as rounded square
+        //   - Pause button shows play icon for resume
+        //   - Tap record button → STOP and finalize (merge segments)
+        //   - Tap pause button → RESUME recording
+        //
+        // ALTERNATIVE APPROACHES (for future reference):
+        // - Option A: Hide record button when recording/paused (pause button only)
+        // - Option C: Long press on pause button to finalize, single tap to pause/resume
+        // ========================================
+
+        if plugin.isRecording || isPaused {
+            // Currently recording OR paused → STOP and finalize
+            print("📹 StoryCamera UI: Record button → STOP (isRecording: \(plugin.isRecording), isPaused: \(isPaused))")
             stopRecording()
         } else {
+            // Idle → START new recording
+            print("📹 StoryCamera UI: Record button → START")
             startRecording()
         }
     }
@@ -1007,22 +1382,52 @@ class StoryCameraViewController: UIViewController {
     
     private func stopRecording() {
         guard let plugin = plugin else { return }
-        
-        plugin.stopRecordingFromUI()
-        
+
+        // ========================================
+        // STOP RECORDING LOGIC - OPTION B
+        // ========================================
+        // This method is called when the user wants to finalize and stop recording.
+        // It handles two different states:
+        //
+        // STATE 1: Recording is active (plugin.isRecording = true)
+        //   - Call stopRecordingFromUI() to stop the current recording segment
+        //   - If no pauses occurred, this is the only segment
+        //   - If pauses occurred, this stops the last segment and triggers merge
+        //
+        // STATE 2: Recording is paused (isPaused = true, plugin.isRecording = false)
+        //   - Call finalizePausedRecordingFromUI() to merge existing segments
+        //   - No need to stop recording (already stopped when pause was pressed)
+        //   - Segments are already saved, just need to merge and process
+        //
+        // After either path, we:
+        //   - Stop visual feedback (pulsing, timer)
+        //   - Hide pause button
+        //   - Reset UI to idle state
+        // ========================================
+
+        if isPaused {
+            // STATE 2: Paused - merge existing segments
+            print("📹 StoryCamera UI: Stopping from PAUSED state → finalizing segments")
+            plugin.finalizePausedRecordingFromUI()
+        } else {
+            // STATE 1: Recording - stop current segment (will trigger merge if segments exist)
+            print("📹 StoryCamera UI: Stopping from RECORDING state → stopping segment")
+            plugin.stopRecordingFromUI()
+        }
+
         // Stop pulsing animation
         stopPulsingAnimation()
-        
+
         // Stop countdown timer
         stopCountdownTimer()
-        
+
         // Hide pause button
         hidePauseButton()
-        
+
         // Reset pause state
         isPaused = false
         totalPausedTime = 0
-        
+
         // Animate back to circle (idle state)
         animateToIdleState()
     }
@@ -1120,8 +1525,49 @@ class StoryCameraViewController: UIViewController {
     
     @objc private func switchCameraTapped() {
         plugin?.switchCameraFromUI()
+
+        // Update flash button visibility based on camera capabilities
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let device = self.plugin?.currentCamera {
+                let hasFlash = device.hasTorch && device.isTorchAvailable
+                self.flashButton.isHidden = !hasFlash
+
+                // Turn off torch if switching away from back camera
+                if device.torchMode != .off {
+                    do {
+                        try device.lockForConfiguration()
+                        device.torchMode = .off
+                        device.unlockForConfiguration()
+                        self.flashButton.setImage(UIImage(systemName: "bolt.slash.fill"), for: .normal)
+                    } catch {
+                        print("📹 StoryCamera: Error turning off torch: \(error)")
+                    }
+                }
+            }
+        }
     }
-    
+
+    @objc private func flashButtonTapped() {
+        guard let device = plugin?.currentCamera else { return }
+        guard device.hasTorch && device.isTorchAvailable else { return }
+
+        do {
+            try device.lockForConfiguration()
+
+            if device.torchMode == .off {
+                try device.setTorchModeOn(level: 1.0)
+                flashButton.setImage(UIImage(systemName: "bolt.fill"), for: .normal)
+            } else {
+                device.torchMode = .off
+                flashButton.setImage(UIImage(systemName: "bolt.slash.fill"), for: .normal)
+            }
+
+            device.unlockForConfiguration()
+        } catch {
+            print("📹 StoryCamera: Error toggling torch: \(error)")
+        }
+    }
+
     @objc private func cancelTapped() {
         print("📹 StoryCamera: Cancel tapped")
         stopCountdownTimer()
@@ -1146,51 +1592,104 @@ class StoryCameraViewController: UIViewController {
         // Haptic feedback
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
-        
+
+        // ========================================
+        // PAUSE BUTTON UX - OPTION B
+        // ========================================
+        // The pause button handles pause/resume ONLY (not finalization)
+        // Record button is used to finalize/stop recording
+        //
+        // When actively recording:
+        //   - Shows pause icon
+        //   - Tap → PAUSE (stops current segment, saves it)
+        //
+        // When paused:
+        //   - Shows play icon with gold background
+        //   - Tap → RESUME (starts new segment)
+        //
+        // To finalize recording in either state, user taps the RECORD button
+        // ========================================
+
         if isPaused {
             resumeRecording()
         } else {
             pauseRecording()
         }
     }
-    
+
     private func pauseRecording() {
         guard let plugin = plugin, plugin.isRecording, !isPaused else { return }
-        
+
+        // ========================================
+        // PAUSE RECORDING - Stops current segment and saves it
+        // ========================================
+        // Flow:
+        // 1. Set isPaused flag to track UI state
+        // 2. Record when pause started (for timer calculation)
+        // 3. Call plugin.pauseRecordingFromUI() to stop current segment
+        // 4. Plugin stops recording, saves segment to array
+        // 5. Plugin calls pauseRecordingCompleted() when done
+        // 6. UI updates (play icon, gold background, stop animation)
+        // ========================================
+
+        print("📹 StoryCamera UI: Pausing recording")
         isPaused = true
         pausedTime = Date().timeIntervalSince1970
-        
-        // Pause the timer (it will stop updating automatically)
+
+        // Call plugin to stop current segment
+        plugin.pauseRecordingFromUI()
+
+        // UI updates will be done in pauseRecordingCompleted()
+    }
+
+    func pauseRecordingCompleted() {
+        print("📹 StoryCamera UI: Pause completed, updating UI")
+
         // Update button to show play icon
         pauseButton.setImage(UIImage(systemName: "play.fill"), for: .normal)
-        
+
         // Change background to gold when paused (like Android)
         pauseButton.backgroundColor = UIColor(red: 1.0, green: 0.843, blue: 0.0, alpha: 0.8) // Gold #FFD700
-        
+
         // Stop pulsing ring animation
         stopPulsingAnimation()
     }
-    
+
     private func resumeRecording() {
-        guard let plugin = plugin, plugin.isRecording, isPaused else { return }
-        
+        guard let plugin = plugin, !plugin.isRecording, isPaused else { return }
+
+        // ========================================
+        // RESUME RECORDING - Starts new segment
+        // ========================================
+        // Flow:
+        // 1. Clear isPaused flag
+        // 2. Calculate how long we were paused (for accurate timer)
+        // 3. Update UI (pause icon, black background, restart animation)
+        // 4. Call plugin.resumeRecordingFromUI() to start new segment
+        // 5. Plugin starts recording to new file (segment array keeps previous segments)
+        // ========================================
+
+        print("📹 StoryCamera UI: Resuming recording")
         isPaused = false
-        
+
         // Calculate paused duration and add to total
         if pausedTime > 0 {
             let pausedDuration = Date().timeIntervalSince1970 - pausedTime
             totalPausedTime += pausedDuration
             pausedTime = 0
         }
-        
+
         // Update button back to pause icon
         pauseButton.setImage(UIImage(systemName: "pause.fill"), for: .normal)
-        
+
         // Restore background to black
         pauseButton.backgroundColor = UIColor.black.withAlphaComponent(0.8)
-        
+
         // Restart pulsing ring animation
         startPulsingAnimation()
+
+        // Call plugin to start new segment
+        plugin.resumeRecordingFromUI()
     }
     
     deinit {
