@@ -40,6 +40,7 @@ const Auth = () => {
   const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>({});
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -140,6 +141,11 @@ const Auth = () => {
     validateForm();
   }, [formData, acceptedTerms, acceptedPrivacy, isLogin]);
 
+  // Reset attemptedSubmit when switching between login/signup
+  useEffect(() => {
+    setAttemptedSubmit(false);
+  }, [isLogin]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.name === 'betaCode' 
       ? e.target.value.toUpperCase() 
@@ -193,7 +199,9 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    setAttemptedSubmit(true);
+
     if (!isFormValid || submitting) {
       return;
     }
@@ -356,7 +364,7 @@ const Auth = () => {
               <>
                  <div className="space-y-1">
                    <Label htmlFor="name" className="text-velyar-earth font-nunito text-sm">
-                     {t("auth.fullName")} <span className="text-red-500">*</span>
+                     {t("auth.fullName")} {(formErrors.name && (touchedFields.name || attemptedSubmit)) && <span className="text-red-500">*</span>}
                    </Label>
                    <Input
                      id="name"
@@ -372,7 +380,7 @@ const Auth = () => {
                  </div>
                  <div className="space-y-1">
                    <Label htmlFor="username" className="text-velyar-earth font-nunito text-sm">
-                     {t("auth.username")} <span className="text-red-500">*</span>
+                     {t("auth.username")} {(formErrors.username && (touchedFields.username || attemptedSubmit)) && <span className="text-red-500">*</span>}
                    </Label>
                    <Input
                      id="username"
@@ -389,7 +397,7 @@ const Auth = () => {
                  </div>
                  <div className="space-y-1">
                    <Label htmlFor="betaCode" className="text-velyar-earth font-nunito text-sm">
-                     {t("auth.betaAccessCode")} <span className="text-red-500">*</span>
+                     {t("auth.betaAccessCode")} {(formErrors.betaCode && (touchedFields.betaCode || attemptedSubmit)) && <span className="text-red-500">*</span>}
                    </Label>
                    <Input
                      id="betaCode"
@@ -410,7 +418,7 @@ const Auth = () => {
             
              <div className="space-y-1">
                <Label htmlFor="email" className="text-velyar-earth font-nunito text-sm">
-                 {t("auth.email")} <span className="text-red-500">*</span>
+                 {t("auth.email")} {(formErrors.email && (touchedFields.email || attemptedSubmit)) && <span className="text-red-500">*</span>}
                </Label>
                <Input
                  id="email"
@@ -427,7 +435,7 @@ const Auth = () => {
              
              <div className="space-y-1">
                 <Label htmlFor="password" className="text-velyar-earth font-nunito text-sm">
-                  {t("auth.password")} <span className="text-red-500">*</span>
+                  {t("auth.password")} {(formErrors.password && (touchedFields.password || attemptedSubmit)) && <span className="text-red-500">*</span>}
                 </Label>
                 <div className="relative">
                   <Input
@@ -463,7 +471,7 @@ const Auth = () => {
                  <div className="grid grid-cols-2 gap-2">
                    <div className="space-y-1">
                      <Label htmlFor="city" className="text-velyar-earth font-nunito text-sm">
-                       {t("auth.city")} <span className="text-red-500">*</span>
+                       {t("auth.city")} {(formErrors.city && (touchedFields.city || attemptedSubmit)) && <span className="text-red-500">*</span>}
                      </Label>
                      <Input
                        id="city"
@@ -480,7 +488,7 @@ const Auth = () => {
                    </div>
                    <div className="space-y-1">
                      <Label htmlFor="country" className="text-velyar-earth font-nunito text-sm">
-                       {t("auth.country")} <span className="text-red-500">*</span>
+                       {t("auth.country")} {(formErrors.country && (touchedFields.country || attemptedSubmit)) && <span className="text-red-500">*</span>}
                      </Label>
                      <Select value={formData.country} onValueChange={handleCountryChange} required>
                        <SelectTrigger className="border-velyar-earth/20 focus:border-velyar-earth">
@@ -500,7 +508,7 @@ const Auth = () => {
                  
                  <div className="space-y-1">
                    <Label htmlFor="dob" className="text-velyar-earth font-nunito text-sm">
-                     {t("auth.dateOfBirth")} <span className="text-red-500">*</span>
+                     {t("auth.dateOfBirth")} {(formErrors.dob && (touchedFields.dob || attemptedSubmit)) && <span className="text-red-500">*</span>}
                    </Label>
                    <Input
                      id="dob"
