@@ -37,6 +37,68 @@ post_install do |installer|
 
       # Disable Mac Catalyst support for all pods to avoid ITMS-90863 warning
       config.build_settings['SUPPORTS_MACCATALYST'] = 'NO'
+
+      # Fix framework paths for archiving
+      config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
     end
+  end
+
+  # Fix framework embedding for archive builds
+  frameworks_script_path = File.join(installer.sandbox.root, 'Target Support Files', 'Pods-App', 'Pods-App-frameworks.sh')
+  if File.exist?(frameworks_script_path)
+    script_content = File.read(frameworks_script_path)
+
+    # Replace the install_framework function to properly handle archive builds
+    new_function = <<~'FUNCTION'
+# Copies and strips a vendored framework
+install_framework()
+{
+  local source=""
+
+  # Try different possible locations for the framework
+  if [ -r "${BUILT_PRODUCTS_DIR}/$1" ]; then
+    source="${BUILT_PRODUCTS_DIR}/$1"
+  elif [ -r "${BUILT_PRODUCTS_DIR}/$(basename "$1")" ]; then
+    source="${BUILT_PRODUCTS_DIR}/$(basename "$1")"
+  elif [ -r "${CONFIGURATION_BUILD_DIR}/$1" ]; then
+    source="${CONFIGURATION_BUILD_DIR}/$1"
+  elif [ -r "${CONFIGURATION_BUILD_DIR}/$(basename "$1")" ]; then
+    source="${CONFIGURATION_BUILD_DIR}/$(basename "$1")"
+  elif [ -r "$1" ]; then
+    source="$1"
+  else
+    # For archive builds, try the actual pod build location
+    local framework_name=$(basename "$1" .framework)
+    if [ -r "${PODS_BUILD_DIR}/${CONFIGURATION}${EFFECTIVE_PLATFORM_NAME}/${framework_name}/$1" ]; then
+      source="${PODS_BUILD_DIR}/${CONFIGURATION}${EFFECTIVE_PLATFORM_NAME}/${framework_name}/$1"
+    fi
+  fi
+
+  if [ -z "${source}" ] || [ ! -e "${source}" ]; then
+    echo "warning: Could not find framework at any expected location for $1"
+    return
+  fi
+
+  local destination="${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}"
+
+  if [ -L "${source}" ]; then
+    echo "Symlinked..."
+    source="$(readlink -f "${source}" 2>/dev/null || readlink "${source}")"
+    # If symlink target doesn't exist, skip
+    if [ ! -e "${source}" ]; then
+      echo "warning: Symlink target does not exist: ${source}"
+      return
+    fi
+  fi
+FUNCTION
+
+    # Find and replace the install_framework function
+    script_content = script_content.sub(
+      /# Copies and strips a vendored framework\ninstall_framework\(\)\n\{.*?^  fi\n/m,
+      new_function
+    )
+
+    File.write(frameworks_script_path, script_content)
+    puts "✓ Fixed Pods-App-frameworks.sh for archive builds"
   end
 end
