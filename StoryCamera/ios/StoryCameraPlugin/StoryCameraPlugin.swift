@@ -749,11 +749,11 @@ public class StoryCameraPlugin: CAPPlugin, CAPBridgedPlugin {
     private func getVideoMetadata(from url: URL) -> (duration: Double, width: Int, height: Int) {
         let asset = AVAsset(url: url)
         let duration = CMTimeGetSeconds(asset.duration)
-        
-        let tracks = try? asset.tracks(withMediaType: .video)
-        let videoTrack = tracks?.first
+
+        let tracks = asset.tracks(withMediaType: .video)
+        let videoTrack = tracks.first
         let size = videoTrack?.naturalSize ?? CGSize.zero
-        
+
         return (duration, Int(size.width), Int(size.height))
     }
 }
