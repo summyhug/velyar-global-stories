@@ -39,6 +39,7 @@ export const useIOSDetection = () => {
           setIOSVersion(info.osVersion);
           
           // Set iOS-specific status bar
+          // FIX: Using Dark style to ensure dark text/icons (closest to velyar blue #285A66)
           const { StatusBar, Style } = await import('@capacitor/status-bar');
           await StatusBar.setStyle({ style: Style.Dark });
           await StatusBar.setBackgroundColor({ color: '#fffbf0' });

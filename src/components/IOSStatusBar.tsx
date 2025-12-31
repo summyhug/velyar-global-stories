@@ -16,6 +16,8 @@ export const IOSStatusBar = () => {
         await StatusBar.setOverlaysWebView({ overlay: false });
 
         // Set status bar style for iOS
+        // FIX: Using Dark style to ensure dark text/icons (closest to velyar blue #285A66)
+        // Note: iOS only supports black (Dark) or white (Light) - custom colors require native implementation
         await StatusBar.setStyle({ style: Style.Dark });
         await StatusBar.setBackgroundColor({ color: '#fffbf0' });
 
