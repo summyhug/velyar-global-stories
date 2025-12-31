@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, MessageCircle, Share2, Trash2, Heart, Flag, MessageSquare } from "lucide-react";
+import { ArrowLeft, MessageCircle, Share2, Trash2, Heart, Flag, MessageSquare, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -146,26 +146,89 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
 
   const handleDeleteVideo = async () => {
     if (!currentUser || currentUser.id !== currentVideo.user_id) return;
-    
+
     if (confirm("Are you sure you want to delete this video?")) {
       try {
         const { error } = await supabase
           .from('videos')
           .delete()
           .eq('id', currentVideo.id);
-        
+
         if (error) throw error;
-        
+
         toast({
           title: "Video deleted",
           duration: 2000,
         });
-        
+
         // Go back or to next video
         onBack();
       } catch (error) {
         toast({
           title: "Failed to delete video",
+          description: "Please try again",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    }
+  };
+
+  const handleBlockUser = async () => {
+    if (!currentUser || currentUser.id === currentVideo.user_id) return;
+
+    const username = currentVideo.profiles?.display_name || currentVideo.profiles?.username || 'this user';
+
+    if (confirm(`Block ${username}? You won't see their content anymore and a report will be filed.`)) {
+      try {
+        // Create block record
+        const { error: blockError } = await supabase
+          .from('user_blocks')
+          .insert({
+            blocker_id: currentUser.id,
+            blocked_user_id: currentVideo.user_id,
+            reason: 'User blocked via video viewer',
+          });
+
+        if (blockError) {
+          // Check if already blocked
+          if (blockError.code === '23505') {
+            toast({
+              title: "Already blocked",
+              description: "You have already blocked this user",
+              variant: "destructive",
+              duration: 3000,
+            });
+            return;
+          }
+          throw blockError;
+        }
+
+        // Auto-create a harassment report
+        await supabase.from('content_reports').insert({
+          video_id: currentVideo.id,
+          reporter_id: currentUser.id,
+          reason: 'User blocked - automatic report',
+          category: 'Harassment or bullying',
+          description: 'This report was automatically generated when the user blocked the content creator.',
+        });
+
+        toast({
+          title: "User blocked",
+          description: "You won't see content from this user anymore",
+          duration: 3000,
+        });
+
+        // Navigate to next video or go back
+        if (videos.length > 1) {
+          handleSwipe('next');
+        } else {
+          onBack();
+        }
+      } catch (error) {
+        console.error('Block user error:', error);
+        toast({
+          title: "Failed to block user",
           description: "Please try again",
           variant: "destructive",
           duration: 3000,
@@ -251,17 +314,28 @@ export const VideoViewer = ({ videos, initialIndex = 0, onBack, pageTitle }: Vid
               </Button>
             )}
             
-            {/* Report button - only show for other users' content */}
+            {/* Report and Block buttons - only show for other users' content */}
             {currentUser?.id !== currentVideo.user_id && (
-              <ReportContentModal videoId={currentVideo.id}>
+              <>
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={handleBlockUser}
                   className="text-white hover:bg-red-500/20"
+                  title="Block user"
                 >
-                  <Flag className="w-5 h-5" />
+                  <UserX className="w-5 h-5" />
                 </Button>
-              </ReportContentModal>
+                <ReportContentModal videoId={currentVideo.id}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:bg-red-500/20"
+                  >
+                    <Flag className="w-5 h-5" />
+                  </Button>
+                </ReportContentModal>
+              </>
             )}
             
             {/* Appeal button - only show for own content that's been flagged/hidden */}

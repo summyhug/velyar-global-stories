@@ -31,8 +31,7 @@ const Auth = () => {
     password: "",
     city: "",
     country: "",
-    dob: "",
-    betaCode: ""
+    dob: ""
   });
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
@@ -65,9 +64,6 @@ const Auth = () => {
     };
   }, []);
 
-  // Beta access code - hardcoded for now
-  const VALID_BETA_CODE = "BETAOCTO";
-
   const validateForm = () => {
     const errors: Record<string, string> = {};
     
@@ -75,16 +71,8 @@ const Auth = () => {
       if (!formData.name.trim()) errors.name = t("auth.nameRequired");
       if (!formData.username.trim()) errors.username = t("auth.usernameRequired");
       if (formData.username.length < 3) errors.username = t("auth.usernameMinLength");
-      
-      // Beta access code validation
-      if (!formData.betaCode.trim()) {
-        errors.betaCode = t("auth.betaCodeRequired");
-      } else if (formData.betaCode.toUpperCase() !== VALID_BETA_CODE) {
-        errors.betaCode = t("auth.betaCodeInvalid");
-      }
-      
-      // City, country, and DOB are MANDATORY
-      if (!formData.city.trim()) errors.city = t("auth.cityRequired");
+
+      // Country and DOB are MANDATORY (City is optional)
       if (!formData.country) errors.country = t("auth.countryRequired");
       
       if (!formData.dob) {
@@ -147,13 +135,9 @@ const Auth = () => {
   }, [isLogin]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.name === 'betaCode' 
-      ? e.target.value.toUpperCase() 
-      : e.target.value;
-    
     setFormData({
       ...formData,
-      [e.target.name]: value
+      [e.target.name]: e.target.value
     });
   };
 
@@ -395,27 +379,9 @@ const Auth = () => {
                    />
                    {formErrors.username && touchedFields.username && <p className="text-red-500 text-xs">{formErrors.username}</p>}
                  </div>
-                 <div className="space-y-1">
-                   <Label htmlFor="betaCode" className="text-velyar-earth font-nunito text-sm">
-                     {t("auth.betaAccessCode")} {(formErrors.betaCode && (touchedFields.betaCode || attemptedSubmit)) && <span className="text-red-500">*</span>}
-                   </Label>
-                   <Input
-                     id="betaCode"
-                     name="betaCode"
-                     type="text"
-                     value={formData.betaCode}
-                     onChange={handleInputChange}
-                     onBlur={() => handleBlur('betaCode')}
-                     required={!isLogin}
-                     className="border-velyar-earth/20 focus:border-velyar-earth uppercase"
-                     placeholder={t("auth.betaCodePlaceholder")}
-                     autoComplete="off"
-                   />
-                   {formErrors.betaCode && touchedFields.betaCode && <p className="text-red-500 text-xs">{formErrors.betaCode}</p>}
-                 </div>
               </>
             )}
-            
+
              <div className="space-y-1">
                <Label htmlFor="email" className="text-velyar-earth font-nunito text-sm">
                  {t("auth.email")} {(formErrors.email && (touchedFields.email || attemptedSubmit)) && <span className="text-red-500">*</span>}
@@ -471,7 +437,7 @@ const Auth = () => {
                  <div className="grid grid-cols-2 gap-2">
                    <div className="space-y-1">
                      <Label htmlFor="city" className="text-velyar-earth font-nunito text-sm">
-                       {t("auth.city")} {(formErrors.city && (touchedFields.city || attemptedSubmit)) && <span className="text-red-500">*</span>}
+                       {t("auth.city")} <span className="text-xs text-muted-foreground">(optional)</span> {(formErrors.city && (touchedFields.city || attemptedSubmit)) && <span className="text-red-500">*</span>}
                      </Label>
                      <Input
                        id="city"
@@ -480,9 +446,8 @@ const Auth = () => {
                        value={formData.city}
                        onChange={handleInputChange}
                        onBlur={() => handleBlur('city')}
-                       required={!isLogin}
                        className="border-velyar-earth/20 focus:border-velyar-earth"
-                       placeholder="e.g., London"
+                       placeholder="e.g., London (optional)"
                      />
                      {formErrors.city && touchedFields.city && <p className="text-red-500 text-xs">{formErrors.city}</p>}
                    </div>

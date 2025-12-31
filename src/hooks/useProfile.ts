@@ -57,13 +57,17 @@ export function useProfile(userId: string | undefined) {
         console.log('useProfile: profileData:', profileData);
         console.log('useProfile: city:', profileData?.city);
         console.log('useProfile: country:', profileData?.country);
-        
+
         if (profileData?.city && profileData?.country) {
           const locationString = `${profileData.city}, ${profileData.country}`;
           console.log('useProfile: Setting location to:', locationString);
           setLocation(locationString);
+        } else if (profileData?.country) {
+          // Show just country if city is not provided
+          console.log('useProfile: Setting location to country only:', profileData.country);
+          setLocation(profileData.country);
         } else {
-          console.log('useProfile: No city or country data available');
+          console.log('useProfile: No location data available');
         }
 
         // Fetch user videos for stats

@@ -6,6 +6,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useTranslation } from "react-i18next";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import StoryCamera from "../../StoryCamera";
 
 interface MissionCardProps {
@@ -22,6 +24,7 @@ export const MissionCard = ({ id, title, description, participants, location, im
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const displayLocation = targetRegions && targetRegions.length > 0 
     ? `${targetRegions.slice(0, 2).join(', ')}${targetRegions.length > 2 ? '...' : ''}`
@@ -29,7 +32,31 @@ export const MissionCard = ({ id, title, description, participants, location, im
 
   const handleNativeRecording = async () => {
     try {
-      
+      // Check if user is a creator
+      if (!user?.id) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to create content.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_creator')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError || !profile?.is_creator) {
+        toast({
+          title: "Creator Access Required",
+          description: "Content creation is currently by invitation only. Contact us to request access.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const storyResult = await StoryCamera.recordVideo({
         duration: 30,
         camera: 'rear',

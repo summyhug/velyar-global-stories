@@ -44,6 +44,19 @@ const VideoList = () => {
       setLoading(true);
       setError(null);
 
+      // Get current user and their blocked users
+      const { data: { user } } = await supabase.auth.getUser();
+      let blockedUserIds: string[] = [];
+
+      if (user) {
+        const { data: blockedUsers } = await supabase
+          .from('user_blocks')
+          .select('blocked_user_id')
+          .eq('blocker_id', user.id);
+
+        blockedUserIds = blockedUsers?.map(b => b.blocked_user_id) || [];
+      }
+
       // Handle theme-based video fetching
       if (type === 'theme' && id) {
         // For themes, we need to join with video_themes table
@@ -74,8 +87,11 @@ const VideoList = () => {
             profiles: profileData
           });
         }
-        
-        setVideos(videosWithProfiles);
+
+        // Filter out blocked users' videos
+        const filteredVideos = videosWithProfiles.filter(v => !blockedUserIds.includes(v.user_id));
+
+        setVideos(filteredVideos);
 
         // Fetch theme title
         const { data: themeData } = await supabase
@@ -135,7 +151,10 @@ const VideoList = () => {
                 });
               }
             }
-            setVideos(videosWithProfiles);
+
+            // Filter out blocked users' videos
+            const filteredVideos = videosWithProfiles.filter(v => !blockedUserIds.includes(v.user_id));
+            setVideos(filteredVideos);
           }
         }
         return;
@@ -206,7 +225,11 @@ const VideoList = () => {
         mission_id: v.mission_id,
         daily_prompt_id: v.daily_prompt_id
       })));
-      setVideos(videosWithProfiles);
+
+      // Filter out blocked users' videos
+      const filteredVideos = videosWithProfiles.filter(v => !blockedUserIds.includes(v.user_id));
+
+      setVideos(filteredVideos);
     } catch (err) {
       console.error('Error fetching videos:', err);
       setError('Failed to load videos');

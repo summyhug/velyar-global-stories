@@ -28,9 +28,11 @@ import Videos from "./pages/Videos";
 import Profile from "./pages/Profile";
 import Contributions from "./pages/Contributions";
 import Auth from "./pages/Auth";
+import AdminDashboard from "./pages/AdminDashboard";
 import AdminMissions from "./pages/AdminMissions";
 import AdminPrompts from "./pages/AdminPrompts";
 import AdminVideos from "./pages/AdminVideos";
+import AdminModeration from "./pages/AdminModeration";
 import AdminVideoUpload from "./pages/AdminVideoUpload";
 import NotFound from "./pages/NotFound";
 import Privacy from "./pages/Privacy";
@@ -89,6 +91,8 @@ function App() {
                       {/* Admin Routes - Restricted to admin@velyar.com */}
                       <Route element={<AdminGate />}>
                         <Route element={<ProtectedLayout />}>
+                          <Route path="/admin" element={<AdminDashboard />} />
+                          <Route path="/admin/moderation" element={<AdminModeration />} />
                           <Route path="/admin/missions" element={<AdminMissions />} />
                           <Route path="/admin/prompts" element={<AdminPrompts />} />
                           <Route path="/admin/videos" element={<AdminVideos />} />

@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import StoryCamera from "../../StoryCamera";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { getCountryFlag } from "@/utils/countryFlags";
 
 export const DailyPrompt = () => {
@@ -23,6 +24,7 @@ export const DailyPrompt = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchPromptData = async () => {
@@ -156,6 +158,31 @@ export const DailyPrompt = () => {
   // Direct StoryCamera recording function
   const handleRespondWithStoryCamera = async () => {
     try {
+      // Check if user is a creator
+      if (!user?.id) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to create content.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_creator')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileError || !profile?.is_creator) {
+        toast({
+          title: "Creator Access Required",
+          description: "Content creation is currently by invitation only. Contact us to request access.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const storyResult = await StoryCamera.recordVideo({
         duration: 30,
         camera: 'rear',

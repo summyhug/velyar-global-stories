@@ -40,12 +40,12 @@ const Terms = () => {
             </section>
 
             <section>
-              <h3 className="font-semibold text-velyar-earth mb-2">3. Age Requirements and Restrictions</h3>
-              <p>You must be at least 13 years old to use this service. Users under 16 may have restricted access to certain features to comply with data protection laws.</p>
+              <h3 className="font-semibold text-velyar-earth mb-2">3. Age Requirements</h3>
+              <p>You must be at least 14 years old to use this service to comply with COPPA and international data protection laws.</p>
               <ul className="list-disc pl-6 mt-2 space-y-1">
                 <li>Users must provide accurate date of birth information</li>
                 <li>Age verification is required for account creation</li>
-                <li>Restricted accounts have limited feature access for safety</li>
+                <li>Users under 14 are not permitted to create accounts</li>
                 <li>False age information may result in account suspension</li>
               </ul>
             </section>
